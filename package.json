@@ -1,0 +1,52 @@
+{
+  "name": "vault-kv-ui",
+  "version": "1.0.0",
+  "description": "Local web console for browsing and managing HashiCorp Vault KV v2 secrets",
+  "type": "module",
+  "bin": {
+    "vault-kv-ui": "./bin/vault-kv-ui.mjs"
+  },
+  "files": [
+    "bin",
+    "server",
+    "app/dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "bff": "node server/index.mjs",
+    "ui": "npm run dev --prefix app",
+    "dev": "node -e \"const {spawn}=await import('child_process');const bff=spawn('node',['server/index.mjs'],{stdio:'inherit'});const ui=spawn('npm',['run','dev','--prefix','app'],{stdio:'inherit'});process.on('SIGINT',()=>{bff.kill();ui.kill()})\"",
+    "build": "npm run build --prefix app",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "vault",
+    "hashicorp",
+    "kv",
+    "secrets",
+    "ui",
+    "devtools"
+  ],
+  "author": "Ismail <imil.dev01@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ismailhac/vault-kv-ui#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ismailhac/vault-kv-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ismailhac/vault-kv-ui/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6"
+  }
+}

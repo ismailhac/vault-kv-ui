@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+app/node_modules/
+
+# Build output — exclude by default but include in npm package
+app/dist/
+!app/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment & secrets — never commit tokens
+.env
+.env.*
+!.env.example
+
+# Vault CLI state
+.last_execution
+
+# Editor
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+CLAUDE.md
