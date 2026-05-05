@@ -1,7 +1,7 @@
 # Vault KV UI
 
-[![npm version](https://img.shields.io/npm/v/vault-kv-ui.svg?style=flat-square)](https://www.npmjs.com/package/vault-kv-ui)
-[![Node.js](https://img.shields.io/node/v/vault-kv-ui.svg?style=flat-square)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/vault-ui.svg?style=flat-square)](https://www.npmjs.com/package/vault-ui)
+[![Node.js](https://img.shields.io/node/v/vault-ui.svg?style=flat-square)](https://nodejs.org)
 [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
 
 > 🔐 Professional web console for **HashiCorp Vault KV v2** secret management. Browse, edit, audit, and restore secrets with a modern, intuitive interface.
@@ -14,28 +14,28 @@
 
 ```bash
 # Install globally (requires Node.js ≥ 20)
-npm install -g vault-kv-ui
+npm install -g vault-ui
 
 # Launch from anywhere
-vault-kv-ui
+vault-ui
 ```
 
 The UI opens automatically at `http://localhost:3001`.  
-Config and audit logs persist in `~/.vault-kv-ui/`.
+Config and audit logs persist in `~/.vault-ui/`.
 
 ### Environment Setup
 
 ```bash
 # Pre-configure your Vault address
-VAULT_ADDR=https://vault.company.com vault-kv-ui
+VAULT_ADDR=https://vault.company.com vault-ui
 
 # Or provide a token to skip OIDC login
 VAULT_ADDR=https://vault.company.com \
 VAULT_TOKEN=hvs.xxxxxx \
-vault-kv-ui
+vault-ui
 
 # Use a different port
-BFF_PORT=4000 vault-kv-ui
+BFF_PORT=4000 vault-ui
 ```
 
 ---
@@ -97,15 +97,15 @@ All bulk actions **exclude production paths** by default (configurable).
 ### Global (Recommended)
 
 ```bash
-npm install -g vault-kv-ui
-vault-kv-ui
+npm install -g vault-ui
+vault-ui
 ```
 
 ### Local Development
 
 ```bash
-git clone https://github.com/ismailhac/vault-kv-ui.git
-cd vault-kv-ui
+git clone https://github.com/ismailhac/vault-ui.git
+cd vault-ui
 npm install && npm install --prefix app
 npm run dev
 ```
@@ -125,17 +125,17 @@ Open **http://localhost:5173** in your browser.
 | `VAULT_NAMESPACE` | *(none)* | Default namespace on startup |
 | `BFF_PORT` | `3001` | Backend server port |
 | `OIDC_CALLBACK_PORT` | `8250` | Local OIDC callback server port |
-| `LOGS_FILE` | `~/.vault-kv-ui/audit-logs.json` | Audit log persistence path |
+| `LOGS_FILE` | `~/.vault-ui/audit-logs.json` | Audit log persistence path |
 
 ### Adding Namespaces
 
-Launch the app and use the **Setup Wizard** to add Vault namespaces via the UI. They're stored in `~/.vault-kv-ui/config.json`.
+Launch the app and use the **Setup Wizard** to add Vault namespaces via the UI. They're stored in `~/.vault-ui/config.json`.
 
 Or pre-configure in your shell:
 ```bash
 export VAULT_ADDR=https://vault.company.com
 export VAULT_NAMESPACE=org/team/my-namespace
-vault-kv-ui
+vault-ui
 ```
 
 ---
@@ -161,7 +161,7 @@ vault-kv-ui
 
 - **Frontend** — Single-page Vue app with centralized Pinia state
 - **Backend** — Single Express file handling all Vault proxying, auth, and logging
-- **Persistence** — `~/.vault-kv-ui/config.json` (settings), `~/.vault-kv-ui/audit-logs.json` (logs)
+- **Persistence** — `~/.vault-ui/config.json` (settings), `~/.vault-ui/audit-logs.json` (logs)
 
 ---
 
@@ -191,7 +191,7 @@ Vault KV UI is a **local development tool** designed for single-user workstation
 - **Localhost-only** — BFF binds to `127.0.0.1` by default
 - **No per-user auth** — whoever runs the CLI has full access
 - **Audit logging** — all operations logged to persistent JSON
-- **Token management** — tokens cached in-memory and `~/.vault-kv-ui/`
+- **Token management** — tokens cached in-memory and `~/.vault-ui/`
 
 For security disclosures, email **imil.dev01@gmail.com** instead of opening a public issue.
 
@@ -226,4 +226,4 @@ MIT © [Ismail](https://github.com/ismailhac)
 
 ---
 
-**Questions?** Open an issue on [GitHub](https://github.com/ismailhac/vault-kv-ui/issues).
+**Questions?** Open an issue on [GitHub](https://github.com/ismailhac/vault-ui/issues).

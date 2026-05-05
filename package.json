@@ -1,10 +1,10 @@
 {
-  "name": "vault-kv-ui",
+  "name": "vault-ui",
   "version": "1.0.0",
   "description": "Local web console for browsing and managing HashiCorp Vault KV v2 secrets",
   "type": "module",
   "bin": {
-    "vault-kv-ui": "./bin/vault-kv-ui.mjs"
+    "vault-ui": "./bin/vault-kv-ui.mjs"
   },
   "files": [
     "bin",
@@ -28,7 +28,7 @@
     "ui",
     "devtools"
   ],
-  "author": "Ismail <imil.dev01@gmail.com>",
+  "author": "Ismail <ismailhac@users.noreply.github.com>",
   "license": "MIT",
   "homepage": "https://github.com/ismailhac/vault-kv-ui#readme",
   "repository": {
