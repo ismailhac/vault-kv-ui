@@ -739,5 +739,5 @@ app.use((err, req, res, _next) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`[BFF] vault-admin running on http://localhost:${PORT}`)
+  console.log(`[BFF] Vault Admin running on http://localhost:${PORT}`)
 })

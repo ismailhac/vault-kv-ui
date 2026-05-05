@@ -70,7 +70,7 @@ function handleManualLogin() {
         >
           <span class="text-green-400 text-2xl font-bold leading-none group-hover:text-green-300 transition select-none">⬡</span>
           <div class="leading-tight">
-            <div class="text-white font-bold text-base tracking-wide group-hover:text-green-300 transition">vault-admin</div>
+            <div class="text-white font-bold text-base tracking-wide group-hover:text-green-300 transition">Vault Admin</div>
             <div class="text-gray-500 text-xs tracking-wider">Secret Manager</div>
           </div>
         </button>
@@ -103,7 +103,7 @@ function handleManualLogin() {
       <footer class="border-t border-gray-800 px-6 py-3 mt-4">
         <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 text-gray-600 text-xs">
           <div class="flex items-center gap-2">
-            <span class="text-green-700 font-bold">⬡ vault-admin</span>
+            <span class="text-green-700 font-bold">⬡ Vault Admin</span>
             <span>v{{ vault.appVersion }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">

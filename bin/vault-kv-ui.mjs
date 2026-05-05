@@ -13,7 +13,7 @@ const distPath = join(__dirname, '..', 'app', 'dist', 'index.html')
 
 // Guard: dist must exist
 if (!existsSync(distPath)) {
-  console.error('[vault-admin] ERROR: app/dist/ not found.')
+  console.error('[Vault Admin] ERROR: app/dist/ not found.')
   console.error('  This usually means the package was published without building the frontend.')
   console.error('  If you are developing locally, run: npm run build --prefix app')
   process.exit(1)
@@ -36,7 +36,7 @@ function waitAndOpen(attemptsLeft) {
           platform() === 'win32' ? `start "" "${url}"` :
           `xdg-open "${url}"`
         exec(cmd, err => {
-          if (err) console.warn('[vault-admin] Could not open browser automatically:', err.message)
+          if (err) console.warn('[Vault Admin] Could not open browser automatically:', err.message)
         })
       }
     }, 500)
@@ -44,7 +44,7 @@ function waitAndOpen(attemptsLeft) {
   sock.once('error', () => {
     sock.destroy()
     if (attemptsLeft <= 0) {
-      console.warn('[vault-admin] Server did not start in time — open manually:', url)
+      console.warn('[Vault Admin] Server did not start in time — open manually:', url)
       return
     }
     setTimeout(() => waitAndOpen(attemptsLeft - 1), 200)
