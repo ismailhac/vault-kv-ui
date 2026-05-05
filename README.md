@@ -104,8 +104,8 @@ vault-admin
 ### Local Development
 
 ```bash
-git clone https://github.com/ismailhac/vault-admin.git
-cd vault-admin
+git clone https://github.com/ismailhac/vault-kv-ui.git
+cd vault-kv-ui
 npm install && npm install --prefix app
 npm run dev
 ```
@@ -226,4 +226,4 @@ MIT © [Ismail](https://github.com/ismailhac)
 
 ---
 
-**Questions?** Open an issue on [GitHub](https://github.com/ismailhac/vault-admin/issues).
+**Questions?** Open an issue on [GitHub](https://github.com/ismailhac/vault-kv-ui/issues).
