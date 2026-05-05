@@ -131,7 +131,7 @@ function resolveToken(namespace) {
   // 3. Global env var
   if (process.env.VAULT_TOKEN) return process.env.VAULT_TOKEN
 
-  // 4. ~/.env file (written by vault-kv CLI)
+  // 4. ~/.env file (written by vault-admin CLI)
   const envFile = join(homedir(), '.env')
   if (existsSync(envFile)) {
     const lines = readFileSync(envFile, 'utf8').split('\n')
@@ -739,5 +739,5 @@ app.use((err, req, res, _next) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`[BFF] Vault KV proxy running on http://localhost:${PORT}`)
+  console.log(`[BFF] vault-admin running on http://localhost:${PORT}`)
 })

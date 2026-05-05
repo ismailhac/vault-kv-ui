@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
       <div class="space-y-6">
         <div class="landing-logo text-green-400 font-black leading-none" style="font-size: 9rem;">⬡</div>
         <div>
-          <h1 class="text-white font-bold tracking-wide" style="font-size: 2.75rem;">Vault KV UI</h1>
+          <h1 class="text-white font-bold tracking-wide" style="font-size: 2.75rem;">vault-admin</h1>
           <p class="text-gray-500 text-sm mt-2 tracking-widest uppercase">Secret Manager · HashiCorp Vault KV v2</p>
         </div>
       </div>

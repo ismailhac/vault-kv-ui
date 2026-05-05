@@ -675,7 +675,7 @@ onUnmounted(() => clearInterval(pollTimer))
         <!-- Vault export row -->
         <div class="border-t border-gray-800 pt-4">
           <div class="flex items-center justify-between mb-3">
-            <div class="text-gray-400 text-xs">Exporter la session vers Vault KV</div>
+            <div class="text-gray-400 text-xs">Exporter la session vers Vault</div>
             <span class="text-purple-400 text-xs font-mono">{{ vault.currentNamespaceLabel }}</span>
           </div>
 
