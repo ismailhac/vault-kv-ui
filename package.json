@@ -1,10 +1,10 @@
 {
-  "name": "vault-manager",
+  "name": "vault-admin",
   "version": "1.0.0",
   "description": "Local web console for browsing and managing HashiCorp Vault KV v2 secrets",
   "type": "module",
   "bin": {
-    "vault-manager": "./bin/vault-kv-ui.mjs"
+    "vault-admin": "./bin/vault-kv-ui.mjs"
   },
   "files": [
     "bin",

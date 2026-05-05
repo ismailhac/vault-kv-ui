@@ -1,7 +1,7 @@
 # Vault KV UI
 
-[![npm version](https://img.shields.io/npm/v/vault-manager.svg?style=flat-square)](https://www.npmjs.com/package/vault-manager)
-[![Node.js](https://img.shields.io/node/v/vault-manager.svg?style=flat-square)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/vault-admin.svg?style=flat-square)](https://www.npmjs.com/package/vault-admin)
+[![Node.js](https://img.shields.io/node/v/vault-admin.svg?style=flat-square)](https://nodejs.org)
 [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
 
 > 🔐 Professional web console for **HashiCorp Vault KV v2** secret management. Browse, edit, audit, and restore secrets with a modern, intuitive interface.
@@ -14,28 +14,28 @@
 
 ```bash
 # Install globally (requires Node.js ≥ 20)
-npm install -g vault-manager
+npm install -g vault-admin
 
 # Launch from anywhere
-vault-manager
+vault-admin
 ```
 
 The UI opens automatically at `http://localhost:3001`.  
-Config and audit logs persist in `~/.vault-manager/`.
+Config and audit logs persist in `~/.vault-admin/`.
 
 ### Environment Setup
 
 ```bash
 # Pre-configure your Vault address
-VAULT_ADDR=https://vault.company.com vault-manager
+VAULT_ADDR=https://vault.company.com vault-admin
 
 # Or provide a token to skip OIDC login
 VAULT_ADDR=https://vault.company.com \
 VAULT_TOKEN=hvs.xxxxxx \
-vault-manager
+vault-admin
 
 # Use a different port
-BFF_PORT=4000 vault-manager
+BFF_PORT=4000 vault-admin
 ```
 
 ---
@@ -97,15 +97,15 @@ All bulk actions **exclude production paths** by default (configurable).
 ### Global (Recommended)
 
 ```bash
-npm install -g vault-manager
-vault-manager
+npm install -g vault-admin
+vault-admin
 ```
 
 ### Local Development
 
 ```bash
-git clone https://github.com/ismailhac/vault-manager.git
-cd vault-manager
+git clone https://github.com/ismailhac/vault-admin.git
+cd vault-admin
 npm install && npm install --prefix app
 npm run dev
 ```
@@ -125,17 +125,17 @@ Open **http://localhost:5173** in your browser.
 | `VAULT_NAMESPACE` | *(none)* | Default namespace on startup |
 | `BFF_PORT` | `3001` | Backend server port |
 | `OIDC_CALLBACK_PORT` | `8250` | Local OIDC callback server port |
-| `LOGS_FILE` | `~/.vault-manager/audit-logs.json` | Audit log persistence path |
+| `LOGS_FILE` | `~/.vault-admin/audit-logs.json` | Audit log persistence path |
 
 ### Adding Namespaces
 
-Launch the app and use the **Setup Wizard** to add Vault namespaces via the UI. They're stored in `~/.vault-manager/config.json`.
+Launch the app and use the **Setup Wizard** to add Vault namespaces via the UI. They're stored in `~/.vault-admin/config.json`.
 
 Or pre-configure in your shell:
 ```bash
 export VAULT_ADDR=https://vault.company.com
 export VAULT_NAMESPACE=org/team/my-namespace
-vault-manager
+vault-admin
 ```
 
 ---
@@ -161,7 +161,7 @@ vault-manager
 
 - **Frontend** — Single-page Vue app with centralized Pinia state
 - **Backend** — Single Express file handling all Vault proxying, auth, and logging
-- **Persistence** — `~/.vault-manager/config.json` (settings), `~/.vault-manager/audit-logs.json` (logs)
+- **Persistence** — `~/.vault-admin/config.json` (settings), `~/.vault-admin/audit-logs.json` (logs)
 
 ---
 
@@ -191,7 +191,7 @@ Vault KV UI is a **local development tool** designed for single-user workstation
 - **Localhost-only** — BFF binds to `127.0.0.1` by default
 - **No per-user auth** — whoever runs the CLI has full access
 - **Audit logging** — all operations logged to persistent JSON
-- **Token management** — tokens cached in-memory and `~/.vault-manager/`
+- **Token management** — tokens cached in-memory and `~/.vault-admin/`
 
 For security disclosures, email **imil.dev01@gmail.com** instead of opening a public issue.
 
@@ -226,4 +226,4 @@ MIT © [Ismail](https://github.com/ismailhac)
 
 ---
 
-**Questions?** Open an issue on [GitHub](https://github.com/ismailhac/vault-manager/issues).
+**Questions?** Open an issue on [GitHub](https://github.com/ismailhac/vault-admin/issues).
