@@ -1,6 +1,6 @@
 {
   "name": "vault-admin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local web console for browsing and managing HashiCorp Vault KV v2 secrets",
   "type": "module",
   "bin": {
