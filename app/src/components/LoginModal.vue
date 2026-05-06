@@ -275,7 +275,7 @@ onUnmounted(stopPolling)
               <input
                 v-model="setupOrg"
                 type="text"
-                placeholder="adeo"
+                placeholder="company"
                 class="w-32 px-3 py-2 bg-gray-950 border-y border-gray-700 text-green-300 text-sm font-mono focus:outline-none focus:border-y-green-600 placeholder-gray-600"
                 @input="onOrgInput"
                 @keydown.enter="confirmOrg"
@@ -283,7 +283,7 @@ onUnmounted(stopPolling)
               />
               <span class="px-3 py-2 bg-gray-800 border border-l-0 border-gray-700 text-gray-500 text-xs rounded-r select-none whitespace-nowrap">.cloud</span>
             </div>
-            <p class="text-gray-600 text-xs">Nom de votre organisation (ex : <code class="text-gray-500">adeo</code>)</p>
+            <p class="text-gray-600 text-xs">Nom de votre organisation (ex : <code class="text-gray-500">company</code>)</p>
           </div>
 
           <!-- Live URL preview -->

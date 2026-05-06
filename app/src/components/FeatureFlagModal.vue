@@ -322,7 +322,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
             <input
               v-model="ffKey"
               type="text"
-              placeholder="FF_OPEN_MODAL"
+              placeholder="MY_KEY"
               class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
               spellcheck="false"
             />

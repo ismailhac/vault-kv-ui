@@ -192,7 +192,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
               <input
                 v-model="keyName"
                 type="text"
-                placeholder="API_KOBI_REGISTRY_V2_API_KEY"
+                placeholder="MY_KEY"
                 class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-blue-300 font-mono rounded text-sm focus:outline-none focus:border-blue-600 placeholder-gray-700"
                 spellcheck="false"
                 @keydown.enter="scan"

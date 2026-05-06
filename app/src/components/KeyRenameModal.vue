@@ -198,7 +198,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & renommage', 2: 'Di
                 <input
                   v-model="oldKeyName"
                   type="text"
-                  placeholder="KOBI_WORKSPACE_DI"
+                  placeholder="MY_KEY"
                   class="flex-1 px-3 py-2 bg-gray-950 border border-red-900 text-red-300 font-mono rounded text-sm focus:outline-none focus:border-red-600 placeholder-gray-700"
                   spellcheck="false"
                   @keydown.enter="scan"
@@ -215,7 +215,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & renommage', 2: 'Di
               <input
                 v-model="newKeyName"
                 type="text"
-                placeholder="KOBI_WORKSPACE_ID"
+                placeholder="MY_KEY"
                 class="w-full px-3 py-2 bg-gray-950 border border-green-900 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
                 :class="{ 'opacity-40': !scanned }"
                 :disabled="!scanned"

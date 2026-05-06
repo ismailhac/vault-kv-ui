@@ -263,7 +263,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Sélection', 3
               <input
                 v-model="keyName"
                 type="text"
-                placeholder="FF_OPEN_MODAL"
+                placeholder="MY_KEY"
                 class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-red-300 font-mono rounded text-sm focus:outline-none focus:border-red-600 placeholder-gray-700"
                 spellcheck="false"
                 @keydown.enter="scan"

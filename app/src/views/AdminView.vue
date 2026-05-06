@@ -1039,7 +1039,7 @@ onUnmounted(() => clearInterval(pollTimer))
             <input
               v-model="editOrg"
               type="text"
-              placeholder="ex: adeo"
+              placeholder="ex: company"
               class="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 text-xs rounded focus:outline-none focus:border-green-600"
             />
             <span class="px-3 py-1.5 bg-gray-950 border border-gray-700 text-gray-600 text-xs rounded">
@@ -1081,7 +1081,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <input
                 v-model="ns.namespace"
                 type="text"
-                placeholder="adeo/cdp/..."
+                placeholder="company/path/..."
                 :disabled="ns.namespace === vault.currentNamespace"
                 class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed font-mono"
               />

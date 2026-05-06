@@ -122,7 +122,7 @@ function resolveToken(namespace) {
   // 1. In-memory store (set by /api/auth/login)
   if (ns && tokenStore.has(ns)) return tokenStore.get(ns)
 
-  // 2. Namespace-specific env var (e.g. VAULT_TOKEN_ADEO_CDP_OAP_...)
+  // 2. Namespace-specific env var
   if (ns) {
     const key = namespaceToEnvKey(ns)
     if (process.env[key]) return process.env[key]
@@ -725,7 +725,7 @@ const distDir = join(__dirname, '..', 'app', 'dist')
 if (existsSync(distDir)) {
   app.use(express.static(distDir))
   app.use((req, res) => {
-    res.sendFile(join(distDir, 'index.html'))
+    res.sendFile('index.html', { root: distDir })
   })
 } else {
   console.warn('[BFF] app/dist/ not found — frontend will not be served')
