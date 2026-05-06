@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-05-06
+
+### Fixed
+- Old Node.js now shows a clear error instead of a cryptic syntax crash: bin script checks `process.versions.node` before loading any server code and exits with a human-readable message if Node < 18
+- Removed `node:` prefix from all built-in imports in the bin — the `node:` scheme was only added in Node 14.18 and caused silent resolution failures on older versions
+
 ## [1.0.3] - 2026-05-06
 
 ### Fixed

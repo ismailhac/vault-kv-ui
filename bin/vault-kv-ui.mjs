@@ -1,17 +1,25 @@
 #!/usr/bin/env node
-import { createConnection } from 'node:net'
-import { exec } from 'node:child_process'
-import { platform } from 'node:os'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { dirname, join } from 'node:path'
-import { existsSync } from 'node:fs'
+import { createConnection } from 'net'
+import { exec } from 'child_process'
+import { platform } from 'os'
+import { fileURLToPath, pathToFileURL } from 'url'
+import { dirname, join } from 'path'
+import { existsSync } from 'fs'
+
+// Version check — must use only basic syntax so it runs on any Node version
+const nodeMajor = parseInt(process.versions.node.split('.')[0], 10)
+if (nodeMajor < 18) {
+  console.error('[Vault Admin] ERROR: Node.js ' + process.versions.node + ' is not supported.')
+  console.error('  Vault Admin requires Node.js 18 or later.')
+  console.error('  Download the latest LTS version at: https://nodejs.org')
+  process.exit(1)
+}
 
 const PORT = parseInt(process.env.BFF_PORT || '3001')
 const url = `http://localhost:${PORT}`
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distPath = join(__dirname, '..', 'app', 'dist', 'index.html')
 
-// Guard: dist must exist
 if (!existsSync(distPath)) {
   console.error('[Vault Admin] ERROR: app/dist/ not found.')
   console.error('  This usually means the package was published without building the frontend.')

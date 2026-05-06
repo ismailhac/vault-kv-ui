@@ -3,9 +3,9 @@ import cors from 'cors'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { homedir } from 'os'
 import { join, dirname } from 'path'
-import { fileURLToPath } from 'node:url'
-import { createServer } from 'node:http'
-import { randomUUID } from 'node:crypto'
+import { fileURLToPath } from 'url'
+import { createServer } from 'http'
+import { randomUUID } from 'crypto'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
