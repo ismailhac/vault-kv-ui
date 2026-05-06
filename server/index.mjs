@@ -725,7 +725,7 @@ const distDir = join(__dirname, '..', 'app', 'dist')
 if (existsSync(distDir)) {
   app.use(express.static(distDir))
   app.use((req, res) => {
-    res.sendFile(join(distDir, 'index.html'))
+    res.sendFile('index.html', { root: distDir })
   })
 } else {
   console.warn('[BFF] app/dist/ not found — frontend will not be served')
