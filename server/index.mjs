@@ -219,6 +219,51 @@ app.get('/api/kv/read', async (req, res) => {
   }
 })
 
+// GET /api/kv/versions?path=&mount=&namespace=
+app.get('/api/kv/versions', async (req, res) => {
+  const namespace = getNamespace(req)
+  const token = resolveToken(namespace)
+  if (!token) return res.status(401).json({ error: 'No Vault token found' })
+  const { path, mount = 'secret' } = req.query
+  if (!path) return res.status(400).json({ error: 'path is required' })
+  try {
+    const result = await vaultFetch(`${mount}/metadata/${path}`, token, namespace)
+    if (result.status !== 200) return res.status(result.status).json(result.body)
+    const currentVersion = result.body.data?.current_version ?? 0
+    const versionsMap = result.body.data?.versions ?? {}
+    const versions = Object.entries(versionsMap)
+      .map(([vNum, meta]) => ({
+        version: parseInt(vNum, 10),
+        created_time: meta.created_time ?? null,
+        deletion_time: (meta.deletion_time && meta.deletion_time !== '0001-01-01T00:00:00Z') ? meta.deletion_time : null,
+        destroyed: meta.destroyed ?? false,
+        created_by: meta.created_by ?? null,
+      }))
+      .sort((a, b) => b.version - a.version)
+    res.json({ current_version: currentVersion, versions })
+  } catch (e) {
+    res.status(502).json({ error: `Vault injoignable: ${e.message}` })
+  }
+})
+
+// GET /api/kv/read-version?path=&version=&mount=&namespace=
+app.get('/api/kv/read-version', async (req, res) => {
+  const namespace = getNamespace(req)
+  const token = resolveToken(namespace)
+  if (!token) return res.status(401).json({ error: 'No Vault token found' })
+  const { path, version, mount = 'secret' } = req.query
+  if (!path) return res.status(400).json({ error: 'path is required' })
+  const versionNum = parseInt(version, 10)
+  if (!version || isNaN(versionNum) || versionNum < 1) return res.status(400).json({ error: 'version must be a positive integer' })
+  try {
+    const result = await vaultFetch(`${mount}/data/${path}?version=${versionNum}`, token, namespace)
+    if (result.status !== 200) return res.status(result.status).json(result.body)
+    res.json({ data: result.body.data?.data ?? {}, metadata: result.body.data?.metadata ?? {} })
+  } catch (e) {
+    res.status(502).json({ error: `Vault injoignable: ${e.message}` })
+  }
+})
+
 // POST /api/kv/write  body: { path, mount, data, namespace }
 app.post('/api/kv/write', async (req, res) => {
   if (!adminSettings.editingEnabled)

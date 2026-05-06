@@ -19,6 +19,14 @@ export interface NamespaceOption {
   namespace: string
 }
 
+export interface VersionMeta {
+  version: number
+  created_time: string | null
+  deletion_time: string | null
+  destroyed: boolean
+  created_by: string | null
+}
+
 export const useVaultStore = defineStore('vault', () => {
   // --- App config (loaded from BFF) ---
   const namespaces = ref<NamespaceOption[]>([])
@@ -56,6 +64,13 @@ export const useVaultStore = defineStore('vault', () => {
   const searchLoading = ref(false)
   const searchError = ref<string | null>(null)
   let searchRequestSeq = 0
+
+  // --- Version history ---
+  const versionList = ref<VersionMeta[]>([])
+  const versionCurrentVersion = ref(0)
+  const versionLoading = ref(false)
+  const versionError = ref<string | null>(null)
+  let fetchVersionsSeq = 0
 
   // --- Admin settings ---
   const editingEnabled = ref(true)
@@ -329,6 +344,43 @@ export const useVaultStore = defineStore('vault', () => {
     return res.json()
   }
 
+  async function fetchVersions(path: string) {
+    const requestId = ++fetchVersionsSeq
+    versionLoading.value = true
+    versionError.value = null
+    versionList.value = []
+    versionCurrentVersion.value = 0
+    try {
+      const params = new URLSearchParams({ path, mount: currentMount.value, namespace: currentNamespace.value })
+      const res = await fetch(`/api/kv/versions?${params}`)
+      if (requestId !== fetchVersionsSeq) return
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        versionError.value = (err as { error?: string }).error ?? `HTTP ${res.status}`
+      } else {
+        const json = await res.json()
+        versionList.value = json.versions ?? []
+        versionCurrentVersion.value = json.current_version ?? 0
+      }
+    } catch (e: unknown) {
+      if (requestId !== fetchVersionsSeq) return
+      versionError.value = e instanceof Error ? e.message : 'Network error'
+    } finally {
+      if (requestId === fetchVersionsSeq) versionLoading.value = false
+    }
+  }
+
+  async function readSecretVersion(path: string, version: number): Promise<Record<string, string>> {
+    const params = new URLSearchParams({ path, version: String(version), mount: currentMount.value, namespace: currentNamespace.value })
+    const res = await fetch(`/api/kv/read-version?${params}`)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+    }
+    const json = await res.json()
+    return json.data ?? {}
+  }
+
   async function initializeApp() {
     initStatus.value = 'loading'
     initError.value = null
@@ -457,5 +509,8 @@ export const useVaultStore = defineStore('vault', () => {
     initializeApp, retryInitialization, goHome, logout,
     // search
     searchResults, searchLoading, searchError, searchSecrets,
+    // version history
+    versionList, versionCurrentVersion, versionLoading, versionError,
+    fetchVersions, readSecretVersion,
   }
 })
