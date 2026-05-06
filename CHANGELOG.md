@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.1.3] - 2026-05-07
+
+### Fixed
+- Postinstall banner now visible during `npm install -g` — writes directly to `/dev/tty` to bypass npm 10's stdio piping of lifecycle scripts (falls back to stderr in non-TTY environments)
+
 ## [1.1.2] - 2026-05-07
 
 ### Fixed
