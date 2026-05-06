@@ -2,7 +2,7 @@
 import { createConnection } from 'node:net'
 import { exec } from 'node:child_process'
 import { platform } from 'node:os'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
 
@@ -20,7 +20,7 @@ if (!existsSync(distPath)) {
 }
 
 // Start the BFF (import as side-effect — server/index.mjs calls app.listen() at module level)
-await import(join(__dirname, '..', 'server', 'index.mjs'))
+await import(pathToFileURL(join(__dirname, '..', 'server', 'index.mjs')).href)
 
 // Wait for the server to accept connections, then open browser
 function waitAndOpen(attemptsLeft) {
