@@ -17,14 +17,14 @@ try {
   }
   const ljust = (str) => str + ' '.repeat(Math.max(0, inner - str.length))
 
-  console.log('')
-  console.log('╔' + '═'.repeat(inner) + '╗')
-  console.log('║' + center('vault-admin v' + version + ' installed') + '║')
-  console.log('╠' + '═'.repeat(inner) + '╣')
-  console.log('║' + ljust('  Run:   vault-admin') + '║')
-  console.log('║' + ljust('  Docs:  github.com/ismailhac/vault-kv-ui') + '║')
-  console.log('╚' + '═'.repeat(inner) + '╝')
-  console.log('')
+  console.error('')
+  console.error('╔' + '═'.repeat(inner) + '╗')
+  console.error('║' + center('vault-admin v' + version + ' installed') + '║')
+  console.error('╠' + '═'.repeat(inner) + '╣')
+  console.error('║' + ljust('  Run:   vault-admin') + '║')
+  console.error('║' + ljust('  Docs:  github.com/ismailhac/vault-kv-ui') + '║')
+  console.error('╚' + '═'.repeat(inner) + '╝')
+  console.error('')
 } catch (_) {
   // Silently ignore — banner is cosmetic, must not block install
 }
