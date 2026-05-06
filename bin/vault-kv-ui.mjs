@@ -19,16 +19,19 @@ if (!existsSync(distPath)) {
   process.exit(1)
 }
 
-// Start the BFF (import as side-effect — server/index.mjs calls app.listen() at module level)
-await import(pathToFileURL(join(__dirname, '..', 'server', 'index.mjs')).href)
+// Start the BFF then wait for it to accept connections
+import(pathToFileURL(join(__dirname, '..', 'server', 'index.mjs')).href)
+  .then(() => waitAndOpen(15))
+  .catch(err => {
+    console.error('[Vault Admin] Failed to start server:', err.message)
+    process.exit(1)
+  })
 
-// Wait for the server to accept connections, then open browser
 function waitAndOpen(attemptsLeft) {
   const sock = createConnection({ port: PORT, host: '127.0.0.1' })
   sock.once('connect', () => {
     sock.destroy()
-    console.log(`\n  🔓 Vault KV UI → ${url}\n`)
-    // Give the server a moment to fully initialize before opening browser
+    console.log(`\n  🔓 Vault Admin → ${url}\n`)
     setTimeout(() => {
       if (!process.env.SSH_CLIENT && !process.env.SSH_TTY) {
         const cmd =
@@ -50,5 +53,3 @@ function waitAndOpen(attemptsLeft) {
     setTimeout(() => waitAndOpen(attemptsLeft - 1), 200)
   })
 }
-
-waitAndOpen(15)  // 15 × 200ms = 3s max wait
