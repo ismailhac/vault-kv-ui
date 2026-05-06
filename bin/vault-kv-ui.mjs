@@ -4,7 +4,7 @@ import { exec } from 'child_process'
 import { platform } from 'os'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { dirname, join } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 
 // Version check — must use only basic syntax so it runs on any Node version
 const nodeMajor = parseInt(process.versions.node.split('.')[0], 10)
@@ -15,9 +15,17 @@ if (nodeMajor < 18) {
   process.exit(1)
 }
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+// Version flag — must check before any server startup
+if (process.argv.includes('--version') || process.argv.includes('-v')) {
+  const { version } = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'))
+  console.log(version)
+  process.exit(0)
+}
+
 const PORT = parseInt(process.env.BFF_PORT || '3001')
 const url = `http://localhost:${PORT}`
-const __dirname = dirname(fileURLToPath(import.meta.url))
 const distPath = join(__dirname, '..', 'app', 'dist', 'index.html')
 
 if (!existsSync(distPath)) {

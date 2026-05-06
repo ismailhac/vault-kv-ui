@@ -1,6 +1,6 @@
 {
   "name": "vault-admin",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Local web console for browsing and managing HashiCorp Vault KV v2 secrets",
   "type": "module",
   "bin": {
@@ -8,6 +8,7 @@
   },
   "files": [
     "bin",
+    "bin/postinstall.mjs",
     "server",
     "app/dist",
     "LICENSE",
@@ -18,7 +19,8 @@
     "ui": "npm run dev --prefix app",
     "dev": "node -e \"const {spawn}=await import('child_process');const bff=spawn('node',['server/index.mjs'],{stdio:'inherit'});const ui=spawn('npm',['run','dev','--prefix','app'],{stdio:'inherit'});process.on('SIGINT',()=>{bff.kill();ui.kill()})\"",
     "build": "npm run build --prefix app",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "node bin/postinstall.mjs"
   },
   "keywords": [
     "vault",
