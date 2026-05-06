@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-05-07
+
+### Added
+- Global Search — inline search input in the browser nav bar (always visible, works in read-only mode); press Enter to open SearchModal and find secrets by path substring or key name; click a result to open it directly in SecretPanel; prod paths excluded by default with a toggle to include them
+
 ## [1.0.6] - 2026-05-07
 ### Fixed
 - SPA catch-all now serves `index.html` correctly under Express 5 — `res.sendFile` with `{ root }` option instead of an absolute path, which caused `NotFoundError: Not Found` for requests falling through `express.static` (e.g. browser navigation on reload)

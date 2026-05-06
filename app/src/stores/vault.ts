@@ -51,6 +51,12 @@ export const useVaultStore = defineStore('vault', () => {
   const secretLoading = ref(false)
   const secretError = ref<string | null>(null)
 
+  // --- Search ---
+  const searchResults = ref<{ path: string; matchedIn: string; matchedKeys: string[] }[]>([])
+  const searchLoading = ref(false)
+  const searchError = ref<string | null>(null)
+  let searchRequestSeq = 0
+
   // --- Admin settings ---
   const editingEnabled = ref(true)
   const loggingEnabled = ref(true)
@@ -362,6 +368,35 @@ export const useVaultStore = defineStore('vault', () => {
     await initializeApp()
   }
 
+  async function searchSecrets(query: string, by: 'path' | 'key' = 'path') {
+    const requestId = ++searchRequestSeq
+    searchLoading.value = true
+    searchError.value = null
+    searchResults.value = []
+    try {
+      const params = new URLSearchParams({
+        q: query,
+        by,
+        mount: currentMount.value,
+        namespace: currentNamespace.value,
+      })
+      const res = await fetch(`/api/kv/search?${params}`)
+      if (requestId !== searchRequestSeq) return
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        searchError.value = (err as { error?: string }).error ?? `HTTP ${res.status}`
+      } else {
+        const json = await res.json()
+        searchResults.value = json.results ?? []
+      }
+    } catch (e: unknown) {
+      if (requestId !== searchRequestSeq) return
+      searchError.value = e instanceof Error ? e.message : 'Network error'
+    } finally {
+      if (requestId === searchRequestSeq) searchLoading.value = false
+    }
+  }
+
   function goHome() {
     readSecretRequestSeq += 1
     currentPath.value = ''
@@ -420,5 +455,7 @@ export const useVaultStore = defineStore('vault', () => {
     listPath, navigateTo, navigateBack, navigateToBreadcrumb,
     readSecret, writeSecret, deleteSecret, deleteFolder,
     initializeApp, retryInitialization, goHome, logout,
+    // search
+    searchResults, searchLoading, searchError, searchSecrets,
   }
 })

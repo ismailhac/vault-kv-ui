@@ -366,6 +366,70 @@ app.get('/api/kv/dump', async (req, res) => {
   }
 })
 
+// GET /api/kv/search?q=&by=path|key|value&mount=&namespace=&limit=
+app.get('/api/kv/search', async (req, res) => {
+  const namespace = getNamespace(req)
+  const token = resolveToken(namespace)
+  if (!token) return res.status(401).json({ error: 'No Vault token found' })
+
+  const { q = '', by = 'path', mount = 'secret', limit = '100' } = req.query
+  if (!q.trim()) return res.status(400).json({ error: 'q is required' })
+
+  const maxResults = Math.min(parseInt(limit) || 100, 500)
+  const query = q.toLowerCase()
+  const start = Date.now()
+  const results = []
+  let scannedCount = 0
+
+  async function searchPath(currentPath) {
+    if (results.length >= maxResults) return
+    const vaultListPath = currentPath
+      ? `${mount}/metadata/${currentPath}?list=true`
+      : `${mount}/metadata/?list=true`
+    let listResult
+    try { listResult = await vaultFetch(vaultListPath, token, namespace) } catch { return }
+    if (listResult.status !== 200) return
+    const keys = listResult.body.data?.keys ?? []
+    for (const key of keys) {
+      if (results.length >= maxResults) return
+      const fullPath = currentPath
+        ? `${currentPath}/${key.replace(/\/$/, '')}`
+        : key.replace(/\/$/, '')
+      if (key.endsWith('/')) {
+        await searchPath(fullPath)
+      } else {
+        scannedCount++
+        if (by === 'path') {
+          if (fullPath.toLowerCase().includes(query)) {
+            results.push({ path: fullPath, matchedIn: 'path', matchedKeys: [] })
+          }
+        } else {
+          try {
+            const r = await vaultFetch(`${mount}/data/${fullPath}`, token, namespace)
+            if (r.status !== 200) continue
+            const data = r.body.data?.data ?? {}
+            const matchedKeys = []
+            for (const [k, v] of Object.entries(data)) {
+              if (by === 'key' && k.toLowerCase().includes(query)) matchedKeys.push(k)
+              if (by === 'value' && String(v).toLowerCase().includes(query)) matchedKeys.push(k)
+            }
+            if (matchedKeys.length > 0) {
+              results.push({ path: fullPath, matchedIn: by, matchedKeys })
+            }
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
+  try {
+    await searchPath('')
+    res.json({ results, scannedCount, searchTimeMs: Date.now() - start })
+  } catch (e) {
+    res.status(502).json({ error: `Vault injoignable: ${e.message}` })
+  }
+})
+
 // POST /api/auth/start-login  body: { namespace }
 // Native OIDC flow: calls Vault API for auth_url, starts a local HTTP callback server on :8250,
 // and exchanges the code for a token automatically — no vault CLI required.

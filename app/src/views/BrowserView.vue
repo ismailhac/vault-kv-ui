@@ -11,9 +11,18 @@ import KeyRenameModal from '../components/KeyRenameModal.vue'
 import DownloadOverlay from '../components/DownloadOverlay.vue'
 import CreateSecretModal from '../components/CreateSecretModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
+import SearchModal from '../components/SearchModal.vue'
 
 const vault = useVaultStore()
 const showBulk = ref(false)
+const showSearch = ref(false)
+const searchQuery = ref('')
+
+function triggerSearch() {
+  if (!searchQuery.value.trim()) return
+  vault.searchSecrets(searchQuery.value.trim(), 'path')
+  showSearch.value = true
+}
 const showFeatureFlag = ref(false)
 const showKeyRemoval = ref(false)
 const showKeyUpdate = ref(false)
@@ -174,25 +183,24 @@ onBeforeUnmount(() => {
 
   <!-- Toolbar -->
   <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
-    <!-- Mount + breadcrumbs + refresh -->
-    <div class="flex items-center gap-2 flex-wrap">
+    <!-- Row 1 left: mount + breadcrumbs + refresh -->
+    <div class="flex items-center gap-2 min-w-0">
       <select
         v-model="vault.currentMount"
         @change="resetToRoot"
-        class="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded px-2 py-1"
+        class="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded px-2 py-1 shrink-0"
       >
         <option value="secret">secret</option>
         <option value="kv">kv</option>
       </select>
-      <span class="text-gray-600">/</span>
-      <button class="text-blue-400 hover:underline text-sm pointer" @click="resetToRoot">(root)</button>
+      <span class="text-gray-600 shrink-0">/</span>
+      <button class="text-blue-400 hover:underline text-sm pointer shrink-0" @click="resetToRoot">(root)</button>
       <template v-for="(crumb, i) in vault.breadcrumbs" :key="i">
-        <span class="text-gray-600">/</span>
-        <button class="text-blue-400 hover:underline text-sm pointer" @click="vault.navigateToBreadcrumb(i)">{{ crumb }}</button>
+        <span class="text-gray-600 shrink-0">/</span>
+        <button class="text-blue-400 hover:underline text-sm pointer shrink-0" @click="vault.navigateToBreadcrumb(i)">{{ crumb }}</button>
       </template>
-      <!-- Refresh -->
       <button
-        class="p-1 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded pointer transition-colors"
+        class="p-1 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded pointer transition-colors shrink-0"
         title="Rafraîchir"
         :disabled="vault.listLoading"
         @click="vault.listPath(vault.currentPath)"
@@ -203,8 +211,23 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- Actions -->
-    <div v-if="vault.editingEnabled" class="flex items-center gap-1.5 flex-wrap">
+    <!-- Row 1 right: search input -->
+    <div class="relative shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-gray-500 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
+      </svg>
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Rechercher…"
+        class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded pl-7 pr-3 py-1.5 w-48 placeholder-gray-600 focus:outline-none focus:border-sky-600 transition-colors"
+        @keydown.enter="triggerSearch"
+      />
+    </div>
+  </div>
+
+  <!-- Row 2: action buttons (edit mode only) -->
+  <div v-if="vault.editingEnabled" class="flex items-center gap-1.5 mb-4">
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-green-800 hover:bg-green-700 text-green-100 rounded pointer transition-colors"
         @click="showCreate = true"
@@ -297,7 +320,6 @@ onBeforeUnmount(() => {
         </svg>
         Download
       </button>
-    </div>
   </div>
 
   <!-- Read-only banner -->
@@ -417,6 +439,7 @@ onBeforeUnmount(() => {
   <KeyUpdateModal v-if="showKeyUpdate" @close="showKeyUpdate = false" />
   <KeyAdjustModal v-if="showKeyAdjust" @close="showKeyAdjust = false" />
   <KeyRenameModal v-if="showKeyRename" @close="showKeyRename = false" />
+  <SearchModal v-if="showSearch" :initial-query="searchQuery" @close="showSearch = false; searchQuery = ''" />
 
   <!-- Download overlay (blocks all interaction) -->
   <DownloadOverlay v-if="downloadLoading" />
