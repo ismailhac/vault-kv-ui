@@ -456,9 +456,10 @@ onUnmounted(stopPolling)
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
           <div>
             <h2 class="text-white font-semibold text-sm">🔑 {{ t('loginModal.loginTitle') }}</h2>
-            <p class="text-gray-500 text-xs mt-0.5">
+            <p class="text-gray-500 text-xs mt-0.5 flex items-center gap-1.5 flex-wrap">
               {{ t('loginModal.namespaceLabel') }}
               <span class="text-purple-300 font-mono">{{ namespaceLabel }}</span>
+              <span v-if="loginNs && loginNs !== namespaceLabel" class="text-gray-600 font-mono">· {{ loginNs }}</span>
             </p>
           </div>
           <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="close">✕</button>
@@ -527,11 +528,14 @@ onUnmounted(stopPolling)
                 >{{ t('loginModal.open') }}</a>
               </div>
             </div>
-            <div class="flex items-center gap-2 text-gray-400 text-xs">
-              <div class="w-4 h-4 border-2 border-gray-600 border-t-green-400 rounded-full animate-spin shrink-0"></div>
-              {{ t('loginModal.waitingAuth') }}
+            <div class="flex flex-col items-center gap-3 py-2">
+              <div class="w-8 h-8 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
+              <p class="text-gray-400 text-sm">{{ t('loginModal.waitingAuth') }}</p>
             </div>
-            <button class="text-xs text-gray-500 hover:text-gray-300 underline" @click="close">{{ t('loginModal.cancel') }}</button>
+            <button
+              class="w-full px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded border border-gray-700 font-semibold transition cursor-pointer"
+              @click="close"
+            >{{ t('loginModal.cancel') }}</button>
           </div>
 
           <!-- error -->
