@@ -1,12 +1,12 @@
-<p align="center">
-  <img src="app/public/favicon.svg" alt="Vault Admin" width="72" height="72" />
-</p>
-
 # Vault Admin
 
 [![npm version](https://img.shields.io/npm/v/vault-admin.svg?style=flat-square)](https://www.npmjs.com/package/vault-admin)
 [![Node.js](https://img.shields.io/node/v/vault-admin.svg?style=flat-square)](https://nodejs.org)
 [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
+
+<p align="center">
+  <img src="app/public/favicon.svg" alt="Vault Admin" width="80" height="80" />
+</p>
 
 > 🔐 Professional web console for **HashiCorp Vault KV v2** secret management. Browse, edit, audit, and restore secrets with a modern, intuitive interface.
 
