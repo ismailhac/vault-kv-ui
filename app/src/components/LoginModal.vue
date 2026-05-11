@@ -87,6 +87,7 @@ async function saveSetup() {
       mount: setupMount.value.trim() || 'secret',
     })
     vault.currentNamespace = nsList[0].namespace
+    loginNs.value = nsList[0].namespace
     vault.showSetupStep = false
     step.value = 'login'
   } catch (e: unknown) {
