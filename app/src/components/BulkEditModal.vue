@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 
+const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
 
@@ -93,7 +95,7 @@ async function loadAvailablePaths() {
       const err = await res.json().catch(() => ({}))
       availablePaths.value = []
       selectedPath.value = ''
-      pathsError.value = err.error ?? `HTTP ${res.status}`
+      pathsError.value = (err as { error?: string }).error ?? `HTTP ${res.status}`
       return
     }
 
@@ -109,12 +111,12 @@ async function loadAvailablePaths() {
       selectedPath.value = availablePaths.value[0]
     } else {
       selectedPath.value = ''
-      pathsError.value = 'Aucun chemin trouvé dans ce mount (ou accès insuffisant).'
+      pathsError.value = t('bulkEditModal.noPathsAvailable')
     }
   } catch (e: unknown) {
     availablePaths.value = []
     selectedPath.value = ''
-    pathsError.value = e instanceof Error ? e.message : 'Erreur réseau pendant le chargement des chemins'
+    pathsError.value = e instanceof Error ? e.message : t('bulkEditModal.noPathsAvailable')
   }
   loadingPaths.value = false
 }
@@ -170,7 +172,7 @@ async function loadSelectedPathJson(path: string) {
     bulkJson.value = buildBulkJson(path, data)
   } catch (e: unknown) {
     if (requestId !== selectedPathRequestId) return
-    selectedPathJsonError.value = e instanceof Error ? e.message : 'Erreur réseau pendant le chargement du JSON'
+    selectedPathJsonError.value = e instanceof Error ? e.message : t('bulkEditModal.loadingJson')
     bulkJson.value = buildBulkJson(path, {})
   } finally {
     if (requestId === selectedPathRequestId) {
@@ -226,14 +228,14 @@ function parseBulk(): Record<string, Record<string, string>> | null {
   try {
     const parsed = JSON.parse(bulkJson.value)
     if (typeof parsed !== 'object' || Array.isArray(parsed))
-      throw new Error('Le JSON doit être un objet { "path": { clé: valeur } }')
+      throw new Error(t('bulkEditModal.jsonMustBeObject'))
     for (const [path, data] of Object.entries(parsed)) {
       if (typeof data !== 'object' || Array.isArray(data))
-        throw new Error(`La valeur de "${path}" doit être un objet`)
+        throw new Error(t('bulkEditModal.valueMustBeObject', { path }))
     }
     return parsed as Record<string, Record<string, string>>
   } catch (e: unknown) {
-    jsonError.value = e instanceof Error ? e.message : 'JSON invalide'
+    jsonError.value = e instanceof Error ? e.message : t('bulkEditModal.jsonMustBeObject')
     return null
   }
 }
@@ -290,7 +292,7 @@ async function confirmOne(index: number) {
     await vault.writeSecret(entry.path, entry.after)
     applyResults.value.push({ path: entry.path, ok: true })
   } catch (e: unknown) {
-    applyResults.value.push({ path: entry.path, ok: false, error: e instanceof Error ? e.message : 'Erreur' })
+    applyResults.value.push({ path: entry.path, ok: false, error: e instanceof Error ? e.message : t('bulkEditModal.applyAll') })
   }
   if (applyResults.value.length === previews.value.length) allApplied.value = true
 }
@@ -317,15 +319,15 @@ async function confirmApplyAll() {
       await vault.writeSecret(entry.path, entry.after)
       applyResults.value.push({ path: entry.path, ok: true })
     } catch (e: unknown) {
-      applyResults.value.push({ path: entry.path, ok: false, error: e instanceof Error ? e.message : 'Erreur' })
+      applyResults.value.push({ path: entry.path, ok: false, error: e instanceof Error ? e.message : t('bulkEditModal.applyAll') })
     }
   }
   allApplied.value = true
-  
+
   // Show success notification
   const okCount = applyResults.value.filter(r => r.ok).length
   const errorCount = applyResults.value.filter(r => !r.ok).length
-  successMessage.value = errorCount === 0 ? `✓ ${okCount} secret(s) mis à jour` : `✓ ${okCount} OK · ⚠ ${errorCount} erreur(s)`
+  successMessage.value = errorCount === 0 ? `✓ ${okCount}` : `✓ ${okCount} OK · ⚠ ${errorCount}`
   
   // Reset to JSON input after 2 seconds
   setTimeout(() => {
@@ -369,15 +371,15 @@ function getRowStatus(entry: PathDiff, key: string) {
     <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <span class="text-white font-semibold text-sm">Édition groupée — mount : <span class="text-green-400">{{ vault.currentMount }}</span></span>
+        <span class="text-white font-semibold text-sm">{{ t('bulkEditModal.title') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         <button class="text-gray-500 hover:text-gray-300" @click="emit('close')">✕</button>
       </div>
 
       <!-- Spinner while paths are loading -->
       <div v-if="loadingPaths" class="flex-1 flex flex-col items-center justify-center py-16 gap-4">
         <div class="w-12 h-12 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
-        <p class="text-gray-400 text-sm">Chargement des secrets…</p>
-        <p class="text-gray-600 text-xs">Scan récursif du mount <span class="text-green-500">{{ vault.currentMount }}</span></p>
+        <p class="text-gray-400 text-sm">{{ t('bulkEditModal.loadingSecrets') }}</p>
+        <p class="text-gray-600 text-xs">{{ t('bulkEditModal.scanningMount') }} <span class="text-green-500">{{ vault.currentMount }}</span></p>
       </div>
 
       <div v-else class="overflow-auto flex-1 px-5 py-4 space-y-4">
@@ -393,7 +395,7 @@ function getRowStatus(entry: PathDiff, key: string) {
         <div v-if="!previewReady">
           <!-- Preset selector -->
           <div class="mb-4">
-            <label class="text-gray-400 text-xs block mb-2">Projet (preset) :</label>
+            <label class="text-gray-400 text-xs block mb-2">{{ t('bulkEditModal.projectPreset') }}</label>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="preset in presetOptions"
@@ -413,13 +415,13 @@ function getRowStatus(entry: PathDiff, key: string) {
           <!-- Path selector -->
           <div class="mb-4">
             <div class="flex items-center gap-2 mb-2">
-              <label class="text-gray-400 text-xs">Chemin à éditer :</label>
+              <label class="text-gray-400 text-xs">{{ t('bulkEditModal.pathToEdit') }}</label>
               <button
                 type="button"
                 class="px-2 py-0.5 rounded-full border text-xs font-medium transition cursor-pointer"
                 :class="includeProd ? 'bg-red-900/60 text-red-300 border-red-700 hover:bg-red-900' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-gray-200'"
                 @click="includeProd = !includeProd"
-              >{{ includeProd ? '🔴 prod inclus' : 'prod exclu' }}</button>
+              >{{ includeProd ? t('bulkEditModal.prodIncluded') : t('bulkEditModal.prodExcluded') }}</button>
             </div>
             <div class="flex gap-2">
               <select
@@ -427,7 +429,7 @@ function getRowStatus(entry: PathDiff, key: string) {
                 :disabled="loadingPaths || filteredPaths.length === 0"
                 class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 rounded text-sm focus:outline-none focus:border-green-600 disabled:opacity-50"
               >
-                <option value="" disabled>{{ loadingPaths ? 'Chargement des chemins...' : 'Sélectionnez un chemin' }}</option>
+                <option value="" disabled>{{ loadingPaths ? t('bulkEditModal.loadingPaths') : t('bulkEditModal.selectPath') }}</option>
                 <option v-for="path in filteredPaths" :key="path" :value="path">
                   {{ path }}
                 </option>
@@ -441,25 +443,25 @@ function getRowStatus(entry: PathDiff, key: string) {
               </button>
             </div>
             <div v-if="availablePaths.length > 0" class="text-gray-500 text-xs mt-1">
-              {{ filteredPaths.length }} chemin(s) pour ce preset · {{ availablePaths.length }} total
+              {{ t('bulkEditModal.pathCount', { filtered: filteredPaths.length, total: availablePaths.length }) }}
             </div>
             <div v-else-if="!loadingPaths && pathsError" class="text-red-400 text-xs mt-1">
               ⚠ {{ pathsError }}
             </div>
             <div v-else-if="!loadingPaths" class="text-gray-500 text-xs mt-1">
-              Aucun chemin disponible.
+              {{ t('bulkEditModal.noPathsAvailable') }}
             </div>
           </div>
 
           <!-- JSON input -->
           <p class="text-gray-400 text-xs mb-2">
-            Modifiez les valeurs du JSON (le chemin est mis à jour automatiquement) :
+            {{ t('bulkEditModal.editJsonHint') }}
           </p>
           <div v-if="loadingSelectedPathJson" class="text-blue-300 text-xs mb-2">
-            Chargement du JSON d'origine pour le chemin sélectionné...
+            {{ t('bulkEditModal.loadingJson') }}
           </div>
           <div v-if="selectedPathJsonError" class="text-amber-300 text-xs mb-2">
-            ⚠ Impossible de charger les données du path: {{ selectedPathJsonError }}
+            {{ t('bulkEditModal.cannotLoadPath') }} {{ selectedPathJsonError }}
           </div>
           <textarea
             v-model="bulkJson"
@@ -474,7 +476,7 @@ function getRowStatus(entry: PathDiff, key: string) {
               :disabled="previewLoading || loadingSelectedPathJson"
               @click="preview"
             >
-              {{ previewLoading ? 'Chargement…' : 'Prévisualiser les diffs' }}
+              {{ previewLoading ? t('bulkEditModal.loading') : t('bulkEditModal.previewDiffs') }}
             </button>
           </div>
         </div>
@@ -482,16 +484,16 @@ function getRowStatus(entry: PathDiff, key: string) {
         <!-- Preview diffs -->
         <div v-if="previewReady" class="space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-gray-400 text-sm">{{ previews.length }} chemin(s) · {{ totalChanges }} modifié(s)</span>
+            <span class="text-gray-400 text-sm">{{ t('bulkEditModal.pathsModified', { paths: previews.length, modified: totalChanges }) }}</span>
             <div class="flex gap-2">
               <button
                 class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
                 @click="previewReady = false"
-              >← Modifier</button>
+              >{{ t('bulkEditModal.editBack') }}</button>
               <button
                 class="text-xs px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded"
                 @click="applyAll"
-              >Appliquer tout ({{ totalChanges }})</button>
+              >{{ t('bulkEditModal.applyAll', { n: totalChanges }) }}</button>
             </div>
           </div>
 
@@ -516,7 +518,7 @@ function getRowStatus(entry: PathDiff, key: string) {
                   v-if="!applyResults.find(r => r.path === entry.path)"
                   class="text-xs px-2 py-0.5 bg-green-800 hover:bg-green-700 text-green-200 rounded"
                   @click="startConfirm(i)"
-                >Appliquer</button>
+                >{{ t('bulkEditModal.apply') }}</button>
               </div>
             </div>
             <!-- Mini diff table -->
@@ -544,7 +546,7 @@ function getRowStatus(entry: PathDiff, key: string) {
       </div><!-- end v-else body (paths loaded) -->
 
       <div v-if="allApplied" class="px-5 py-3 border-t border-gray-700 text-green-400 text-sm text-center">
-        ✓ Toutes les mises à jour ont été appliquées.
+        {{ t('bulkEditModal.allApplied') }}
       </div>
     </div>
   </div>

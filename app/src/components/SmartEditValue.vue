@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import cronstrue from 'cronstrue'
 import 'cronstrue/locales/fr'
 
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   'cancel': []
 }>()
 
+const { t } = useI18n()
 const vFocus = { mounted: (el: HTMLElement) => { if (props.autofocus !== false) (el as HTMLInputElement).focus() } }
 
 function isBooleanLike(v: unknown): boolean {
@@ -76,8 +78,8 @@ const cronLabel = computed(() => {
         <span class="w-2 h-2 rounded-full shrink-0" :class="boolVal ? 'bg-green-400' : 'bg-gray-500'"></span>
         {{ boolVal ? 'true' : 'false' }}
       </button>
-      <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0" title="Sauvegarder (Entrée)" @click.stop="emit('confirm')">✓</button>
-      <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" title="Annuler (Échap)" @click.stop="emit('cancel')">✕</button>
+      <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0" :title="t('smartEditValue.saveTip')" @click.stop="emit('confirm')">✓</button>
+      <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('smartEditValue.cancelTip')" @click.stop="emit('cancel')">✕</button>
     </div>
   </template>
 
@@ -95,8 +97,8 @@ const cronLabel = computed(() => {
         @click.stop
       />
       <button type="button" class="px-1.5 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded shrink-0" @click.stop="increment">+</button>
-      <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0 ml-0.5" title="Sauvegarder (Entrée)" @click.stop="emit('confirm')">✓</button>
-      <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" title="Annuler (Échap)" @click.stop="emit('cancel')">✕</button>
+      <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0 ml-0.5" :title="t('smartEditValue.saveTip')" @click.stop="emit('confirm')">✓</button>
+      <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('smartEditValue.cancelTip')" @click.stop="emit('cancel')">✕</button>
     </div>
   </template>
 
@@ -113,8 +115,8 @@ const cronLabel = computed(() => {
           @keyup.escape="emit('cancel')"
           @click.stop
         />
-        <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0" title="Sauvegarder (Entrée)" @click.stop="emit('confirm')">✓</button>
-        <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" title="Annuler (Échap)" @click.stop="emit('cancel')">✕</button>
+        <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0" :title="t('smartEditValue.saveTip')" @click.stop="emit('confirm')">✓</button>
+        <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('smartEditValue.cancelTip')" @click.stop="emit('cancel')">✕</button>
       </div>
       <span v-if="cronLabel" class="text-xs text-gray-500 italic">— {{ cronLabel }}</span>
     </div>

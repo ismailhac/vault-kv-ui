@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, inject, watch } from 'vue'
 import type { Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SmartValueCell from './SmartValueCell.vue'
 import SmartEditValue from './SmartEditValue.vue'
 
 defineOptions({ name: 'NestedJsonField' })
 
+const { t } = useI18n()
 const vFocus = { mounted: (el: HTMLElement) => (el as HTMLInputElement).focus() }
 
 const props = defineProps<{
@@ -54,11 +56,11 @@ const childEntries = computed<[string, unknown][]>(() => {
 const badge = computed(() => {
   if (isObject(props.value)) {
     const n = Object.keys(props.value).length
-    return `{${n} clé${n > 1 ? 's' : ''}}`
+    return `{${t('nestedJsonField.objectBadge', { n }, n)}}`
   }
   if (isArray(props.value)) {
     const n = (props.value as unknown[]).length
-    return `[${n} élément${n > 1 ? 's' : ''}]`
+    return `[${t('nestedJsonField.arrayBadge', { n }, n)}]`
   }
   return ''
 })
@@ -130,7 +132,7 @@ function onChildKeyRename(path: string[], newKey: string) {
   <template v-if="isNested">
     <tr
       class="group border-b border-gray-800 last:border-0 cursor-pointer select-none"
-      :title="editingAllowed ? 'Cliquer pour étendre / réduire · ✏ pour renommer la clé' : 'Cliquer pour étendre / réduire'"
+      :title="editingAllowed ? t('nestedJsonField.expandCollapseRename') : t('nestedJsonField.expandCollapse')"
       @click.stop="toggleExpand"
       @dblclick.stop="toggleExpand"
     >
@@ -142,12 +144,12 @@ function onChildKeyRename(path: string[], newKey: string) {
             v-focus
             v-model="editingKeyValue"
             class="flex-1 min-w-0 bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
-            placeholder="Nom de la clé"
+            :placeholder="t('nestedJsonField.keyNamePlaceholder')"
             @keyup.enter="commitKeyEdit"
             @keyup.escape="cancelEditKey"
           />
-          <button class="text-green-400 hover:text-green-300 text-sm shrink-0" title="Renommer (Entrée)" @click.stop="commitKeyEdit">✓</button>
-          <button class="text-gray-500 hover:text-gray-300 text-xs shrink-0" title="Annuler (Échap)" @click.stop="cancelEditKey">✕</button>
+          <button class="text-green-400 hover:text-green-300 text-sm shrink-0" :title="t('nestedJsonField.renameConfirmTip')" @click.stop="commitKeyEdit">✓</button>
+          <button class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('nestedJsonField.cancelTip')" @click.stop="cancelEditKey">✕</button>
         </div>
         <!-- Read mode -->
         <div v-else class="flex items-center gap-1">
@@ -164,7 +166,7 @@ function onChildKeyRename(path: string[], newKey: string) {
           <button
             v-if="editingAllowed"
             class="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-gray-400 hover:text-yellow-300 text-xs shrink-0 ml-0.5 leading-none"
-            title="Renommer la clé"
+            :title="t('nestedJsonField.renameKeyTip')"
             @click.stop="startEditKey"
             @dblclick.stop
           >✏</button>
@@ -196,7 +198,7 @@ function onChildKeyRename(path: string[], newKey: string) {
     v-else
     class="group border-b border-gray-800 last:border-0"
     :class="editingAllowed && !editingLeaf && !editingKey ? 'cursor-pointer' : ''"
-    :title="editingAllowed && !editingLeaf && !editingKey ? 'Double-cliquez pour modifier la valeur · ✏ pour renommer la clé' : undefined"
+    :title="editingAllowed && !editingLeaf && !editingKey ? t('nestedJsonField.dblClickEditRename') : undefined"
     @dblclick.stop="startEditLeaf"
   >
     <!-- Key cell -->
@@ -207,12 +209,12 @@ function onChildKeyRename(path: string[], newKey: string) {
           v-focus
           v-model="editingKeyValue"
           class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
-          placeholder="Nom de la clé"
+          :placeholder="t('nestedJsonField.keyNamePlaceholder')"
           @keyup.enter="commitKeyEdit"
           @keyup.escape="cancelEditKey"
         />
-        <button class="text-green-400 hover:text-green-300 text-sm shrink-0" title="Renommer (Entrée)" @click.stop="commitKeyEdit">✓</button>
-        <button class="text-gray-500 hover:text-gray-300 text-xs shrink-0" title="Annuler (Échap)" @click.stop="cancelEditKey">✕</button>
+        <button class="text-green-400 hover:text-green-300 text-sm shrink-0" :title="t('nestedJsonField.renameConfirmTip')" @click.stop="commitKeyEdit">✓</button>
+        <button class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('nestedJsonField.cancelTip')" @click.stop="cancelEditKey">✕</button>
       </div>
       <!-- Read mode -->
       <div v-else class="flex items-center gap-1">
@@ -220,7 +222,7 @@ function onChildKeyRename(path: string[], newKey: string) {
         <button
           v-if="editingAllowed"
           class="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-gray-400 hover:text-yellow-300 text-xs shrink-0 ml-0.5 leading-none"
-          title="Renommer la clé"
+          :title="t('nestedJsonField.renameKeyTip')"
           @click.stop="startEditKey"
           @dblclick.stop
         >✏</button>

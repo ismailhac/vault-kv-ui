@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 
+const { t } = useI18n()
 const props = defineProps<{ path: string; isFolder: boolean }>()
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const vault = useVaultStore()
@@ -102,7 +104,7 @@ async function confirm() {
     }
     emit('confirm')
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Erreur lors de la suppression'
+    error.value = e instanceof Error ? e.message : 'Error'
     deleting.value = false
   }
 }
@@ -124,7 +126,7 @@ async function confirm() {
         </div>
         <div class="flex-1 min-w-0">
           <div class="text-white font-semibold text-sm">
-            {{ isFolder ? 'Supprimer le dossier' : 'Supprimer le secret' }}
+            {{ isFolder ? t('deleteConfirmModal.deleteFolder') : t('deleteConfirmModal.deleteSecret') }}
           </div>
           <div class="text-gray-500 text-xs mt-0.5 font-mono truncate">{{ path }}{{ isFolder ? '/' : '' }}</div>
         </div>
@@ -134,14 +136,14 @@ async function confirm() {
       <!-- Single secret body -->
       <div v-if="!isFolder" class="px-5 py-4 space-y-3">
         <p class="text-gray-400 text-xs">
-          Le secret et toutes ses versions seront définitivement supprimés. Cette action est irréversible.
+          {{ t('deleteConfirmModal.secretDeleteWarning') }}
         </p>
         <p v-if="error" class="text-red-400 text-xs">⚠ {{ error }}</p>
       </div>
 
       <!-- Folder body: loading -->
       <div v-else-if="loadingPaths" class="px-5 py-8 text-center text-gray-500 text-sm animate-pulse">
-        Chargement des secrets…
+        {{ t('deleteConfirmModal.loadingSecrets') }}
       </div>
 
       <!-- Folder body: tree + checkboxes -->
@@ -157,10 +159,10 @@ async function confirm() {
               @change="toggleAll"
             />
             <span class="text-gray-400 text-xs">
-              {{ selectedCount }} / {{ allPaths.length }} secret(s) sélectionné(s)
+              {{ t('deleteConfirmModal.selectedCount', { selected: selectedCount, total: allPaths.length }) }}
             </span>
           </label>
-          <span class="text-gray-600 text-xs">{{ allPaths.length === 0 ? 'Dossier vide' : 'défilez ↓' }}</span>
+          <span class="text-gray-600 text-xs">{{ allPaths.length === 0 ? t('deleteConfirmModal.emptyFolder') : t('deleteConfirmModal.scrollDown') }}</span>
         </div>
 
         <!-- Scrollable tree -->
@@ -205,7 +207,7 @@ async function confirm() {
             </div>
           </div>
           <div v-if="allPaths.length === 0" class="text-center text-gray-600 text-xs py-4">
-            Aucun secret dans ce dossier.
+            {{ t('deleteConfirmModal.noSecretsInFolder') }}
           </div>
         </div>
 
@@ -219,15 +221,15 @@ async function confirm() {
           :disabled="deleting || (isFolder && !someSelected)"
           @click="confirm"
         >
-          <template v-if="deleting">Suppression…</template>
-          <template v-else-if="!isFolder">Supprimer le secret</template>
-          <template v-else>Supprimer {{ selectedCount }} secret(s)</template>
+          <template v-if="deleting">{{ t('deleteConfirmModal.deleting') }}</template>
+          <template v-else-if="!isFolder">{{ t('deleteConfirmModal.deleteSecretBtn') }}</template>
+          <template v-else>{{ t('deleteConfirmModal.deleteSelectedBtn', { n: selectedCount }) }}</template>
         </button>
         <button
           class="flex-1 py-2 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 hover:border-gray-500 rounded transition"
           :disabled="deleting"
           @click="emit('cancel')"
-        >Annuler</button>
+        >{{ t('deleteConfirmModal.cancel') }}</button>
       </div>
 
     </div>

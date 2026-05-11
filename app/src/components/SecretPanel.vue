@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, provide } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const vFocus = { mounted: (el: HTMLElement) => (el as HTMLInputElement).focus() }
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
@@ -13,8 +15,6 @@ const vault = useVaultStore()
 const editingAllowed = computed(() => vault.editingEnabled)
 
 // Shared slot: only one NestedJsonField instance may be in edit mode at a time.
-// Each instance writes its own Symbol here when it starts editing; all others watch
-// and cancel themselves when the value changes away from their own Symbol.
 const activeNestedEdit = ref<symbol | null>(null)
 provide('activeNestedEdit', activeNestedEdit)
 
@@ -46,17 +46,17 @@ function requestSave() {
   try {
     const parsed = JSON.parse(editJson.value)
     if (typeof parsed !== 'object' || Array.isArray(parsed))
-      throw new Error('Le JSON doit être un objet {clé: valeur}')
+      throw new Error(t('secretPanel.jsonMustBeObject'))
     for (const [k, v] of Object.entries(parsed)) {
       if (typeof v !== 'string' && typeof v !== 'number' && typeof v !== 'boolean')
-        throw new Error(`La valeur de "${k}" doit être une chaîne`)
+        throw new Error(t('secretPanel.valueMustBeString', { key: k }))
     }
     pendingData.value = Object.fromEntries(
       Object.entries(parsed).map(([k, v]) => [k, String(v)])
     )
     showDiff.value = true
   } catch (e: unknown) {
-    jsonError.value = e instanceof Error ? e.message : 'JSON invalide'
+    jsonError.value = e instanceof Error ? e.message : t('secretPanel.invalidJson')
   }
 }
 
@@ -74,20 +74,20 @@ async function confirmSave() {
     setTimeout(() => (saveSuccess.value = false), 3000)
     if (wasRestoring) await vault.fetchVersions(path)
   } catch (e: unknown) {
-    jsonError.value = e instanceof Error ? e.message : 'Erreur lors de la sauvegarde'
+    jsonError.value = e instanceof Error ? e.message : t('secretPanel.saveError')
   }
 }
 
 // ---- Inline row editing (key + value in one shot) ----
-const editingRow = ref<string | null>(null)   // original key of the row being edited
+const editingRow = ref<string | null>(null)
 const editingRowKey = ref('')
 const editingRowValue = ref('')
 const rowEditError = ref<string | null>(null)
-const rowSaveSuccess = ref<string | null>(null) // new key name after successful save
+const rowSaveSuccess = ref<string | null>(null)
 
 function startEditRow(key: string, val: string) {
   if (!editingAllowed.value || editMode.value) return
-  activeNestedEdit.value = null  // cancel any open nested field edit
+  activeNestedEdit.value = null
   editingRow.value = key
   editingRowKey.value = key
   editingRowValue.value = val
@@ -111,7 +111,6 @@ async function saveRow(originalKey: string) {
   const newKey = editingRowKey.value.trim()
   if (!newKey) { cancelEditRow(); return }
 
-  // Skip write if nothing actually changed
   const currentVal = vault.selectedSecret.data[originalKey]
   const currentStr = currentVal !== null && typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal ?? '')
   if (newKey === originalKey && editingRowValue.value === currentStr) {
@@ -122,7 +121,6 @@ async function saveRow(originalKey: string) {
   editingRow.value = null
   rowEditError.value = null
 
-  // Rebuild preserving key order, renaming in place if needed
   const newData: Record<string, string> = {}
   for (const [k, v] of Object.entries(vault.selectedSecret.data)) {
     const strV = v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
@@ -136,7 +134,7 @@ async function saveRow(originalKey: string) {
     setTimeout(() => { if (rowSaveSuccess.value === newKey) rowSaveSuccess.value = null }, 2000)
     await vault.fetchVersions(vault.selectedSecret.path)
   } catch (e: unknown) {
-    rowEditError.value = e instanceof Error ? e.message : 'Erreur lors de la sauvegarde'
+    rowEditError.value = e instanceof Error ? e.message : t('secretPanel.saveError')
   }
 }
 
@@ -196,10 +194,10 @@ const currentBefore = computed<Record<string, string>>(() =>
 function parseJsonValue(val: unknown): { isNested: boolean; parsed: unknown } {
   if (val !== null && typeof val === 'object') return { isNested: true, parsed: val }
   if (typeof val === 'string') {
-    const t = val.trim()
-    if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
+    const trimmed = val.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
       try {
-        const p = JSON.parse(t)
+        const p = JSON.parse(trimmed)
         if (typeof p === 'object' && p !== null) return { isNested: true, parsed: p }
       } catch {}
     }
@@ -240,13 +238,11 @@ function handleKeyRename(path: string[], newKey: string) {
   const topKey = path[0]
 
   if (path.length === 1) {
-    // Renaming a top-level key
     const before = stringifyData(vault.selectedSecret.data)
     const after: Record<string, string> = {}
     for (const k of Object.keys(before)) after[k === topKey ? newKey : k] = before[k]
     pendingData.value = after
   } else {
-    // Renaming a key nested inside a top-level object value
     const raw = vault.selectedSecret.data[topKey]
     let current: unknown = raw
     if (typeof raw === 'string') { try { current = JSON.parse(raw) } catch {} }
@@ -265,13 +261,11 @@ function handleLeafEdit(path: string[], newValue: string) {
   const topKey = path[0]
   const raw = vault.selectedSecret.data[topKey]
 
-  // Parse the current top-level value (may be a native object or a JSON string)
   let current: unknown = raw
   if (typeof raw === 'string') {
     try { current = JSON.parse(raw) } catch {}
   }
 
-  // Deep-clone, patch the leaf, re-serialize
   const cloned = JSON.parse(JSON.stringify(current))
   setNestedValue(cloned, path.slice(1), newValue)
   const serialized = JSON.stringify(cloned)
@@ -294,29 +288,29 @@ function handleLeafEdit(path: string[], newValue: string) {
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <div class="flex items-center gap-2 min-w-0">
           <span class="text-green-400 text-sm font-semibold font-mono truncate">{{ vault.selectedSecret.path }}</span>
-          <span v-if="saveSuccess" class="text-green-500 text-xs shrink-0">✓ Sauvegardé</span>
+          <span v-if="saveSuccess" class="text-green-500 text-xs shrink-0">{{ t('secretPanel.saved') }}</span>
           <span v-if="rowEditError" class="text-red-400 text-xs shrink-0">⚠ {{ rowEditError }}</span>
         </div>
         <div class="flex items-center gap-2 shrink-0 ml-2">
           <button
             v-if="!editMode && editingAllowed"
             class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
-            title="Édition JSON avancée"
+            :title="t('secretPanel.jsonEdit')"
             @click="enterEdit"
-          >✏ JSON</button>
+          >{{ t('secretPanel.jsonEdit') }}</button>
           <button
             v-if="!editMode"
             class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
-            title="Télécharger ce secret"
+            :title="t('secretPanel.downloadSecret')"
             @click="downloadSecret"
-          >⬇ Download</button>
+          >{{ t('secretPanel.downloadSecret') }}</button>
           <button class="text-gray-500 hover:text-gray-300 text-xs" @click="vault.selectedSecret = null">✕</button>
         </div>
       </div>
 
       <!-- Loading / error -->
       <div v-if="vault.secretLoading" class="px-4 py-8 text-gray-500 text-sm animate-pulse text-center">
-        Chargement…
+        {{ t('secretPanel.loading') }}
       </div>
       <div v-else-if="vault.secretError" class="px-4 py-4 text-red-400 text-sm">
         {{ vault.secretError }}
@@ -327,8 +321,8 @@ function handleLeafEdit(path: string[], newValue: string) {
         <table class="w-full text-sm">
           <thead>
             <tr class="text-gray-500 text-xs uppercase border-b border-gray-700">
-              <th class="text-left py-1 pr-4 w-1/3">Clé</th>
-              <th class="text-left py-1">Valeur</th>
+              <th class="text-left py-1 pr-4 w-1/3">{{ t('secretPanel.keyHeader') }}</th>
+              <th class="text-left py-1">{{ t('secretPanel.valueHeader') }}</th>
               <th v-if="editingAllowed" class="w-14"></th>
             </tr>
           </thead>
@@ -346,12 +340,12 @@ function handleLeafEdit(path: string[], newValue: string) {
                 @key-rename="handleKeyRename"
               />
 
-              <!-- Plain value: inline editable row (existing behaviour) -->
+              <!-- Plain value: inline editable row -->
               <tr
                 v-else
                 class="group border-b border-gray-800 last:border-0"
                 :class="editingAllowed && editingRow !== String(key) ? 'cursor-pointer' : ''"
-                :title="editingAllowed && editingRow !== String(key) ? 'Double-cliquez pour modifier' : undefined"
+                :title="editingAllowed && editingRow !== String(key) ? t('secretPanel.editTip') : undefined"
                 @dblclick="startEditRow(String(key), String(val))"
                 @focusout="cancelOnRowBlur"
               >
@@ -367,7 +361,7 @@ function handleLeafEdit(path: string[], newValue: string) {
                     v-focus
                     v-model="editingRowKey"
                     class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
-                    placeholder="Nom de la clé"
+                    :placeholder="t('secretPanel.keyNamePlaceholder')"
                     @keyup.enter="saveRow(String(key))"
                     @keyup.escape="cancelEditRow"
                     @click.stop
@@ -396,7 +390,7 @@ function handleLeafEdit(path: string[], newValue: string) {
                   <button
                     v-if="editingRow !== String(key)"
                     class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-red-400 rounded transition-colors"
-                    :title="`Supprimer la clé ${key}`"
+                    :title="t('secretPanel.deleteKeyTitle', { key })"
                     @click.stop="removeKey(String(key))"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -410,13 +404,13 @@ function handleLeafEdit(path: string[], newValue: string) {
         </table>
         <div class="mt-3 text-xs text-gray-600 flex items-center gap-2">
           <span>v{{ (vault.selectedSecret.metadata as Record<string, unknown>)?.version }} · {{ String((vault.selectedSecret.metadata as Record<string, unknown>)?.created_time ?? '').substring(0, 10) }}</span>
-          <span v-if="editingAllowed" class="text-gray-700">· Double-cliquez sur une ligne pour modifier</span>
+          <span v-if="editingAllowed" class="text-gray-700">· {{ t('secretPanel.editTip') }}</span>
         </div>
       </div>
 
       <!-- JSON edit mode (advanced) -->
       <div v-else class="px-4 py-3">
-        <p class="text-gray-500 text-xs mb-2">Modifiez le JSON ci-dessous. Toutes les valeurs doivent être des chaînes.</p>
+        <p class="text-gray-500 text-xs mb-2">{{ t('secretPanel.jsonEditHint') }}</p>
         <textarea
           v-model="editJson"
           class="w-full h-64 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600"
@@ -426,10 +420,10 @@ function handleLeafEdit(path: string[], newValue: string) {
         <div v-if="jsonError" class="mt-2 text-red-400 text-xs">⚠ {{ jsonError }}</div>
         <div class="flex gap-2 mt-3">
           <button class="px-4 py-1.5 text-sm bg-green-700 hover:bg-green-600 text-white rounded" @click="requestSave">
-            Prévisualiser les changements
+            {{ t('secretPanel.previewChanges') }}
           </button>
           <button class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded" @click="cancelEdit">
-            Annuler
+            {{ t('secretPanel.cancel') }}
           </button>
         </div>
       </div>

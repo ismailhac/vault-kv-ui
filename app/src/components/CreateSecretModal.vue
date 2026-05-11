@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 
+const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
 
@@ -95,21 +97,21 @@ function requestPreview() {
   saveError.value = null
 
   if (!newPath.value.trim()) {
-    pathError.value = 'Le chemin est requis'
+    pathError.value = t('createSecretModal.pathRequired')
     return
   }
   if (mode.value === 'json') {
     try {
       const parsed = JSON.parse(jsonInput.value)
       if (typeof parsed !== 'object' || Array.isArray(parsed))
-        throw new Error('Le JSON doit être un objet {clé: valeur}')
+        throw new Error(t('createSecretModal.jsonMustBeObject'))
     } catch (e: unknown) {
-      jsonError.value = e instanceof Error ? e.message : 'JSON invalide'
+      jsonError.value = e instanceof Error ? e.message : t('createSecretModal.jsonMustBeObject')
       return
     }
   } else {
     if (!formRows.value.some(r => r.key.trim())) {
-      jsonError.value = 'Ajoutez au moins une clé'
+      jsonError.value = t('createSecretModal.addAtLeastOneKey')
       return
     }
   }
@@ -126,7 +128,7 @@ async function confirmCreate() {
     emit('close')
     await vault.listPath(vault.currentPath)
   } catch (e: unknown) {
-    saveError.value = e instanceof Error ? e.message : 'Erreur lors de la création'
+    saveError.value = e instanceof Error ? e.message : t('createSecretModal.createError')
     saving.value = false
   }
 }
@@ -141,7 +143,7 @@ async function confirmCreate() {
 
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <span class="text-white font-semibold text-sm">Créer un nouveau secret</span>
+        <span class="text-white font-semibold text-sm">{{ t('createSecretModal.title') }}</span>
         <button class="text-gray-500 hover:text-gray-300" @click="emit('close')">✕</button>
       </div>
 
@@ -149,7 +151,7 @@ async function confirmCreate() {
 
         <!-- Path input -->
         <div>
-          <label class="text-gray-400 text-xs block mb-1.5">Chemin du secret</label>
+          <label class="text-gray-400 text-xs block mb-1.5">{{ t('createSecretModal.pathLabel') }}</label>
           <div class="flex items-center gap-1 bg-gray-950 border rounded px-3 py-2 focus-within:border-green-600 transition-colors"
                :class="pathError ? 'border-red-600' : 'border-gray-700'">
             <span v-if="vault.currentPath" class="text-gray-600 text-xs font-mono shrink-0 select-none">
@@ -193,19 +195,19 @@ async function confirmCreate() {
             class="px-3 py-1 text-xs rounded transition"
             :class="mode === 'form' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'"
             @click="switchMode('form')"
-          >Formulaire</button>
+          >{{ t('createSecretModal.modeForm') }}</button>
           <button
             type="button"
             class="px-3 py-1 text-xs rounded transition"
             :class="mode === 'json' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'"
             @click="switchMode('json')"
-          >JSON</button>
+          >{{ t('createSecretModal.modeJson') }}</button>
         </div>
 
         <!-- Form mode -->
         <div v-if="mode === 'form'" class="space-y-2">
           <div class="grid grid-cols-[1fr_2fr_auto] gap-2 text-xs text-gray-600 px-1">
-            <span>Clé</span><span>Valeur</span><span></span>
+            <span>{{ t('createSecretModal.keyColumn') }}</span><span>{{ t('createSecretModal.valueColumn') }}</span><span></span>
           </div>
           <div
             v-for="(row, i) in formRows"
@@ -214,12 +216,12 @@ async function confirmCreate() {
           >
             <input
               v-model="row.key"
-              placeholder="MA_CLE"
+              :placeholder="t('createSecretModal.keyPlaceholder')"
               class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-blue-300 font-mono text-xs rounded focus:outline-none focus:border-blue-700 placeholder-gray-700"
             />
             <input
               v-model="row.value"
-              placeholder="valeur"
+              :placeholder="t('createSecretModal.valuePlaceholder')"
               class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 font-mono text-xs rounded focus:outline-none focus:border-gray-500 placeholder-gray-700"
               @keydown.enter="requestPreview"
             />
@@ -237,7 +239,7 @@ async function confirmCreate() {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Ajouter une clé
+            {{ t('createSecretModal.addKey') }}
           </button>
         </div>
 
@@ -262,12 +264,12 @@ async function confirmCreate() {
             :disabled="saving"
             @click="requestPreview"
           >
-            {{ saving ? 'Création…' : 'Prévisualiser' }}
+            {{ saving ? t('createSecretModal.creating') : t('createSecretModal.preview') }}
           </button>
           <button
             class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded transition"
             @click="emit('close')"
-          >Annuler</button>
+          >{{ t('createSecretModal.cancel') }}</button>
         </div>
 
       </div>

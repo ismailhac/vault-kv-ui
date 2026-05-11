@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import NestedDiffRow from './NestedDiffRow.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   path: string
@@ -34,6 +36,13 @@ const diffLines = computed<DiffLine[]>(() => {
 })
 
 const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unchanged'))
+
+const rowClass = (status: DiffLine['status']) => ({
+  'bg-green-950 text-green-300': status === 'added',
+  'bg-red-950 text-red-300': status === 'removed',
+  'bg-yellow-950 text-yellow-200': status === 'modified',
+  'text-gray-400': status === 'unchanged',
+})
 </script>
 
 <template>
@@ -46,7 +55,7 @@ const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unch
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
         <div>
-          <span class="text-white font-semibold text-sm">Confirmer la mise à jour</span>
+          <span class="text-white font-semibold text-sm">{{ t('confirmDiffModal.title') }}</span>
           <span class="ml-2 text-gray-500 text-xs font-mono">{{ path }}</span>
         </div>
         <button class="text-gray-500 hover:text-gray-300" @click="emit('cancel')">✕</button>
@@ -55,27 +64,37 @@ const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unch
       <!-- Diff table -->
       <div class="overflow-auto flex-1 px-5 py-4">
         <div v-if="!hasChanges" class="text-gray-500 text-sm text-center py-8">
-          Aucune modification détectée.
+          {{ t('confirmDiffModal.noChanges') }}
         </div>
         <table v-else class="w-full text-xs font-mono border-collapse">
           <thead>
             <tr class="text-gray-500 uppercase text-left border-b border-gray-700">
-              <th class="pb-2 pr-4 w-1/4">Clé</th>
-              <th class="pb-2 pr-4 w-1/3">Avant</th>
-              <th class="pb-2 w-1/3">Après</th>
-              <th class="pb-2 text-right">Statut</th>
+              <th class="pb-2 pr-4 w-1/4">{{ t('confirmDiffModal.keyHeader') }}</th>
+              <th class="pb-2 pr-4 w-1/3">{{ t('confirmDiffModal.beforeHeader') }}</th>
+              <th class="pb-2 w-1/3">{{ t('confirmDiffModal.afterHeader') }}</th>
+              <th class="pb-2 text-right">{{ t('confirmDiffModal.statusHeader') }}</th>
             </tr>
           </thead>
           <tbody>
-            <NestedDiffRow
+            <tr
               v-for="line in diffLines"
               :key="line.key"
-              :diff-key="line.key"
-              :before="line.before"
-              :after="line.after"
-              :status="line.status"
-              :depth="0"
-            />
+              class="border-b border-gray-800 last:border-0"
+              :class="rowClass(line.status)"
+            >
+              <td class="py-1.5 pr-4 font-semibold">{{ line.key }}</td>
+              <td class="py-1.5 pr-4 break-all opacity-80">
+                <span v-if="line.before !== undefined">{{ line.before }}</span>
+                <span v-else class="text-gray-600 italic">—</span>
+              </td>
+              <td class="py-1.5 break-all">
+                <span v-if="line.after !== undefined">{{ line.after }}</span>
+                <span v-else class="text-gray-600 italic">{{ t('confirmDiffModal.deleted') }}</span>
+              </td>
+              <td class="py-1.5 text-right text-xs opacity-60">
+                {{ { unchanged: '=', modified: '~', added: '+', removed: '−' }[line.status] }}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -85,12 +104,12 @@ const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unch
         <button
           class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded"
           @click="emit('cancel')"
-        >Annuler</button>
+        >{{ t('confirmDiffModal.cancel') }}</button>
         <button
           class="px-4 py-1.5 text-sm bg-green-700 hover:bg-green-600 text-white rounded disabled:opacity-40"
           :disabled="!hasChanges"
           @click="emit('confirm')"
-        >Appliquer</button>
+        >{{ t('confirmDiffModal.apply') }}</button>
       </div>
     </div>
   </div>
