@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Soft green fill inside hex -->
+  <polygon points="32,8 54,20.5 54,43.5 32,56 10,43.5 10,20.5"
+    fill="#052e16"/>
+
+  <!-- Hex outline -->
+  <polygon points="32,8 54,20.5 54,43.5 32,56 10,43.5 10,20.5"
+    fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- V for Vault -->
+  <polyline points="20,21 32,43 44,21"
+    fill="none" stroke="#4ade80" stroke-width="3.5"
+    stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,4 +1,8 @@
-# Vault KV UI
+<p align="center">
+  <img src="app/public/favicon.svg" alt="Vault Admin" width="72" height="72" />
+</p>
+
+# Vault Admin
 
 [![npm version](https://img.shields.io/npm/v/vault-admin.svg?style=flat-square)](https://www.npmjs.com/package/vault-admin)
 [![Node.js](https://img.shields.io/node/v/vault-admin.svg?style=flat-square)](https://nodejs.org)
