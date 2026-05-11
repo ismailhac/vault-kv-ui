@@ -7,7 +7,7 @@
 <p align="center">
   <img src="app/public/favicon.svg" alt="Vault Admin" width="80" height="80" />
   &nbsp;&nbsp;&nbsp;
-  <img src="https://cdn.simpleicons.org/vault/FFEC6E" alt="HashiCorp Vault" width="80" height="80" />
+  <img src="app/public/hashicorp-vault.svg" alt="HashiCorp Vault" width="80" height="80" />
 </p>
 
 > 🔐 Professional web console for **HashiCorp Vault KV v2** secret management. Browse, edit, audit, and restore secrets with a modern, intuitive interface.
