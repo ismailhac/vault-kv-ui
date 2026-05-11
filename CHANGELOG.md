@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.4.0] — 2026-05-11
+### Features
+- i18n-english-first: Full internationalisation with vue-i18n v9 — English as default locale on first load, French as a fully supported locale, EN/FR language switcher in the header, locale persisted in localStorage; all UI strings extracted from 20+ Vue components into en.json and fr.json
+
 ## [1.3.0] — 2026-05-11
 ### Features
 - nested-json-values: Display JSON object/array secret values as collapsible accordions with inline leaf editing, key renaming, nested diffs, and type-aware smart controls

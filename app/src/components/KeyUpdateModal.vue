@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 
+const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
 
@@ -113,11 +115,11 @@ async function scan() {
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`)
     const payload = await res.json()
     const raw = payload?.data ?? payload
-    if (typeof raw !== 'object' || raw === null) throw new Error('Réponse invalide du serveur')
+    if (typeof raw !== 'object' || raw === null) throw new Error(t('keyUpdateModal.invalidServerResponse'))
     dumpData.value = raw as Record<string, Record<string, string>>
     scanned.value = true
   } catch (e: unknown) {
-    scanError.value = e instanceof Error ? e.message : 'Erreur réseau'
+    scanError.value = e instanceof Error ? e.message : t('keyUpdateModal.networkError')
   } finally {
     scanning.value = false
   }
@@ -132,14 +134,18 @@ async function applyAll() {
       await vault.writeSecret(preview.path, preview.after)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
-      applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : 'Erreur' })
+      applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyUpdateModal.applyError') })
     }
   }
   applying.value = false
   step.value = 3
 }
 
-const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Résultat' }
+const STEP_LABELS = computed<Record<number, string>>(() => ({
+  1: t('keyUpdateModal.step1'),
+  2: t('keyUpdateModal.step2'),
+  3: t('keyUpdateModal.step3'),
+}))
 </script>
 
 <template>
@@ -152,9 +158,9 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">Remplacer une valeur</span>
+          <span class="text-white font-semibold text-sm">{{ t('keyUpdateModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">mount : <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs">{{ t('keyUpdateModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         </div>
         <div class="flex items-center gap-1">
           <template v-for="s in [1, 2, 3]" :key="s">
@@ -180,19 +186,19 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
           <!-- Search bar -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-gray-400 text-xs">Nom de la clé à mettre à jour</label>
+              <label class="text-gray-400 text-xs">{{ t('keyUpdateModal.keyLabel') }}</label>
               <button
                 class="px-2 py-0.5 rounded border text-xs font-mono font-semibold transition pointer"
                 :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'"
                 @click="includeProd = !includeProd"
-                title="Inclure les paths prod dans la recherche"
-              >{{ includeProd ? '🔴 prod inclus' : 'prod exclu' }}</button>
+                :title="t('keyUpdateModal.includeProdTitle')"
+              >{{ includeProd ? t('keyUpdateModal.prodIncluded') : t('keyUpdateModal.prodExcluded') }}</button>
             </div>
             <div class="flex gap-2">
               <input
                 v-model="keyName"
                 type="text"
-                placeholder="MY_KEY"
+                placeholder="API_KOBI_REGISTRY_V2_API_KEY"
                 class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-blue-300 font-mono rounded text-sm focus:outline-none focus:border-blue-600 placeholder-gray-700"
                 spellcheck="false"
                 @keydown.enter="scan"
@@ -201,14 +207,14 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
                 class="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded text-sm font-semibold disabled:opacity-40 transition"
                 :disabled="!keyName.trim() || scanning"
                 @click="scan"
-              >{{ scanning ? 'Scan…' : 'Rechercher' }}</button>
+              >{{ scanning ? t('keyUpdateModal.scanning') : t('keyUpdateModal.search') }}</button>
             </div>
           </div>
 
           <!-- Scanning -->
           <div v-if="scanning" class="flex flex-col items-center py-8 gap-3">
             <div class="w-10 h-10 border-2 border-gray-700 border-t-blue-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">Scan du mount en cours…</p>
+            <p class="text-gray-400 text-sm">{{ t('keyUpdateModal.scanningMount') }}</p>
           </div>
 
           <!-- Scan error -->
@@ -218,9 +224,9 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
 
           <!-- No results -->
           <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center">
-            <div class="text-gray-300 font-semibold mb-1">Clé introuvable</div>
+            <div class="text-gray-300 font-semibold mb-1">{{ t('keyUpdateModal.keyNotFound') }}</div>
             <div class="text-gray-500 text-xs font-mono">
-              « {{ keyName }} » n'existe dans aucun secret du mount <span class="text-green-400">{{ vault.currentMount }}</span>.
+              « {{ keyName }} »{{ t('keyUpdateModal.keyNotFoundDesc') }} <span class="text-green-400">{{ vault.currentMount }}</span>.
             </div>
           </div>
 
@@ -232,33 +238,33 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
               <span class="text-blue-400 text-base shrink-0">🔍</span>
               <div class="flex-1 min-w-0">
                 <span class="text-blue-200 font-semibold text-sm font-mono">{{ keyName }}</span>
-                <span class="text-blue-300 text-sm"> trouvée dans
-                  <span class="text-white font-bold">{{ matchingPaths.length }}</span> secret(s)
+                <span class="text-blue-300 text-sm">{{ t('keyUpdateModal.foundIn') }}
+                  <span class="text-white font-bold">{{ matchingPaths.length }}</span> {{ t('keyUpdateModal.secrets') }}
                 </span>
                 <div class="text-blue-500 text-xs mt-0.5">
                   <template v-if="allSameCurrentValue !== null">
-                    Valeur actuelle identique partout : <span class="font-mono text-amber-400">{{ allSameCurrentValue }}</span>
+                    {{ t('keyUpdateModal.sameValueEverywhere') }} <span class="font-mono text-amber-400">{{ allSameCurrentValue }}</span>
                   </template>
                   <template v-else>
-                    {{ uniqueCurrentValues.length }} valeurs différentes trouvées
+                    {{ t('keyUpdateModal.differentValues', { n: uniqueCurrentValues.length }) }}
                   </template>
-                  · {{ Object.keys(dumpData).length }} secrets scannés
+                  · {{ Object.keys(dumpData).length }} {{ t('keyUpdateModal.totalScanned') }}
                 </div>
               </div>
             </div>
 
             <!-- New value input -->
             <div class="p-3 bg-gray-800 border border-gray-700 rounded space-y-2">
-              <label class="text-gray-300 text-xs font-semibold block">Nouvelle valeur commune</label>
+              <label class="text-gray-300 text-xs font-semibold block">{{ t('keyUpdateModal.newValueLabel') }}</label>
               <input
                 v-model="newValue"
                 type="text"
-                placeholder="Entrez la nouvelle valeur…"
+                :placeholder="t('keyUpdateModal.newValuePlaceholder')"
                 class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
                 spellcheck="false"
               />
               <div v-if="newValue.trim() && allSameCurrentValue !== null && newValue.trim() === allSameCurrentValue" class="text-amber-400 text-xs">
-                ⚠ La nouvelle valeur est identique à la valeur actuelle.
+                {{ t('keyUpdateModal.sameValueWarning') }}
               </div>
             </div>
 
@@ -266,11 +272,11 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
             <div>
               <div class="flex items-center justify-between mb-2">
                 <span class="text-gray-400 text-xs">
-                  <span class="text-white font-semibold">{{ selectedPaths.size }}</span> / {{ matchingPaths.length }} paths sélectionnés
+                  {{ t('keyUpdateModal.selectedPaths', { selected: selectedPaths.size, total: matchingPaths.length }) }}
                 </span>
                 <div class="flex gap-2">
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectAll">Tout</button>
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectNone">Aucun</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectAll">{{ t('keyUpdateModal.all') }}</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectNone">{{ t('keyUpdateModal.none') }}</button>
                 </div>
               </div>
 
@@ -311,16 +317,15 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
         <div v-else-if="step === 2" class="space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <span class="text-gray-400 text-sm">
-              <span class="text-white font-bold">{{ previews.length }}</span> path(s) ·
-              clé <span class="font-mono text-blue-300">{{ keyName }}</span> → <span class="font-mono text-green-300">{{ newValue }}</span>
+              {{ t('keyUpdateModal.diffTitle', { n: previews.length }) }} <span class="font-mono text-blue-300">{{ keyName }}</span> → <span class="font-mono text-green-300">{{ newValue }}</span>
             </span>
             <div class="flex gap-2">
-              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 1">← Ajuster</button>
+              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 1">{{ t('keyUpdateModal.adjust') }}</button>
               <button
                 class="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded font-semibold disabled:opacity-40"
                 :disabled="previews.length === 0"
                 @click="showConfirmAll = true"
-              >Appliquer ({{ previews.length }})</button>
+              >{{ t('keyUpdateModal.apply', { n: previews.length }) }}</button>
             </div>
           </div>
 
@@ -340,7 +345,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
           </div>
 
           <div v-if="previews.length === 0" class="text-gray-500 text-sm text-center py-4">
-            Aucun path sélectionné.
+            {{ t('keyUpdateModal.noPaths') }}
           </div>
         </div>
 
@@ -353,12 +358,12 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
             </div>
             <div class="text-center">
               <div class="text-white font-semibold text-base mb-1">
-                {{ applyErrCount === 0 ? 'Valeur mise à jour !' : 'Mise à jour terminée avec erreurs' }}
+                {{ applyErrCount === 0 ? t('keyUpdateModal.step3Success') : t('keyUpdateModal.step3Errors') }}
               </div>
               <div class="text-gray-400 text-sm">
-                <span class="font-mono text-blue-300">{{ keyName }}</span> mis à jour dans
-                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> secret(s)
-                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> erreur(s)</template>
+                <span class="font-mono text-blue-300">{{ keyName }}</span> {{ t('keyUpdateModal.updatedIn') }}
+                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> {{ t('keyUpdateModal.secrets') }}
+                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> {{ t('keyUpdateModal.applyError') }}</template>
               </div>
               <div class="mt-1 text-gray-500 text-xs font-mono">→ <span class="text-green-300">{{ newValue }}</span></div>
             </div>
@@ -374,7 +379,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
           </div>
 
           <details v-if="applyOkCount > 0" class="text-xs text-gray-600">
-            <summary class="cursor-pointer hover:text-gray-400 transition">{{ applyOkCount }} mise(s) à jour réussie(s)</summary>
+            <summary class="cursor-pointer hover:text-gray-400 transition">{{ t('keyUpdateModal.successUpdates', { n: applyOkCount }) }}</summary>
             <div class="mt-2 space-y-0.5 font-mono">
               <div v-for="r in applyResults.filter(r => r.ok)" :key="r.path" class="text-green-700">✓ {{ r.path }}</div>
             </div>
@@ -390,18 +395,18 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
           class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded disabled:opacity-40"
           :disabled="applying"
           @click="step = (step - 1) as Step"
-        >← Retour</button>
+        >{{ t('keyUpdateModal.back') }}</button>
         <div v-else></div>
 
         <div class="flex gap-2">
-          <button v-if="step === 3" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">Fermer</button>
+          <button v-if="step === 3" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">{{ t('keyUpdateModal.close') }}</button>
 
           <button
             v-if="step === 1"
             class="text-sm px-4 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded font-semibold disabled:opacity-40"
             :disabled="!step1Valid"
             @click="step = 2"
-          >Voir le diff →</button>
+          >{{ t('keyUpdateModal.viewDiff') }}</button>
         </div>
       </div>
     </div>
@@ -409,7 +414,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche', 2: 'Diff', 3: 'Ré
 
   <ConfirmDiffModal
     v-if="showConfirmAll"
-    path="(mise à jour — paths sélectionnés)"
+    :path="t('keyUpdateModal.diffTitle', { n: previews.length })"
     :before="confirmAllBefore"
     :after="confirmAllAfter"
     @confirm="applyAll"

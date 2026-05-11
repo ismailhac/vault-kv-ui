@@ -98,10 +98,11 @@ export const useVaultStore = defineStore('vault', () => {
   const currentNamespaceLabel = computed(
     () => namespaces.value.find(n => n.namespace === currentNamespace.value)?.label ?? currentNamespace.value
   )
+  const ttlSeconds = computed(() => tokenStatus.value?.ttl ?? null)
   const ttlLabel = computed(() => {
     if (!tokenStatus.value) return ''
     const t = tokenStatus.value.ttl
-    if (t <= 0) return 'expiré'
+    if (t <= 0) return '__expired__'
     const h = Math.floor(t / 3600)
     const m = Math.floor((t % 3600) / 60)
     return h > 0 ? `${h}h ${m}m` : `${m}m`
@@ -412,7 +413,7 @@ export const useVaultStore = defineStore('vault', () => {
       await listPath('')
     } catch (e: unknown) {
       initStatus.value = 'error'
-      initError.value = e instanceof Error ? e.message : 'Erreur d\'authentification'
+      initError.value = e instanceof Error ? e.message : 'Authentication error'
     }
   }
 
@@ -499,7 +500,7 @@ export const useVaultStore = defineStore('vault', () => {
     // init
     initStatus, initError, isInitialized,
     // computed
-    isAuthenticated, ttlLabel, breadcrumbs,
+    isAuthenticated, ttlSeconds, ttlLabel, breadcrumbs,
     // admin
     editingEnabled, loggingEnabled, loadAdminSettings, lastWriteAt,
     // actions

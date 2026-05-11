@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import SecretPanel from '../components/SecretPanel.vue'
 import BulkEditModal from '../components/BulkEditModal.vue'
@@ -13,6 +14,7 @@ import CreateSecretModal from '../components/CreateSecretModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 import SearchModal from '../components/SearchModal.vue'
 
+const { t } = useI18n()
 const vault = useVaultStore()
 const showBulk = ref(false)
 const showSearch = ref(false)
@@ -149,8 +151,8 @@ onBeforeUnmount(() => {
       <div class="space-y-6">
         <div class="landing-logo text-green-400 font-black leading-none" style="font-size: 9rem;">⬡</div>
         <div>
-          <h1 class="text-white font-bold tracking-wide" style="font-size: 2.75rem;">Vault Admin</h1>
-          <p class="text-gray-500 text-sm mt-2 tracking-widest uppercase">Secret Manager · HashiCorp Vault KV v2</p>
+          <h1 class="text-white font-bold tracking-wide" style="font-size: 2.75rem;">{{ t('app.vaultAdmin') }}</h1>
+          <p class="text-gray-500 text-sm mt-2 tracking-widest uppercase">{{ t('browserView.secretManager') }}</p>
         </div>
       </div>
 
@@ -160,14 +162,14 @@ onBeforeUnmount(() => {
         @click="vault.showLoginModal = true"
       >
         <span>🔑</span>
-        <span>{{ vault.isConfigured ? 'Se connecter' : 'Commencer la configuration' }}</span>
+        <span>{{ vault.isConfigured ? t('browserView.connect') : t('browserView.startSetup') }}</span>
         <span class="group-hover:translate-x-1.5 transition-transform duration-200">→</span>
       </button>
 
       <!-- Dev credit -->
       <div class="text-gray-700 text-xs space-y-1 leading-relaxed">
-        <div>Built with Vue 3 · Node.js · Tailwind CSS</div>
-        <div>By <span class="text-gray-500 font-medium">Ismail</span> · v{{ vault.appVersion }} · MIT</div>
+        <div>{{ t('app.builtWith') }}</div>
+        <div>{{ t('app.by') }} <span class="text-gray-500 font-medium">Ismail</span> · v1.0.0 · MIT</div>
       </div>
 
     </div>
@@ -177,8 +179,8 @@ onBeforeUnmount(() => {
   <template v-else>
 
   <div v-if="vault.tokenError && !vault.showLoginModal" class="mb-4 bg-red-950 border border-red-700 text-red-300 rounded px-4 py-3 text-sm">
-    Erreur Vault : {{ vault.tokenError }}
-    <button class="ml-2 underline text-red-300 hover:text-red-100" @click="vault.showLoginModal = true">Se connecter</button>
+    {{ t('browserView.vaultError') }} {{ vault.tokenError }}
+    <button class="ml-2 underline text-red-300 hover:text-red-100" @click="vault.showLoginModal = true">{{ t('browserView.connectLink') }}</button>
   </div>
 
   <!-- Toolbar -->
@@ -201,7 +203,7 @@ onBeforeUnmount(() => {
       </template>
       <button
         class="p-1 text-gray-400 hover:text-gray-100 hover:bg-gray-700 rounded pointer transition-colors shrink-0"
-        title="Rafraîchir"
+        :title="t('browserView.refresh')"
         :disabled="vault.listLoading"
         @click="vault.listPath(vault.currentPath)"
       >
@@ -219,7 +221,7 @@ onBeforeUnmount(() => {
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Rechercher…"
+        :placeholder="t('browserView.searchPlaceholder')"
         class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded pl-7 pr-3 py-1.5 w-48 placeholder-gray-600 focus:outline-none focus:border-sky-600 transition-colors"
         @keydown.enter="triggerSearch"
       />
@@ -231,12 +233,12 @@ onBeforeUnmount(() => {
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-green-800 hover:bg-green-700 text-green-100 rounded pointer transition-colors"
         @click="showCreate = true"
-        title="Créer un nouveau secret"
+        :title="t('browserView.newTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
-        Nouveau
+        {{ t('browserView.new') }}
       </button>
 
       <div class="w-px h-5 bg-gray-600 mx-0.5" />
@@ -244,56 +246,56 @@ onBeforeUnmount(() => {
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
         @click="showFeatureFlag = true"
-        title="Appliquer une feature flag à plusieurs paths"
+        :title="t('browserView.featureFlagTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-amber-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
         </svg>
-        Feature Flag
+        {{ t('browserView.featureFlag') }}
       </button>
 
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
         @click="showKeyUpdate = true"
-        title="Rechercher une clé et remplacer sa valeur dans plusieurs secrets"
+        :title="t('browserView.replaceTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-blue-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
         </svg>
-        Remplacer
+        {{ t('browserView.replace') }}
       </button>
 
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
         @click="showKeyAdjust = true"
-        title="Rechercher une clé et ajuster sa valeur path par path"
+        :title="t('browserView.adjustTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-violet-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
         </svg>
-        Ajuster
+        {{ t('browserView.adjust') }}
       </button>
 
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
         @click="showKeyRename = true"
-        title="Corriger un nom de clé erroné dans plusieurs secrets"
+        :title="t('browserView.renameTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-teal-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
         </svg>
-        Renommer
+        {{ t('browserView.rename') }}
       </button>
 
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-200 hover:text-red-300 rounded pointer transition-colors"
         @click="showKeyRemoval = true"
-        title="Rechercher et supprimer une clé de plusieurs secrets"
+        :title="t('browserView.deleteTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-red-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
         </svg>
-        Supprimer
+        {{ t('browserView.delete') }}
       </button>
 
       <div class="w-px h-5 bg-gray-600 mx-0.5" />
@@ -301,24 +303,24 @@ onBeforeUnmount(() => {
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
         @click="showBulk = true"
-        title="Éditer plusieurs paths en JSON"
+        :title="t('browserView.bulkTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-yellow-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
         </svg>
-        Groupée
+        {{ t('browserView.bulkEdit') }}
       </button>
 
       <button
         class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
         :disabled="downloadLoading"
         @click="downloadPath"
-        title="Télécharger tous les secrets du chemin courant"
+        :title="t('browserView.downloadTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-green-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
         </svg>
-        Download
+        {{ t('browserView.download') }}
       </button>
   </div>
 
@@ -330,8 +332,8 @@ onBeforeUnmount(() => {
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 shrink-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
     </svg>
-    Mode lecture seule — les actions d'écriture sont désactivées par l'administrateur.
-    <RouterLink to="/admin" class="ml-auto underline hover:text-amber-100">Gérer →</RouterLink>
+    {{ t('browserView.readOnlyBanner') }}
+    <RouterLink to="/admin" class="ml-auto underline hover:text-amber-100">{{ t('browserView.manage') }}</RouterLink>
   </div>
 
   <!-- Entries header: count + hide-empty toggle -->
@@ -340,15 +342,15 @@ onBeforeUnmount(() => {
     class="flex items-center justify-between mb-2 px-1"
   >
     <span class="text-xs text-gray-600">
-      {{ filteredEntries.length }}<template v-if="hideEmpty && emptyPaths.size > 0"> / {{ vault.entries.length }}</template> entrée(s)
-      <span v-if="hideEmpty && emptyPaths.size > 0" class="text-gray-700"> · {{ emptyPaths.size }} vide(s) masqué(s)</span>
+      {{ filteredEntries.length }}<template v-if="hideEmpty && emptyPaths.size > 0"> / {{ vault.entries.length }}</template> {{ t('browserView.entries', { n: filteredEntries.length }) }}
+      <span v-if="hideEmpty && emptyPaths.size > 0" class="text-gray-700"> · {{ t('browserView.hiddenEmpty', { n: emptyPaths.size }) }}</span>
     </span>
     <button
       class="flex items-center gap-1 text-xs px-2 py-0.5 rounded pointer transition-colors"
       :class="hideEmpty ? 'bg-indigo-900/50 text-indigo-300 hover:bg-indigo-900' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-700'"
       :disabled="checkingEmpty"
       @click="toggleHideEmpty"
-      title="Masquer les secrets sans aucune clé"
+      :title="t('browserView.hideEmptyTooltip')"
     >
       <svg v-if="checkingEmpty" class="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -360,23 +362,23 @@ onBeforeUnmount(() => {
       <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
       </svg>
-      {{ checkingEmpty ? 'Vérification…' : hideEmpty ? `Afficher (${emptyPaths.size} vides)` : `Masquer vides (${emptyPaths.size})` }}
+      {{ checkingEmpty ? t('browserView.checking') : hideEmpty ? t('browserView.showEmpty', { n: emptyPaths.size }) : t('browserView.hideEmpty', { n: emptyPaths.size }) }}
     </button>
   </div>
 
   <!-- Entries list -->
   <div class="bg-gray-900 border border-gray-800 rounded overflow-hidden">
     <div v-if="vault.listLoading" class="px-4 py-8 text-center text-gray-500 text-sm animate-pulse">
-      Chargement…
+      {{ t('browserView.loading') }}
     </div>
     <div v-else-if="vault.listError" class="px-4 py-4 text-red-400 text-sm">
-      Erreur : {{ vault.listError }}
+      {{ t('browserView.error') }} {{ vault.listError }}
     </div>
     <div v-else-if="vault.entries.length === 0 && vault.currentPath !== ''" class="px-4 py-8 text-gray-500 text-sm text-center">
-      Dossier vide
+      {{ t('browserView.emptyFolder') }}
     </div>
     <div v-else-if="vault.entries.length === 0" class="px-4 py-8 text-gray-500 text-sm text-center">
-      Aucun secret trouvé à la racine du mount
+      {{ t('browserView.noSecretsFound') }}
     </div>
 
     <!-- Back row -->
@@ -404,13 +406,13 @@ onBeforeUnmount(() => {
         <button
           v-if="!entry.isFolder"
           class="text-xs text-gray-500 hover:text-gray-200 px-2 py-0.5 border border-gray-700 rounded"
-          title="Ouvrir ce secret"
+          :title="t('browserView.openSecret')"
           @click.stop="openSecret(entry.key)"
         >⬇</button>
         <button
           v-if="vault.editingEnabled"
           class="p-1 text-gray-600 hover:text-red-400 hover:bg-red-950/50 rounded transition-colors"
-          :title="entry.isFolder ? 'Supprimer ce dossier et tous ses secrets' : 'Supprimer ce secret'"
+          :title="entry.isFolder ? t('browserView.deleteFolder') : t('browserView.deleteSecret')"
           @click.stop="requestDelete(entry)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 
+const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
 
@@ -119,11 +121,11 @@ async function scan() {
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`)
     const payload = await res.json()
     const raw = payload?.data ?? payload
-    if (typeof raw !== 'object' || raw === null) throw new Error('Réponse invalide')
+    if (typeof raw !== 'object' || raw === null) throw new Error(t('keyAdjustModal.invalidResponse'))
     dumpData.value = raw as Record<string, Record<string, string>>
     scanned.value = true
   } catch (e: unknown) {
-    scanError.value = e instanceof Error ? e.message : 'Erreur réseau'
+    scanError.value = e instanceof Error ? e.message : t('keyAdjustModal.networkError')
   } finally {
     scanning.value = false
   }
@@ -138,14 +140,18 @@ async function applyAll() {
       await vault.writeSecret(preview.path, preview.after)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
-      applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : 'Erreur' })
+      applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyAdjustModal.networkError') })
     }
   }
   applying.value = false
   step.value = 3
 }
 
-const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Diff', 3: 'Résultat' }
+const STEP_LABELS = computed<Record<number, string>>(() => ({
+  1: t('keyAdjustModal.step1'),
+  2: t('keyAdjustModal.step2'),
+  3: t('keyAdjustModal.step3'),
+}))
 </script>
 
 <template>
@@ -158,9 +164,9 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">Ajuster par path</span>
+          <span class="text-white font-semibold text-sm">{{ t('keyAdjustModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">mount : <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs">{{ t('keyAdjustModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         </div>
         <div class="flex items-center gap-1">
           <template v-for="s in [1, 2, 3]" :key="s">
@@ -183,25 +189,24 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
         <!-- ── STEP 1 — Scan + per-path inline editing ── -->
         <div v-if="step === 1" class="space-y-4">
           <p class="text-gray-400 text-sm">
-            Recherchez une clé pour voir toutes ses occurrences. Éditez la valeur directement sur chaque ligne — seuls les paths modifiés seront mis à jour.
+            {{ t('keyAdjustModal.step1Desc') }}
           </p>
 
           <!-- Search bar -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-gray-400 text-xs">Clé à rechercher</label>
+              <label class="text-gray-400 text-xs">{{ t('keyAdjustModal.keyLabel') }}</label>
               <button
                 class="px-2 py-0.5 rounded border text-xs font-mono font-semibold transition pointer"
                 :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'"
                 @click="includeProd = !includeProd"
-                title="Inclure les paths prod dans la recherche"
-              >{{ includeProd ? '🔴 prod inclus' : 'prod exclu' }}</button>
+              >{{ includeProd ? t('keyAdjustModal.prodIncluded') : t('keyAdjustModal.prodExcluded') }}</button>
             </div>
             <div class="flex gap-2">
               <input
                 v-model="keyName"
                 type="text"
-                placeholder="MY_KEY"
+                placeholder="FF_OPEN_MODAL"
                 class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-violet-300 font-mono rounded text-sm focus:outline-none focus:border-violet-600 placeholder-gray-700"
                 spellcheck="false"
                 @keydown.enter="scan"
@@ -210,14 +215,14 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
                 class="px-4 py-2 bg-violet-700 hover:bg-violet-600 text-white rounded text-sm font-semibold disabled:opacity-40 transition"
                 :disabled="!keyName.trim() || scanning"
                 @click="scan"
-              >{{ scanning ? 'Scan…' : 'Rechercher' }}</button>
+              >{{ scanning ? t('keyAdjustModal.scanning') : t('keyAdjustModal.search') }}</button>
             </div>
           </div>
 
           <!-- Scanning -->
           <div v-if="scanning" class="flex flex-col items-center py-8 gap-3">
             <div class="w-10 h-10 border-2 border-gray-700 border-t-violet-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">Scan du mount…</p>
+            <p class="text-gray-400 text-sm">{{ t('keyAdjustModal.scanningMount') }}</p>
           </div>
 
           <!-- Error -->
@@ -225,9 +230,9 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
 
           <!-- No results -->
           <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center">
-            <div class="text-gray-300 font-semibold mb-1">Clé introuvable</div>
+            <div class="text-gray-300 font-semibold mb-1">{{ t('keyAdjustModal.keyNotFound') }}</div>
             <div class="text-gray-500 text-xs font-mono">
-              « {{ keyName }} » n'existe dans aucun secret du mount <span class="text-green-400">{{ vault.currentMount }}</span>.
+              « {{ keyName }} »{{ t('keyAdjustModal.keyNotFoundDesc') }} <span class="text-green-400">{{ vault.currentMount }}</span>.
             </div>
           </div>
 
@@ -239,9 +244,9 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
               <span class="text-violet-400 shrink-0">✏</span>
               <div class="flex-1">
                 <span class="text-violet-200 font-semibold text-sm font-mono">{{ keyName }}</span>
-                <span class="text-violet-300 text-sm"> — <span class="text-white font-bold">{{ matchingPaths.length }}</span> occurrence(s)</span>
+                <span class="text-violet-300 text-sm">{{ t('keyAdjustModal.foundOccurrences', { n: matchingPaths.length }) }}</span>
                 <div class="text-violet-500 text-xs mt-0.5">
-                  Éditez la valeur sur chaque ligne · <span class="text-yellow-400 font-semibold">{{ previews.length }}</span> modification(s) en attente
+                  {{ t('keyAdjustModal.pendingModifications', { n: previews.length }) }}
                 </div>
               </div>
             </div>
@@ -250,12 +255,12 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
             <div>
               <div class="flex items-center justify-between mb-2">
                 <span class="text-gray-400 text-xs">
-                  <span class="text-white font-semibold">{{ selectedPaths.size }}</span> / {{ matchingPaths.length }} paths sélectionnés
-                  <span v-if="previews.length > 0" class="ml-2 text-yellow-400">· {{ previews.length }} modifié(s)</span>
+                  {{ t('keyAdjustModal.selectedPaths', { selected: selectedPaths.size, total: matchingPaths.length }) }}
+                  <span v-if="previews.length > 0" class="ml-2 text-yellow-400">· {{ t('keyAdjustModal.modified', { n: previews.length }) }}</span>
                 </span>
                 <div class="flex gap-2">
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectAll">Tout</button>
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectNone">Aucun</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectAll">{{ t('keyAdjustModal.all') }}</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectNone">{{ t('keyAdjustModal.none') }}</button>
                 </div>
               </div>
 
@@ -299,7 +304,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
                     <button
                       v-if="isModified(path)"
                       class="shrink-0 text-gray-600 hover:text-gray-300 text-xs px-1.5 py-1 rounded hover:bg-gray-700 transition"
-                      title="Remettre la valeur originale"
+                      :title="t('keyAdjustModal.resetValue')"
                       @click="resetValue(path)"
                     >↺</button>
                   </div>
@@ -308,16 +313,16 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
                   <span
                     v-if="isModified(path) && selectedPaths.has(path)"
                     class="shrink-0 text-xs px-1.5 py-0.5 bg-yellow-900 text-yellow-300 rounded border border-yellow-800"
-                  >modifié</span>
+                  >{{ t('keyAdjustModal.modifiedBadge') }}</span>
                 </div>
               </div>
             </div>
 
             <div v-if="unchangedCount > 0 && previews.length > 0" class="text-gray-600 text-xs">
-              ℹ {{ unchangedCount }} path(s) sélectionné(s) sans modification — ils ne seront pas mis à jour.
+              {{ t('keyAdjustModal.unchangedInfo', { n: unchangedCount }) }}
             </div>
             <div v-if="scanned && previews.length === 0" class="text-gray-500 text-xs">
-              Éditez au moins une valeur ci-dessus pour continuer.
+              {{ t('keyAdjustModal.editAtLeastOne') }}
             </div>
           </template>
         </div>
@@ -326,16 +331,15 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
         <div v-else-if="step === 2" class="space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <span class="text-gray-400 text-sm">
-              <span class="text-white font-bold">{{ previews.length }}</span> path(s) modifié(s) ·
-              clé <span class="font-mono text-violet-300">{{ keyName }}</span>
+              {{ t('keyAdjustModal.diffTitle', { n: previews.length }) }} <span class="font-mono text-violet-300">{{ keyName }}</span>
             </span>
             <div class="flex gap-2">
-              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 1">← Ajuster</button>
+              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 1">{{ t('keyAdjustModal.adjust') }}</button>
               <button
                 class="text-xs px-3 py-1 bg-violet-700 hover:bg-violet-600 text-white rounded font-semibold disabled:opacity-40"
                 :disabled="previews.length === 0"
                 @click="showConfirmAll = true"
-              >Appliquer ({{ previews.length }})</button>
+              >{{ t('keyAdjustModal.apply', { n: previews.length }) }}</button>
             </div>
           </div>
 
@@ -354,7 +358,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
             </div>
           </div>
 
-          <div v-if="previews.length === 0" class="text-gray-500 text-sm text-center py-4">Aucune modification.</div>
+          <div v-if="previews.length === 0" class="text-gray-500 text-sm text-center py-4">{{ t('keyAdjustModal.noModifications') }}</div>
         </div>
 
         <!-- ── STEP 3 — Résultat ── -->
@@ -366,12 +370,12 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
             </div>
             <div class="text-center">
               <div class="text-white font-semibold text-base mb-1">
-                {{ applyErrCount === 0 ? 'Valeurs ajustées !' : 'Mise à jour terminée avec erreurs' }}
+                {{ applyErrCount === 0 ? t('keyAdjustModal.step3Success') : t('keyAdjustModal.step3Errors') }}
               </div>
               <div class="text-gray-400 text-sm">
-                <span class="font-mono text-violet-300">{{ keyName }}</span> ajusté dans
-                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> secret(s)
-                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> erreur(s)</template>
+                <span class="font-mono text-violet-300">{{ keyName }}</span> {{ t('keyAdjustModal.adjustedIn') }}
+                {{ t('keyAdjustModal.successAdjustments', { n: applyOkCount }) }}
+                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span></template>
               </div>
             </div>
           </div>
@@ -386,7 +390,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
           </div>
 
           <details v-if="applyOkCount > 0" class="text-xs text-gray-600">
-            <summary class="cursor-pointer hover:text-gray-400 transition">{{ applyOkCount }} ajustement(s) réussi(s)</summary>
+            <summary class="cursor-pointer hover:text-gray-400 transition">{{ t('keyAdjustModal.successAdjustments', { n: applyOkCount }) }}</summary>
             <div class="mt-2 space-y-0.5 font-mono">
               <div v-for="r in applyResults.filter(r => r.ok)" :key="r.path" class="text-green-700">✓ {{ r.path }}</div>
             </div>
@@ -402,18 +406,18 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
           class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded disabled:opacity-40"
           :disabled="applying"
           @click="step = (step - 1) as Step"
-        >← Retour</button>
+        >{{ t('keyAdjustModal.back') }}</button>
         <div v-else></div>
 
         <div class="flex gap-2">
-          <button v-if="step === 3" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">Fermer</button>
+          <button v-if="step === 3" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">{{ t('keyAdjustModal.close') }}</button>
 
           <button
             v-if="step === 1"
             class="text-sm px-4 py-1.5 bg-violet-700 hover:bg-violet-600 text-white rounded font-semibold disabled:opacity-40"
             :disabled="!step1Valid"
             @click="step = 2"
-          >Voir le diff ({{ previews.length }}) →</button>
+          >{{ t('keyAdjustModal.viewDiff', { n: previews.length }) }}</button>
         </div>
       </div>
     </div>
@@ -421,7 +425,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Recherche & édition', 2: 'Dif
 
   <ConfirmDiffModal
     v-if="showConfirmAll"
-    path="(ajustement — paths modifiés)"
+    :path="t('keyAdjustModal.diffTitle', { n: previews.length })"
     :before="confirmAllBefore"
     :after="confirmAllAfter"
     @confirm="applyAll"

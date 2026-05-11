@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 
+const { t } = useI18n()
 const props = defineProps<{ initialQuery?: string }>()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
@@ -53,7 +55,7 @@ function onKeydown(e: KeyboardEvent) {
 
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
-        <span class="text-white font-semibold text-sm">Recherche globale</span>
+        <span class="text-white font-semibold text-sm">{{ t('searchModal.title') }}</span>
         <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="emit('close')">✕</button>
       </div>
 
@@ -63,7 +65,7 @@ function onKeydown(e: KeyboardEvent) {
           <input
             v-model="query"
             type="text"
-            placeholder="Terme de recherche…"
+            :placeholder="t('searchModal.searchPlaceholder')"
             class="flex-1 bg-gray-950 border border-gray-700 text-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-sky-600 placeholder-gray-600"
             @keydown="onKeydown"
             autofocus
@@ -73,28 +75,28 @@ function onKeydown(e: KeyboardEvent) {
             :disabled="!query.trim() || vault.searchLoading"
             @click="runSearch"
           >
-            <span v-if="vault.searchLoading" class="animate-pulse">Scan…</span>
-            <span v-else>Chercher</span>
+            <span v-if="vault.searchLoading" class="animate-pulse">{{ t('searchModal.scanning') }}</span>
+            <span v-else>{{ t('searchModal.search') }}</span>
           </button>
         </div>
 
         <div class="flex items-center gap-4 text-xs text-gray-400">
           <!-- Search mode toggle -->
           <div class="flex items-center gap-2">
-            <span>Chercher par :</span>
+            <span>{{ t('searchModal.searchBy') }}</span>
             <button
               :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'path' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
               @click="searchBy = 'path'"
-            >Chemin</button>
+            >{{ t('searchModal.byPath') }}</button>
             <button
               :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'key' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
               @click="searchBy = 'key'"
-            >Clé</button>
+            >{{ t('searchModal.byKey') }}</button>
           </div>
           <!-- Prod toggle -->
           <label class="flex items-center gap-1.5 cursor-pointer select-none">
             <input type="checkbox" v-model="excludeProd" class="accent-sky-500" />
-            Exclure prod
+            {{ t('searchModal.excludeProd') }}
           </label>
         </div>
       </div>
@@ -104,7 +106,7 @@ function onKeydown(e: KeyboardEvent) {
 
         <!-- Loading -->
         <div v-if="vault.searchLoading" class="text-gray-500 text-sm text-center py-10 animate-pulse">
-          Scan en cours…
+          {{ t('searchModal.scanning') }}
         </div>
 
         <!-- Error -->
@@ -114,14 +116,14 @@ function onKeydown(e: KeyboardEvent) {
 
         <!-- No results yet (before first search) -->
         <div v-else-if="vault.searchResults.length === 0 && !vault.searchError" class="text-gray-600 text-xs text-center py-10">
-          Saisissez un terme et lancez la recherche.
+          {{ t('searchModal.enterSearch') }}
         </div>
 
         <!-- Empty after prod filter -->
         <div v-else-if="filteredResults.length === 0" class="text-gray-500 text-sm text-center py-6">
-          Aucun résultat
+          {{ t('searchModal.noResults') }}
           <span v-if="excludeProd && vault.searchResults.length > 0" class="block text-xs text-gray-600 mt-1">
-            ({{ vault.searchResults.length - filteredResults.length }} résultat(s) masqué(s) — prod exclus)
+            ({{ vault.searchResults.length - filteredResults.length }} {{ t('searchModal.hiddenByProd', { n: vault.searchResults.length - filteredResults.length }) }})
           </span>
         </div>
 
@@ -135,7 +137,7 @@ function onKeydown(e: KeyboardEvent) {
           >
             <span class="text-green-400 text-sm font-mono truncate">{{ result.path }}</span>
             <span v-if="result.matchedKeys.length > 0" class="text-gray-500 text-xs">
-              Clés : {{ result.matchedKeys.join(', ') }}
+              {{ t('searchModal.matchedKeys') }} {{ result.matchedKeys.join(', ') }}
             </span>
           </div>
         </div>
@@ -145,13 +147,13 @@ function onKeydown(e: KeyboardEvent) {
       <!-- Footer -->
       <div class="flex items-center justify-between px-5 py-2.5 border-t border-gray-700 shrink-0 text-xs text-gray-600">
         <span v-if="filteredResults.length > 0">
-          {{ filteredResults.length }} résultat(s)
+          {{ t('searchModal.resultCount', { n: filteredResults.length }) }}
           <span v-if="excludeProd && vault.searchResults.length !== filteredResults.length">
-            · {{ vault.searchResults.length - filteredResults.length }} masqué(s) prod
+            {{ t('searchModal.hiddenProd', { n: vault.searchResults.length - filteredResults.length }) }}
           </span>
         </span>
         <span v-else />
-        <button class="text-gray-500 hover:text-gray-300 transition-colors" @click="emit('close')">Fermer</button>
+        <button class="text-gray-500 hover:text-gray-300 transition-colors" @click="emit('close')">{{ t('searchModal.close') }}</button>
       </div>
 
     </div>

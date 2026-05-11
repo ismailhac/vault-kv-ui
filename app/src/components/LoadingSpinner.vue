@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   status: 'loading' | 'success' | 'error'
@@ -10,7 +13,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  message: 'Vérification du token Vault...',
+  message: '',
   error: '',
 })
 
@@ -32,8 +35,8 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             ></div>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ message }}</h2>
-        <p class="text-gray-400 text-sm">Veuillez patienter...</p>
+        <h2 class="text-white font-semibold text-lg">{{ message || t('loadingSpinner.verifyingToken') }}</h2>
+        <p class="text-gray-400 text-sm">{{ t('loadingSpinner.pleaseWait') }}</p>
       </div>
 
       <!-- Success state -->
@@ -45,9 +48,9 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             <span class="text-green-400 text-3xl">✓</span>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">Authentification réussie</h2>
-        <p class="text-green-400 text-sm">Connexion au Vault établie avec succès</p>
-        <p class="text-gray-500 text-xs">Redirection en cours...</p>
+        <h2 class="text-white font-semibold text-lg">{{ t('loadingSpinner.authSuccess') }}</h2>
+        <p class="text-green-400 text-sm">{{ t('loadingSpinner.connectionEstablished') }}</p>
+        <p class="text-gray-500 text-xs">{{ t('loadingSpinner.redirecting') }}</p>
       </div>
 
       <!-- Error state -->
@@ -57,12 +60,12 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             <span class="text-red-400 text-3xl">⚠</span>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">Erreur d'authentification</h2>
+        <h2 class="text-white font-semibold text-lg">{{ t('loadingSpinner.authError') }}</h2>
         <div class="bg-red-950 border border-red-800 rounded p-3 text-left">
-          <p class="text-red-300 text-xs font-mono">{{ error || 'Une erreur inconnue s\'est produite' }}</p>
+          <p class="text-red-300 text-xs font-mono">{{ error || t('loadingSpinner.unknownError') }}</p>
         </div>
         <p class="text-gray-400 text-sm">
-          Votre token Vault a expiré ou est invalide. Veuillez vous reconnecter.
+          {{ t('loadingSpinner.tokenExpiredOrInvalid') }}
         </p>
         <div class="flex gap-2 pt-2">
           <button
@@ -70,17 +73,17 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             class="flex-1 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded font-semibold text-sm transition"
             @click="onRetry"
           >
-            🔄 Réessayer
+            {{ t('loadingSpinner.retry') }}
           </button>
           <button
             v-if="showManualBtn"
             class="flex-1 px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded font-semibold text-sm transition"
             @click="onManualLogin"
           >
-            🔑 Se connecter
+            {{ t('loadingSpinner.login') }}
           </button>
         </div>
-        <p class="text-gray-500 text-xs">ou relancez l'application</p>
+        <p class="text-gray-500 text-xs">{{ t('loadingSpinner.orRestart') }}</p>
       </div>
     </div>
   </div>

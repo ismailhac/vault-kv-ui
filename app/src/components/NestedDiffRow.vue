@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 defineOptions({ name: 'NestedDiffRow' })
+
+const { t } = useI18n()
 
 type DiffStatus = 'unchanged' | 'modified' | 'added' | 'removed'
 
@@ -75,11 +78,11 @@ const nestedLines = computed<NestedLine[]>(() => {
 function makeBadge(v: unknown): string {
   if (Array.isArray(v)) {
     const n = v.length
-    return `[${n} élément${n > 1 ? 's' : ''}]`
+    return `[${t('nestedDiffRow.arrayBadge', { n }, n)}]`
   }
   if (typeof v === 'object' && v !== null) {
     const n = Object.keys(v).length
-    return `{${n} clé${n > 1 ? 's' : ''}}`
+    return `{${t('nestedDiffRow.objectBadge', { n }, n)}}`
   }
   return ''
 }

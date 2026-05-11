@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 
+const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
 
@@ -205,7 +207,7 @@ async function loadPaths() {
     const sug = suggestedProjects.value
     selectedProjects.value = sug.length > 0 ? [...sug] : [...projectSegments.value]
   } catch (e: unknown) {
-    loadError.value = e instanceof Error ? e.message : 'Erreur réseau'
+    loadError.value = e instanceof Error ? e.message : t('featureFlagModal.step5Errors')
   } finally {
     loadingPaths.value = false
   }
@@ -255,7 +257,7 @@ async function buildPreviews() {
         results.push({ path, before: {}, after: { [ffKey.value]: val }, fetchError: (err as { error?: string }).error ?? `HTTP ${res.status}` })
       }
     } catch (e: unknown) {
-      results.push({ path, before: {}, after: { [ffKey.value]: val }, fetchError: e instanceof Error ? e.message : 'Erreur réseau' })
+      results.push({ path, before: {}, after: { [ffKey.value]: val }, fetchError: e instanceof Error ? e.message : t('featureFlagModal.step5Errors') })
     }
   }
   previews.value = results
@@ -271,13 +273,19 @@ async function applyAll() {
       await vault.writeSecret(preview.path, preview.after)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
-      applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : 'Erreur' })
+      applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('featureFlagModal.step5Errors') })
     }
   }
   step.value = 5
 }
 
-const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'BU & Envs', 4: 'Diff', 5: 'Résultat' }
+const STEP_LABELS = computed<Record<number, string>>(() => ({
+  1: t('featureFlagModal.step1'),
+  2: t('featureFlagModal.step2'),
+  3: t('featureFlagModal.step3'),
+  4: t('featureFlagModal.step4'),
+  5: t('featureFlagModal.step5'),
+}))
 </script>
 
 <template>
@@ -290,9 +298,9 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">Feature Flag</span>
+          <span class="text-white font-semibold text-sm">{{ t('featureFlagModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">mount : <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs">{{ t('featureFlagModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         </div>
         <!-- Step indicator -->
         <div class="flex items-center gap-1">
@@ -315,21 +323,21 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
 
         <!-- ── STEP 1 — Définir la feature flag ── -->
         <div v-if="step === 1" class="space-y-5">
-          <p class="text-gray-400 text-sm">Définissez la clé et la valeur à appliquer dans tous les secrets ciblés.</p>
+          <p class="text-gray-400 text-sm">{{ t('featureFlagModal.step1Desc') }}</p>
 
           <div>
-            <label class="text-gray-400 text-xs block mb-1.5">Nom de la clé</label>
+            <label class="text-gray-400 text-xs block mb-1.5">{{ t('featureFlagModal.keyLabel') }}</label>
             <input
               v-model="ffKey"
               type="text"
-              placeholder="MY_KEY"
+              placeholder="FF_OPEN_MODAL"
               class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
               spellcheck="false"
             />
           </div>
 
           <div>
-            <label class="text-gray-400 text-xs block mb-1.5">Type de valeur</label>
+            <label class="text-gray-400 text-xs block mb-1.5">{{ t('featureFlagModal.valueTypeLabel') }}</label>
             <div class="flex gap-2 mb-3">
               <button
                 v-for="t in ['boolean', 'string', 'number'] as const"
@@ -364,22 +372,22 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
         <!-- ── STEP 2 — Projets ── -->
         <div v-else-if="step === 2" class="space-y-4">
           <div class="flex items-center justify-between">
-            <p class="text-gray-400 text-sm">Sélectionnez les projets à cibler.</p>
+            <p class="text-gray-400 text-sm">{{ t('featureFlagModal.step2Desc') }}</p>
             <div class="flex gap-2">
-              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = [...projectSegments]">Tout</button>
-              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = []">Aucun</button>
+              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = [...projectSegments]">{{ t('featureFlagModal.all') }}</button>
+              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = []">{{ t('featureFlagModal.none') }}</button>
             </div>
           </div>
 
           <div v-if="loadingPaths" class="flex flex-col items-center py-10 gap-3">
             <div class="w-10 h-10 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">Scan du mount…</p>
+            <p class="text-gray-400 text-sm">{{ t('featureFlagModal.scanningMount') }}</p>
           </div>
           <div v-else-if="loadError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded">⚠ {{ loadError }}</div>
 
           <template v-else>
             <div v-if="suggestedProjects.length > 0">
-              <div class="text-gray-500 text-xs mb-2 uppercase tracking-wider">Suggérés · namespace {{ vault.currentNamespaceLabel }}</div>
+              <div class="text-gray-500 text-xs mb-2 uppercase tracking-wider">{{ t('featureFlagModal.suggested') }} {{ vault.currentNamespaceLabel }}</div>
               <div class="space-y-1">
                 <div
                   v-for="proj in suggestedProjects" :key="proj"
@@ -398,7 +406,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
             </div>
 
             <div v-if="otherProjects.length > 0">
-              <div class="text-gray-500 text-xs mb-2 mt-3 uppercase tracking-wider">Autres projets</div>
+              <div class="text-gray-500 text-xs mb-2 mt-3 uppercase tracking-wider">{{ t('featureFlagModal.otherProjects') }}</div>
               <div class="space-y-1">
                 <div
                   v-for="proj in otherProjects" :key="proj"
@@ -416,10 +424,10 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
               </div>
             </div>
 
-            <div v-if="projectSegments.length === 0" class="text-gray-500 text-sm text-center py-8">Aucun projet trouvé.</div>
+            <div v-if="projectSegments.length === 0" class="text-gray-500 text-sm text-center py-8">{{ t('featureFlagModal.noProjects') }}</div>
 
             <div class="text-gray-600 text-xs pt-2 border-t border-gray-800">
-              {{ selectedProjects.length }} projet(s) · {{ allPaths.filter(p => selectedProjects.includes(seg(p, 0))).length }} paths
+              {{ t('featureFlagModal.projectCount', { n: selectedProjects.length, paths: allPaths.filter(p => selectedProjects.includes(seg(p, 0))).length }) }}
             </div>
           </template>
         </div>
@@ -430,10 +438,10 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
           <!-- BU selection -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">BU (Business Units)</label>
+              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('featureFlagModal.step3BU') }}</label>
               <div class="flex gap-1.5">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = [...availableBUs]">Tout</button>
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = []">Aucun</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = [...availableBUs]">{{ t('featureFlagModal.allEnvs') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = []">{{ t('featureFlagModal.none') }}</button>
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -456,17 +464,17 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
           <!-- Env selection -->
           <div>
             <div class="flex items-center gap-3 mb-2 flex-wrap">
-              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">Environnements</label>
+              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('featureFlagModal.step3Envs') }}</label>
               <!-- Quick-select presets -->
               <div class="flex gap-1.5 ml-auto">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="quickSelectEnvs('all')">Tous</button>
-                <button class="text-xs px-2 py-0.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-300 border border-emerald-800 rounded" @click="quickSelectEnvs('no-prod')">Hors prod</button>
-                <button class="text-xs px-2 py-0.5 bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded" @click="quickSelectEnvs('prod-only')">Prod seulement</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="quickSelectEnvs('all')">{{ t('featureFlagModal.allEnvs') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-300 border border-emerald-800 rounded" @click="quickSelectEnvs('no-prod')">{{ t('featureFlagModal.noProdsLabel') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded" @click="quickSelectEnvs('prod-only')">{{ t('featureFlagModal.prodOnlyLabel') }}</button>
               </div>
             </div>
 
             <div v-if="availableEnvs.length === 0" class="text-gray-600 text-xs">
-              Sélectionnez au moins une BU pour voir les environnements.
+              {{ t('featureFlagModal.noBUSelected') }}
             </div>
             <div v-else class="flex flex-wrap gap-2">
               <div
@@ -486,7 +494,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
                   <span v-if="selectedEnvs.includes(env)">✓</span>
                 </span>
                 {{ env }}
-                <span v-if="isProd(env)" class="text-red-500 opacity-80 font-normal">(prod)</span>
+                <span v-if="isProd(env)" class="text-red-500 opacity-80 font-normal">{{ t('featureFlagModal.prod') }}</span>
                 <span class="opacity-50 font-normal">{{ pathsPerEnv[env] ?? 0 }}</span>
               </div>
             </div>
@@ -504,10 +512,10 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
             </span>
             <div>
               <div class="text-xs font-semibold" :class="includeSubPaths ? 'text-amber-200' : 'text-gray-300'">
-                Inclure les sous-paths
+                {{ t('featureFlagModal.includeSubPaths') }}
               </div>
               <div class="text-xs text-gray-500 mt-0.5">
-                Ex : <span class="font-mono">projet/bu/env/conf</span> · décochez pour cibler uniquement <span class="font-mono">projet/bu/env</span>
+                {{ t('featureFlagModal.includeSubPathsDesc') }}
               </div>
             </div>
           </div>
@@ -526,16 +534,16 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
               </span>
               <div class="flex-1">
                 <div class="text-xs font-semibold" :class="activeProdMode ? 'text-orange-200' : 'text-gray-300'">
-                  Valeur différente pour prod (activé hors-prod / désactivé prod)
+                  {{ t('featureFlagModal.diffProdMode') }}
                 </div>
-                <div class="text-xs text-gray-500 mt-0.5">Utile pour déployer un FF sur tous les envs sauf prod</div>
+                <div class="text-xs text-gray-500 mt-0.5">{{ t('featureFlagModal.diffProdModeDesc') }}</div>
               </div>
             </div>
 
             <!-- Prod value inputs -->
             <div v-if="activeProdMode" class="ml-7 flex gap-4 p-3 bg-gray-800 border border-gray-700 rounded" @click.stop>
               <div class="flex-1">
-                <label class="text-gray-400 text-xs block mb-1">Valeur hors-prod :</label>
+                <label class="text-gray-400 text-xs block mb-1">{{ t('featureFlagModal.nonProdValue') }}</label>
                 <div v-if="ffValueType === 'boolean'" class="flex gap-2">
                   <button type="button" class="px-3 py-1 rounded border text-xs font-bold"
                     :class="ffValue === 'true' ? 'bg-green-700 text-white border-green-500' : 'bg-gray-700 text-gray-400 border-gray-600'"
@@ -547,7 +555,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
                 <input v-else v-model="ffValue" class="px-2 py-1 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-xs w-full" />
               </div>
               <div class="flex-1">
-                <label class="text-amber-400 text-xs block mb-1">Valeur prod (désactivé) :</label>
+                <label class="text-amber-400 text-xs block mb-1">{{ t('featureFlagModal.prodValue') }}</label>
                 <div v-if="ffValueType === 'boolean'" class="flex gap-2">
                   <button type="button" class="px-3 py-1 rounded border text-xs font-bold"
                     :class="ffProdValue === 'true' ? 'bg-green-700 text-white border-green-500' : 'bg-gray-700 text-gray-400 border-gray-600'"
@@ -572,15 +580,15 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
                 <span v-if="perEnvValues">✓</span>
               </span>
               <div>
-                <div class="text-xs font-semibold" :class="perEnvValues ? 'text-violet-200' : 'text-gray-300'">Valeur personnalisée par environnement</div>
-                <div class="text-xs text-gray-500 mt-0.5">Définissez une valeur différente pour chaque env sélectionné</div>
+                <div class="text-xs font-semibold" :class="perEnvValues ? 'text-violet-200' : 'text-gray-300'">{{ t('featureFlagModal.perEnvValues') }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">{{ t('featureFlagModal.perEnvValuesDesc') }}</div>
               </div>
             </div>
 
             <div v-if="perEnvValues && !activeProdMode" class="ml-7 space-y-2 p-3 bg-gray-800 border border-gray-700 rounded" @click.stop>
               <div v-for="env in selectedEnvs" :key="env" class="flex items-center gap-3">
                 <span class="font-mono text-xs w-20 shrink-0" :class="isProd(env) ? 'text-red-300' : 'text-green-300'">{{ env }}</span>
-                <span v-if="isProd(env)" class="text-red-500 text-xs shrink-0">(prod)</span>
+                <span v-if="isProd(env)" class="text-red-500 text-xs shrink-0">{{ t('featureFlagModal.prod') }}</span>
                 <div v-if="ffValueType === 'boolean'" class="flex gap-2" @click.stop>
                   <button type="button" class="px-2 py-0.5 rounded border text-xs font-bold"
                     :class="(envValueMap[env] ?? ffValue) === 'true' ? 'bg-green-700 text-white border-green-500' : 'bg-gray-700 text-gray-400 border-gray-600'"
@@ -598,34 +606,34 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
 
           <!-- Summary -->
           <div class="p-3 bg-gray-800 border border-gray-700 rounded text-xs space-y-1.5">
-            <div class="text-gray-300 font-semibold mb-1">Récapitulatif</div>
-            <div class="text-gray-400">Projets : <span class="text-white font-mono">{{ selectedProjects.join(', ') || '—' }}</span></div>
-            <div class="text-gray-400">BUs : <span class="text-blue-300 font-mono">{{ selectedBUs.join(', ') || '—' }}</span></div>
-            <div class="text-gray-400">Envs : <span class="font-mono">
+            <div class="text-gray-300 font-semibold mb-1">{{ t('featureFlagModal.summary') }}</div>
+            <div class="text-gray-400">{{ t('featureFlagModal.summaryProjects') }} <span class="text-white font-mono">{{ selectedProjects.join(', ') || '—' }}</span></div>
+            <div class="text-gray-400">{{ t('featureFlagModal.summaryBUs') }} <span class="text-blue-300 font-mono">{{ selectedBUs.join(', ') || '—' }}</span></div>
+            <div class="text-gray-400">{{ t('featureFlagModal.summaryEnvs') }} <span class="font-mono">
               <span v-for="(e, i) in selectedEnvs" :key="e">
                 <span :class="isProd(e) ? 'text-red-300' : 'text-emerald-300'">{{ e }}</span>
                 <span v-if="i < selectedEnvs.length - 1" class="text-gray-600">, </span>
               </span>
               <span v-if="!selectedEnvs.length" class="text-gray-600">—</span>
             </span></div>
-            <div class="text-gray-400">Sous-paths : <span :class="includeSubPaths ? 'text-amber-300' : 'text-gray-300'">{{ includeSubPaths ? 'inclus' : 'exclus' }}</span></div>
+            <div class="text-gray-400">{{ t('featureFlagModal.summarySubPaths') }} <span :class="includeSubPaths ? 'text-amber-300' : 'text-gray-300'">{{ includeSubPaths ? t('featureFlagModal.included') : t('featureFlagModal.excluded') }}</span></div>
             <div class="text-gray-400">
-              Clé : <span class="font-mono text-green-300">{{ ffKey }}</span> =
+              {{ t('featureFlagModal.summaryKey') }} <span class="font-mono text-green-300">{{ ffKey }}</span> =
               <template v-if="activeProdMode">
-                <span class="text-emerald-300">{{ ffValue }}</span> (hors-prod) /
-                <span class="text-amber-300">{{ ffProdValue }}</span> (prod)
+                <span class="text-emerald-300">{{ ffValue }}</span>{{ t('featureFlagModal.summaryProdMode') }}
+                <span class="text-amber-300">{{ ffProdValue }}</span>
               </template>
               <template v-else-if="perEnvValues">
-                <span class="text-violet-300">valeur par env</span>
+                <span class="text-violet-300">{{ t('featureFlagModal.summaryPerEnv') }}</span>
               </template>
               <template v-else>
                 <span class="text-green-300">{{ ffValue }}</span>
               </template>
             </div>
             <div class="pt-1 border-t border-gray-700">
-              Paths ciblés : <span class="text-green-400 font-bold text-sm">{{ targetPaths.length }}</span>
+              {{ t('featureFlagModal.targetedPaths') }} <span class="text-green-400 font-bold text-sm">{{ targetPaths.length }}</span>
             </div>
-            <div v-if="!step3Valid && selectedBUs.length > 0" class="text-amber-400">⚠ Aucun path ciblé — ajustez la sélection.</div>
+            <div v-if="!step3Valid && selectedBUs.length > 0" class="text-amber-400">{{ t('featureFlagModal.noPathsWarning') }}</div>
           </div>
         </div>
 
@@ -633,23 +641,22 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
         <div v-else-if="step === 4" class="space-y-4">
           <div v-if="previewLoading" class="flex flex-col items-center py-10 gap-3">
             <div class="w-10 h-10 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">Chargement des diffs…</p>
+            <p class="text-gray-400 text-sm">{{ t('featureFlagModal.loadingDiffs') }}</p>
             <p class="text-gray-600 text-xs">{{ previews.length }} / {{ targetPaths.length }} paths</p>
           </div>
 
           <template v-else>
             <div class="flex items-center justify-between flex-wrap gap-2">
               <span class="text-gray-400 text-sm">
-                <span class="text-white font-bold">{{ previews.length }}</span> path(s) ·
-                <span class="text-yellow-300 font-bold">{{ totalPathsChanged }}</span> modifié(s)
+                {{ t('featureFlagModal.step4PathsModified', { paths: previews.length, modified: totalPathsChanged }) }}
               </span>
               <div class="flex gap-2">
-                <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 3">← Ajuster</button>
+                <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 3">{{ t('featureFlagModal.adjust') }}</button>
                 <button
                   class="text-xs px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded font-semibold disabled:opacity-40"
                   :disabled="totalPathsChanged === 0"
                   @click="showConfirmAll = true"
-                >Appliquer tout ({{ totalPathsChanged }})</button>
+                >{{ t('featureFlagModal.applyAll', { n: totalPathsChanged }) }}</button>
               </div>
             </div>
 
@@ -668,7 +675,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
               <div v-for="entry in entries" :key="entry.path" class="border-t border-gray-800 first:border-0">
                 <div class="px-4 py-1 flex items-center gap-2">
                   <span class="font-mono text-xs text-gray-400">{{ entry.path }}</span>
-                  <span v-if="depth(entry.path) > 3" class="text-amber-600 text-xs ml-1">(sous-path)</span>
+                  <span v-if="depth(entry.path) > 3" class="text-amber-600 text-xs ml-1">{{ t('featureFlagModal.subPath') }}</span>
                   <span v-if="entry.fetchError" class="text-red-400 text-xs ml-auto">⚠ {{ entry.fetchError }}</span>
                 </div>
                 <table class="w-full text-xs font-mono">
@@ -691,7 +698,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
             </div>
 
             <div v-if="totalPathsChanged === 0" class="text-gray-500 text-sm text-center py-4">
-              <span class="font-mono text-gray-300">{{ ffKey }}</span> a déjà la bonne valeur partout.
+              <span class="font-mono text-gray-300">{{ ffKey }}</span>{{ t('featureFlagModal.alreadyCorrect') }}
             </div>
           </template>
         </div>
@@ -705,14 +712,14 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
             </div>
             <div class="text-center">
               <div class="text-white font-semibold text-base mb-1">
-                {{ applyErrCount === 0 ? 'Feature flag appliqué !' : 'Application terminée avec erreurs' }}
+                {{ applyErrCount === 0 ? t('featureFlagModal.step5Success') : t('featureFlagModal.step5Errors') }}
               </div>
               <div class="text-gray-400 text-sm">
-                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> path(s) mis à jour
-                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> erreur(s)</template>
+                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> {{ t('featureFlagModal.pathsUpdated', { n: applyOkCount }) }}
+                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> {{ t('featureFlagModal.errors', { n: applyErrCount }) }}</template>
               </div>
               <div class="mt-1 text-gray-500 text-xs font-mono">
-                {{ ffKey }} = {{ ffValue }}<template v-if="activeProdMode"> / prod = {{ ffProdValue }}</template>
+                {{ ffKey }} = {{ ffValue }}<template v-if="activeProdMode">{{ t('featureFlagModal.prodValueSuffix') }} {{ ffProdValue }}</template>
               </div>
             </div>
           </div>
@@ -727,7 +734,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
           </div>
 
           <details v-if="applyOkCount > 0" class="text-xs text-gray-600">
-            <summary class="cursor-pointer hover:text-gray-400 transition">{{ applyOkCount }} path(s) mis à jour avec succès</summary>
+            <summary class="cursor-pointer hover:text-gray-400 transition">{{ t('featureFlagModal.successPathsUpdated', { n: applyOkCount }) }}</summary>
             <div class="mt-2 space-y-0.5 font-mono">
               <div v-for="r in applyResults.filter(r => r.ok)" :key="r.path" class="text-green-700">✓ {{ r.path }}</div>
             </div>
@@ -743,23 +750,23 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
           class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded disabled:opacity-40"
           :disabled="previewLoading"
           @click="step = (step - 1) as Step"
-        >← Retour</button>
+        >{{ t('featureFlagModal.back') }}</button>
         <div v-else></div>
 
         <div class="flex gap-2">
-          <button v-if="step === 5" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">Fermer</button>
+          <button v-if="step === 5" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">{{ t('featureFlagModal.close') }}</button>
 
           <button v-if="step === 1"
             class="text-sm px-4 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold disabled:opacity-40"
-            :disabled="!step1Valid" @click="step = 2">Suivant → Projets</button>
+            :disabled="!step1Valid" @click="step = 2">{{ t('featureFlagModal.nextProjects') }}</button>
 
           <button v-else-if="step === 2"
             class="text-sm px-4 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold disabled:opacity-40"
-            :disabled="!step2Valid || loadingPaths" @click="step = 3">Suivant → BU & Envs</button>
+            :disabled="!step2Valid || loadingPaths" @click="step = 3">{{ t('featureFlagModal.nextBU') }}</button>
 
           <button v-else-if="step === 3"
             class="text-sm px-4 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold disabled:opacity-40"
-            :disabled="!step3Valid" @click="buildPreviews">Charger les diffs →</button>
+            :disabled="!step3Valid" @click="buildPreviews">{{ t('featureFlagModal.loadDiffs') }}</button>
         </div>
       </div>
     </div>
@@ -767,7 +774,7 @@ const STEP_LABELS: Record<number, string> = { 1: 'Définir', 2: 'Projets', 3: 'B
 
   <ConfirmDiffModal
     v-if="showConfirmAll"
-    path="(tous les paths ciblés)"
+    :path="t('featureFlagModal.step4PathsModified', { paths: previews.length, modified: totalPathsChanged })"
     :before="confirmAllBefore"
     :after="confirmAllAfter"
     @confirm="applyAll"

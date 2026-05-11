@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 
+const { t, locale } = useI18n()
 const vault = useVaultStore()
 const router = useRouter()
 
@@ -47,9 +49,31 @@ const settingsSaving = ref(false)
 const localSettings = ref({ loggingEnabled: true, editingEnabled: true })
 
 // Configuration editing
+function buildAdminUrl(org: string) {
+  return org.trim() ? `https://vault.factory.${org.trim()}.cloud` : ''
+}
+function extractAdminOrg(url: string) {
+  return url.match(/^https?:\/\/vault\.factory\.(.+?)\.cloud\/?$/)?.[1] ?? ''
+}
+
+type EditMode = 'quick' | 'custom'
 const showConfigEdit = ref(false)
+const editMode = ref<EditMode>('quick')
 const editOrg = ref('')
+const editVaultAddr = ref('')
 const editMount = ref('secret')
+
+function onEditOrgInput() {
+  editVaultAddr.value = buildAdminUrl(editOrg.value)
+}
+
+function switchEditMode(mode: EditMode) {
+  editMode.value = mode
+  if (mode === 'quick') {
+    editOrg.value = extractAdminOrg(editVaultAddr.value) || editOrg.value
+    editVaultAddr.value = buildAdminUrl(editOrg.value)
+  }
+}
 const editNamespaces = ref<Array<{ label: string; namespace: string }>>([])
 const configSaving = ref(false)
 const configError = ref<string | null>(null)
@@ -66,10 +90,10 @@ let feedbackTimer: ReturnType<typeof setTimeout> | null = null
 function showFeedback(key: string, enabled: boolean) {
   if (feedbackTimer) clearTimeout(feedbackTimer)
   const labels: Record<string, [string, string]> = {
-    editingEnabled: ['Édition activée', 'Mode lecture seule activé — toutes les écritures sont bloquées'],
-    loggingEnabled: ['Journalisation activée', 'Journalisation désactivée'],
+    editingEnabled: [t('adminView.editingActivated'), t('adminView.readOnlyActivated')],
+    loggingEnabled: [t('adminView.loggingActivated'), t('adminView.loggingDeactivated')],
   }
-  const [onMsg, offMsg] = labels[key] ?? ['Activé', 'Désactivé']
+  const [onMsg, offMsg] = labels[key] ?? [t('adminView.editingActivated'), t('adminView.loggingDeactivated')]
   feedback.value = { key, message: enabled ? onMsg : offMsg, ok: enabled }
   feedbackTimer = setTimeout(() => { feedback.value = null }, 2500)
 }
@@ -96,7 +120,7 @@ async function restoreEntry(entry: LogEntry) {
       }
     } else {
       const before = flatBefore(entry)
-      if (!Object.keys(before).length) throw new Error('Aucun état précédent disponible')
+      if (!Object.keys(before).length) throw new Error(t('adminView.noPreviousState'))
       const res = await fetch('/api/kv/write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +131,7 @@ async function restoreEntry(entry: LogEntry) {
     restoreSuccess.value = true
     setTimeout(() => { restoreSuccess.value = false; selectedLog.value = null; fetchAll(true) }, 1500)
   } catch (e: unknown) {
-    restoreError.value = e instanceof Error ? e.message : 'Erreur lors de la restauration'
+    restoreError.value = e instanceof Error ? e.message : t('adminView.restore')
   }
   restoring.value = false
 }
@@ -242,7 +266,7 @@ async function exportToVault() {
     })
     if (res.ok) {
       const nsLabel = vault.namespaces.find(n => n.namespace === vault.currentNamespace)?.label ?? vault.currentNamespace
-      exportResult.value = { ok: true, message: `Exporté vers [${nsLabel}] ${vaultExportMount.value}/${vaultExportPath.value.trim()}` }
+      exportResult.value = { ok: true, message: t('adminView.exportedTo', { ns: nsLabel, mount: vaultExportMount.value, path: vaultExportPath.value.trim() }) }
       const fullPath = vaultExportPath.value.trim()
       const parts = fullPath.split('/')
       const pathPrefix = parts.length > 1 ? parts.slice(0, -1).join('/') : ''
@@ -254,15 +278,16 @@ async function exportToVault() {
       exportResult.value = { ok: false, message: detail }
     }
   } catch (e: unknown) {
-    exportResult.value = { ok: false, message: e instanceof Error ? e.message : 'Erreur réseau' }
+    exportResult.value = { ok: false, message: e instanceof Error ? e.message : t('adminView.saveError') }
   }
   exporting.value = false
   if (exportResult.value?.ok) setTimeout(() => { exportResult.value = null }, 4000)
 }
 
 function formatSavedAt(ts: string | null): string {
-  if (!ts) return 'Jamais'
-  return new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  if (!ts) return t('adminView.never')
+  const localeStr = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return new Date(ts).toLocaleString(localeStr, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 const nsScopedLogs = computed(() => logs.value.filter(l => l.namespace === vault.currentNamespace))
@@ -334,7 +359,8 @@ async function saveSetting(key: 'loggingEnabled' | 'editingEnabled', value: bool
 }
 
 function formatTs(ts: string): string {
-  return new Date(ts).toLocaleString('fr-FR', {
+  const localeStr = locale.value === 'fr' ? 'fr-FR' : 'en-GB'
+  return new Date(ts).toLocaleString(localeStr, {
     day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
   })
@@ -345,11 +371,11 @@ function nsLabel(ns: string): string {
 }
 
 function logTypeLabel(type: string): string {
-  if (type === 'write') return 'Écriture'
-  if (type === 'login_ok') return 'Connexion'
-  if (type === 'login_fail') return 'Échec login'
-  if (type === 'delete') return 'Suppression'
-  if (type === 'delete_folder') return 'Suppression dossier'
+  if (type === 'write') return t('adminView.logTypeWrite')
+  if (type === 'login_ok') return t('adminView.logTypeLogin')
+  if (type === 'login_fail') return t('adminView.logTypeLoginFail')
+  if (type === 'delete') return t('adminView.logTypeDelete')
+  if (type === 'delete_folder') return t('adminView.logTypeDeleteFolder')
   return type
 }
 
@@ -369,8 +395,10 @@ async function handleLogout() {
 }
 
 function openConfigEdit() {
-  const org = vault.vaultAddr.match(/^https?:\/\/vault\.factory\.(.+?)\.cloud\/?$/)?.[1] ?? ''
+  const org = extractAdminOrg(vault.vaultAddr || '')
   editOrg.value = org
+  editVaultAddr.value = vault.vaultAddr || ''
+  editMode.value = org ? 'quick' : 'custom'
   editMount.value = vault.currentMount || 'secret'
   editNamespaces.value = vault.namespaces.length > 0
     ? vault.namespaces.map(n => ({ label: n.label, namespace: n.namespace }))
@@ -437,7 +465,7 @@ async function executeConfirmAction() {
 
     showConfirmDialog.value = false
   } catch (e) {
-    configError.value = e instanceof Error ? e.message : 'Erreur'
+    configError.value = e instanceof Error ? e.message : t('adminView.saveError')
   } finally {
     confirmLoading.value = false
   }
@@ -447,8 +475,8 @@ async function saveConfig() {
   configError.value = null
   configSaving.value = true
   try {
-    if (!editOrg.value.trim()) {
-      throw new Error('Le nom de l\'organisation est requis')
+    if (!editVaultAddr.value.trim()) {
+      throw new Error(t('adminView.orgRequired'))
     }
     const nsList = editNamespaces.value
       .filter(n => n.label.trim() || n.namespace.trim())
@@ -458,17 +486,16 @@ async function saveConfig() {
         namespace: n.namespace.trim(),
       }))
     if (nsList.length === 0) {
-      throw new Error('Au moins un namespace est requis')
+      throw new Error(t('adminView.atLeastOneNamespace'))
     }
-    const vaultAddr = `https://vault.factory.${editOrg.value.trim()}.cloud`
     await vault.saveAppConfig({
-      vaultAddr,
+      vaultAddr: editVaultAddr.value.trim(),
       namespaces: nsList,
       mount: editMount.value.trim() || 'secret',
     })
     showConfigEdit.value = false
   } catch (e: unknown) {
-    configError.value = e instanceof Error ? e.message : 'Erreur de sauvegarde'
+    configError.value = e instanceof Error ? e.message : t('adminView.saveError')
   } finally {
     configSaving.value = false
   }
@@ -487,7 +514,7 @@ onUnmounted(() => clearInterval(pollTimer))
 
     <!-- Page header -->
     <div class="flex items-center justify-between gap-4">
-      <h1 class="text-white font-semibold text-sm">Dashboard Admin</h1>
+      <h1 class="text-white font-semibold text-sm">{{ t('adminView.dashboard') }}</h1>
       <div class="flex gap-2">
         <button
           class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition cursor-pointer"
@@ -497,7 +524,7 @@ onUnmounted(() => clearInterval(pollTimer))
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" :class="['w-3.5 h-3.5', refreshing && 'animate-spin']">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
           </svg>
-          Actualiser
+          {{ t('adminView.refresh') }}
         </button>
         <button
           class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-blue-900 hover:bg-blue-800 text-blue-200 rounded transition cursor-pointer"
@@ -506,7 +533,7 @@ onUnmounted(() => clearInterval(pollTimer))
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 9.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0z" />
           </svg>
-          Modifier config
+          {{ t('adminView.editConfig') }}
         </button>
         <button
           class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-red-900 hover:bg-red-800 text-red-200 rounded transition cursor-pointer disabled:opacity-50 disabled:hover:bg-red-900"
@@ -520,7 +547,7 @@ onUnmounted(() => clearInterval(pollTimer))
           <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3-3 3-3m0 0-3-3m3 3H9" />
           </svg>
-          {{ loggingOut ? 'Déconnexion…' : 'Déconnexion' }}
+          {{ loggingOut ? t('adminView.loggingOut') : t('adminView.logout') }}
         </button>
       </div>
     </div>
@@ -534,30 +561,30 @@ onUnmounted(() => clearInterval(pollTimer))
       <!-- Stats cards -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
-          <div class="text-gray-500 text-xs mb-1">Écritures (total)</div>
+          <div class="text-gray-500 text-xs mb-1">{{ t('adminView.totalWrites') }}</div>
           <div class="text-white text-2xl font-bold font-mono">{{ nsStats.totalWrites }}</div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
-          <div class="text-gray-500 text-xs mb-1">Écritures (auj.)</div>
+          <div class="text-gray-500 text-xs mb-1">{{ t('adminView.writesToday') }}</div>
           <div class="text-blue-400 text-2xl font-bold font-mono">{{ nsStats.writesToday }}</div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
-          <div class="text-gray-500 text-xs mb-1">Connexions réussies</div>
+          <div class="text-gray-500 text-xs mb-1">{{ t('adminView.successLogins') }}</div>
           <div class="text-green-400 text-2xl font-bold font-mono">{{ nsStats.totalLogins }}</div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
-          <div class="text-gray-500 text-xs mb-1">Échecs de login</div>
+          <div class="text-gray-500 text-xs mb-1">{{ t('adminView.failedLogins') }}</div>
           <div class="text-red-400 text-2xl font-bold font-mono">{{ nsStats.totalLoginFails }}</div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
-          <div class="text-gray-500 text-xs mb-1">Entrées de log</div>
+          <div class="text-gray-500 text-xs mb-1">{{ t('adminView.logEntries') }}</div>
           <div class="text-gray-300 text-2xl font-bold font-mono">{{ nsStats.logsCount }}</div>
         </div>
       </div>
 
       <!-- Settings panel -->
       <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">Paramètres</h2>
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">{{ t('adminView.settings') }}</h2>
         <!-- Feedback toast -->
         <transition name="fade">
           <div
@@ -588,8 +615,8 @@ onUnmounted(() => clearInterval(pollTimer))
               />
             </button>
             <div>
-              <div class="text-sm text-gray-200 group-hover:text-white transition">Journalisation</div>
-              <div class="text-xs text-gray-600">Enregistre les écritures et connexions</div>
+              <div class="text-sm text-gray-200 group-hover:text-white transition">{{ t('adminView.logging') }}</div>
+              <div class="text-xs text-gray-600">{{ t('adminView.loggingDesc') }}</div>
             </div>
           </label>
 
@@ -610,33 +637,33 @@ onUnmounted(() => clearInterval(pollTimer))
               />
             </button>
             <div>
-              <div class="text-sm text-gray-200 group-hover:text-white transition">Édition activée</div>
-              <div class="text-xs text-gray-600">Désactiver = mode lecture seule sur toute l'UI</div>
+              <div class="text-sm text-gray-200 group-hover:text-white transition">{{ t('adminView.editingEnabled') }}</div>
+              <div class="text-xs text-gray-600">{{ t('adminView.editingDesc') }}</div>
             </div>
           </label>
 
         </div>
         <div v-if="!localSettings.editingEnabled" class="mt-4 px-3 py-2 bg-red-950 border border-red-800 rounded text-red-300 text-xs">
-          ⚠ Mode lecture seule actif — toutes les actions d'écriture sont bloquées
+          ⚠ {{ t('adminView.readOnlyActive') }}
         </div>
       </div>
 
       <!-- Persistence panel -->
       <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 space-y-4">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Persistance des logs</h2>
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider">{{ t('adminView.logPersistence') }}</h2>
 
         <!-- File save row -->
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div class="text-xs">
             <div class="text-gray-400">
-              Fichier :
+              {{ t('adminView.file') }}
               <span class="text-gray-300 font-mono ml-1">{{ saveStatus?.file ?? '…' }}</span>
             </div>
             <div class="text-gray-600 mt-0.5">
-              Dernière sauvegarde : <span :class="saveStatus?.lastSavedAt ? 'text-green-500' : 'text-gray-500'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
-              <span v-if="saveStatus?.count != null" class="ml-2 text-gray-700">· {{ saveStatus.count }} entrée(s)</span>
+              {{ t('adminView.lastSaved') }} <span :class="saveStatus?.lastSavedAt ? 'text-green-500' : 'text-gray-500'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
+              <span v-if="saveStatus?.count != null" class="ml-2 text-gray-700">· {{ t('adminView.entryCount', { n: saveStatus.count }) }}</span>
             </div>
-            <div class="text-gray-700 mt-0.5 text-xs">Sauvegarde automatique au changement de namespace et à l'arrêt du BFF.</div>
+            <div class="text-gray-700 mt-0.5 text-xs">{{ t('adminView.autoSaveNote') }}</div>
           </div>
           <button
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition shrink-0"
@@ -651,15 +678,15 @@ onUnmounted(() => clearInterval(pollTimer))
             <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            {{ saving ? 'Sauvegarde…' : 'Sauvegarder maintenant' }}
+            {{ saving ? t('adminView.saving') : t('adminView.saveNow') }}
           </button>
         </div>
 
         <!-- Local JSON download -->
         <div class="border-t border-gray-800 pt-4 flex items-center justify-between">
           <div>
-            <div class="text-gray-400 text-xs">Exporter localement (JSON)</div>
-            <div class="text-gray-700 text-xs mt-0.5">{{ nsScopedLogs.length }} entrée(s) · namespace actif</div>
+            <div class="text-gray-400 text-xs">{{ t('adminView.exportJson') }}</div>
+            <div class="text-gray-700 text-xs mt-0.5">{{ t('adminView.exportJsonDesc', { n: nsScopedLogs.length }) }}</div>
           </div>
           <button
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition shrink-0"
@@ -668,14 +695,14 @@ onUnmounted(() => clearInterval(pollTimer))
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-blue-400">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            Télécharger JSON
+            {{ t('adminView.downloadJson') }}
           </button>
         </div>
 
         <!-- Vault export row -->
         <div class="border-t border-gray-800 pt-4">
           <div class="flex items-center justify-between mb-3">
-            <div class="text-gray-400 text-xs">Exporter la session vers Vault</div>
+            <div class="text-gray-400 text-xs">{{ t('adminView.exportVault') }}</div>
             <span class="text-purple-400 text-xs font-mono">{{ vault.currentNamespaceLabel }}</span>
           </div>
 
@@ -701,7 +728,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <span
                 v-if="exportPresetActive"
                 class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none select-none"
-              >répertoire mémorisé</span>
+              >{{ t('adminView.exportVaultDir') }}</span>
             </div>
             <button
               class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition shrink-0"
@@ -713,7 +740,7 @@ onUnmounted(() => clearInterval(pollTimer))
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
               </svg>
-              {{ exporting ? 'Export…' : 'Exporter' }}
+              {{ exporting ? t('adminView.exporting') : t('adminView.export') }}
             </button>
           </div>
           <transition name="fade">
@@ -734,7 +761,7 @@ onUnmounted(() => clearInterval(pollTimer))
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
           <div class="flex gap-1">
             <button
-              v-for="tab in ([{ id: 'all', label: 'Tout' }, { id: 'writes', label: 'Écritures' }, { id: 'logins', label: 'Connexions' }] as const)"
+              v-for="tab in ([{ id: 'all', label: t('adminView.tabAll') }, { id: 'writes', label: t('adminView.tabWrites') }, { id: 'logins', label: t('adminView.tabLogins') }] as const)"
               :key="tab.id"
               type="button"
               class="px-3 py-1 text-xs rounded transition"
@@ -742,22 +769,22 @@ onUnmounted(() => clearInterval(pollTimer))
               @click="activeTab = tab.id"
             >{{ tab.label }}</button>
           </div>
-          <span class="text-gray-600 text-xs">{{ filteredLogs.length }} entrée(s)</span>
+          <span class="text-gray-600 text-xs">{{ t('adminView.entryCount', { n: filteredLogs.length }) }}</span>
         </div>
 
         <!-- Table -->
         <div v-if="filteredLogs.length === 0" class="px-4 py-8 text-center text-gray-600 text-sm">
-          Aucune entrée pour le moment
+          {{ t('adminView.noEntries') }}
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-xs font-mono">
             <thead>
               <tr class="border-b border-gray-800 text-gray-600 uppercase tracking-wider">
-                <th class="text-left px-4 py-2 w-36">Heure</th>
-                <th class="text-left px-3 py-2 w-28">Type</th>
-                <th class="text-left px-3 py-2 w-32">Namespace</th>
-                <th class="text-left px-3 py-2">Détails</th>
-                <th class="text-left px-3 py-2 w-16">Statut</th>
+                <th class="text-left px-4 py-2 w-36">{{ t('adminView.timeHeader') }}</th>
+                <th class="text-left px-3 py-2 w-28">{{ t('adminView.typeHeader') }}</th>
+                <th class="text-left px-3 py-2 w-32">{{ t('adminView.namespaceHeader') }}</th>
+                <th class="text-left px-3 py-2">{{ t('adminView.detailsHeader') }}</th>
+                <th class="text-left px-3 py-2 w-16">{{ t('adminView.statusHeader') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -782,7 +809,7 @@ onUnmounted(() => clearInterval(pollTimer))
                       <span v-if="diffSummary(entry).modified" class="ml-1 px-1 py-0.5 rounded bg-yellow-950 text-yellow-300 text-xs">~{{ diffSummary(entry).modified }}</span>
                       <span v-if="diffSummary(entry).removed" class="ml-1 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs">-{{ diffSummary(entry).removed }}</span>
                     </template>
-                    <span v-else class="text-gray-600 ml-1">({{ entry.keysCount }} clé(s))</span>
+                    <span v-else class="text-gray-600 ml-1">{{ t('adminView.keysCount', { n: entry.keysCount ?? 0 }) }}</span>
                   </template>
                   <template v-else-if="entry.type === 'login_ok'">
                     <span class="text-gray-300">{{ entry.display_name || '—' }}</span>
@@ -806,7 +833,7 @@ onUnmounted(() => clearInterval(pollTimer))
                     </span>
                     <button
                       class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-red-400 rounded transition-colors"
-                      title="Supprimer cette entrée du journal"
+                      :title="t('adminView.deleteLogEntry')"
                       @click.stop="deleteLogEntry(entry.id)"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
@@ -852,7 +879,7 @@ onUnmounted(() => clearInterval(pollTimer))
             <span class="font-mono text-sm" :class="selectedLog.type === 'delete' ? 'text-red-400' : 'text-green-400'">{{ selectedLog.path }}</span>
             <span class="text-gray-600 text-xs">mount: {{ selectedLog.mount }}</span>
             <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded">
-              ✗ Échec — {{ selectedLog.error }}
+              ✗ {{ t('adminView.failure') }} — {{ selectedLog.error }}
             </span>
           </div>
 
@@ -860,21 +887,21 @@ onUnmounted(() => clearInterval(pollTimer))
           <div class="flex gap-2 flex-wrap">
             <template v-if="diffSummary(selectedLog).added">
               <span class="px-2 py-0.5 rounded bg-green-950 border border-green-800 text-green-400 text-xs">
-                +{{ diffSummary(selectedLog).added }} ajouté(s)
+                {{ t('adminView.added', { n: diffSummary(selectedLog).added }) }}
               </span>
             </template>
             <template v-if="diffSummary(selectedLog).modified">
               <span class="px-2 py-0.5 rounded bg-yellow-950 border border-yellow-800 text-yellow-300 text-xs">
-                ~{{ diffSummary(selectedLog).modified }} modifié(s)
+                {{ t('adminView.modified', { n: diffSummary(selectedLog).modified }) }}
               </span>
             </template>
             <template v-if="diffSummary(selectedLog).removed">
               <span class="px-2 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 text-xs">
-                -{{ diffSummary(selectedLog).removed }} supprimé(s)
+                {{ t('adminView.removed', { n: diffSummary(selectedLog).removed }) }}
               </span>
             </template>
             <template v-if="!diffSummary(selectedLog).added && !diffSummary(selectedLog).modified && !diffSummary(selectedLog).removed">
-              <span class="text-gray-600 text-xs">Aucune différence détectée</span>
+              <span class="text-gray-600 text-xs">{{ t('adminView.noDiffDetected') }}</span>
             </template>
           </div>
 
@@ -883,9 +910,9 @@ onUnmounted(() => clearInterval(pollTimer))
             <table class="w-full text-xs font-mono">
               <thead>
                 <tr class="bg-gray-800 border-b border-gray-700 text-gray-500 uppercase tracking-wider">
-                  <th class="text-left px-4 py-2 w-1/3">Clé</th>
-                  <th class="text-left px-3 py-2 w-1/3">Avant</th>
-                  <th class="text-left px-3 py-2 w-1/3">Après</th>
+                  <th class="text-left px-4 py-2 w-1/3">{{ t('adminView.modalKeyHeader') }}</th>
+                  <th class="text-left px-3 py-2 w-1/3">{{ t('adminView.modalBeforeHeader') }}</th>
+                  <th class="text-left px-3 py-2 w-1/3">{{ t('adminView.modalAfterHeader') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -907,7 +934,7 @@ onUnmounted(() => clearInterval(pollTimer))
             </table>
           </div>
           <div v-else class="text-gray-600 text-xs">
-            Aucun détail disponible — entrée antérieure à la v2 du log.
+            {{ t('adminView.noDetails') }}
           </div>
         </template>
 
@@ -920,39 +947,39 @@ onUnmounted(() => clearInterval(pollTimer))
               -{{ selectedLog.deletedCount ?? 0 }} secret(s)
             </span>
             <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded">
-              ✗ Échec — {{ selectedLog.error }}
+              ✗ {{ t('adminView.failure') }} — {{ selectedLog.error }}
             </span>
           </div>
           <div v-if="selectedLog.deletedPaths?.length" class="border border-gray-700 rounded overflow-hidden">
-            <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 text-gray-500 text-xs uppercase tracking-wider">Chemins supprimés</div>
+            <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 text-gray-500 text-xs uppercase tracking-wider">{{ t('adminView.deletedPaths') }}</div>
             <div
               v-for="p in selectedLog.deletedPaths"
               :key="p"
               class="px-4 py-1.5 border-b border-gray-800 last:border-0 text-xs font-mono text-red-300/80 bg-red-950/20"
             >- {{ p }}</div>
           </div>
-          <div v-else class="text-gray-600 text-xs">Aucun chemin supprimé enregistré.</div>
+          <div v-else class="text-gray-600 text-xs">{{ t('adminView.noDeletedPaths') }}</div>
         </template>
 
         <!-- Login detail -->
         <template v-else>
           <div class="space-y-2 text-sm">
             <div class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">Namespace</span>
+              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.namespaceField') }}</span>
               <span class="text-gray-300 font-mono text-xs break-all">{{ selectedLog.namespace || '—' }}</span>
             </div>
             <div v-if="selectedLog.display_name" class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">Utilisateur</span>
+              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.userField') }}</span>
               <span class="text-gray-300">{{ selectedLog.display_name }}</span>
             </div>
             <div v-if="selectedLog.error" class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">Erreur</span>
+              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.errorField') }}</span>
               <span class="text-red-400 text-xs font-mono break-all">{{ selectedLog.error }}</span>
             </div>
             <div class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">Statut</span>
+              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.statusField') }}</span>
               <span :class="selectedLog.success ? 'text-green-400' : 'text-red-400'">
-                {{ selectedLog.success ? 'Succès' : 'Échec' }}
+                {{ selectedLog.success ? t('adminView.success') : t('adminView.failure') }}
               </span>
             </div>
           </div>
@@ -969,38 +996,38 @@ onUnmounted(() => clearInterval(pollTimer))
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition"
             :class="restoring ? 'bg-gray-700 text-gray-400' : restoreSuccess ? 'bg-green-900 text-green-300' : 'bg-amber-900/60 hover:bg-amber-800/80 text-amber-300 border border-amber-800'"
             :disabled="restoring"
-            :title="selectedLog.type === 'write' ? 'Écraser avec l\'état précédent (rollback)' : 'Restaurer le secret supprimé'"
+            :title="selectedLog.type === 'write' ? t('adminView.rollbackTooltip') : t('adminView.restoreTooltip')"
             @click="restoreEntry(selectedLog)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
             </svg>
-            {{ restoreSuccess ? '✓ Restauré' : restoring ? 'Restauration…' : selectedLog.type === 'write' ? 'Rollback' : 'Restaurer' }}
+            {{ restoreSuccess ? t('adminView.restored') : restoring ? t('adminView.restoring') : selectedLog.type === 'write' ? t('adminView.rollback') : t('adminView.restore') }}
           </button>
           <button
             v-else-if="selectedLog.type === 'delete_folder' && Object.keys(selectedLog.before ?? {}).length > 0"
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition"
             :class="restoring ? 'bg-gray-700 text-gray-400' : restoreSuccess ? 'bg-green-900 text-green-300' : 'bg-amber-900/60 hover:bg-amber-800/80 text-amber-300 border border-amber-800'"
             :disabled="restoring"
-            title="Restaurer tous les secrets supprimés"
+            :title="t('adminView.restoreAllTooltip')"
             @click="restoreEntry(selectedLog)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
             </svg>
-            {{ restoreSuccess ? '✓ Restauré' : restoring ? 'Restauration…' : `Restaurer (${selectedLog.deletedCount} secrets)` }}
+            {{ restoreSuccess ? t('adminView.restored') : restoring ? t('adminView.restoring') : t('adminView.restoreSecretsCount', { n: selectedLog.deletedCount }) }}
           </button>
           <span v-if="restoreError" class="text-red-400 text-xs">⚠ {{ restoreError }}</span>
         </div>
         <button
           class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded text-gray-600 hover:text-red-400 hover:bg-red-950/40 transition border border-gray-800 hover:border-red-900"
-          title="Supprimer cette entrée du journal"
+          :title="t('adminView.deleteLogEntry')"
           @click="deleteLogEntry(selectedLog.id)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
           </svg>
-          Supprimer log
+          {{ t('adminView.deleteLog') }}
         </button>
       </div>
 
@@ -1017,7 +1044,7 @@ onUnmounted(() => clearInterval(pollTimer))
 
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <h2 class="text-white font-semibold text-sm">⚙ Modifier la configuration</h2>
+        <h2 class="text-white font-semibold text-sm">{{ t('adminView.editConfigTitle') }}</h2>
         <button class="text-gray-500 hover:text-gray-300 text-lg" @click="showConfigEdit = false">✕</button>
       </div>
 
@@ -1029,28 +1056,55 @@ onUnmounted(() => clearInterval(pollTimer))
           ⚠ {{ configError }}
         </div>
 
-        <!-- Organization -->
-        <div class="space-y-1.5">
-          <label class="block text-gray-400 text-xs font-semibold">Organisation</label>
-          <div class="flex gap-2">
-            <span class="px-3 py-1.5 bg-gray-950 border border-gray-700 text-gray-600 text-xs rounded">
-              https://vault.factory.
-            </span>
-            <input
-              v-model="editOrg"
-              type="text"
-              placeholder="ex: company"
-              class="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 text-xs rounded focus:outline-none focus:border-green-600"
-            />
-            <span class="px-3 py-1.5 bg-gray-950 border border-gray-700 text-gray-600 text-xs rounded">
-              .cloud
-            </span>
+        <!-- Vault URL -->
+        <div class="space-y-2">
+          <label class="block text-gray-400 text-xs font-semibold">{{ t('adminView.orgLabel') }}</label>
+
+          <!-- Mode toggle -->
+          <div class="flex gap-1">
+            <button
+              type="button"
+              class="px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer"
+              :class="editMode === 'quick' ? 'bg-green-800 text-green-200' : 'bg-gray-800 text-gray-400 hover:text-gray-200'"
+              @click="switchEditMode('quick')"
+            >{{ t('adminView.modeQuick') }}</button>
+            <button
+              type="button"
+              class="px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer"
+              :class="editMode === 'custom' ? 'bg-green-800 text-green-200' : 'bg-gray-800 text-gray-400 hover:text-gray-200'"
+              @click="switchEditMode('custom')"
+            >{{ t('adminView.modeCustom') }}</button>
           </div>
+
+          <!-- Quick mode -->
+          <div v-if="editMode === 'quick'" class="space-y-1">
+            <div class="flex gap-1 items-center">
+              <span class="px-2 py-1.5 bg-gray-900 border border-gray-700 text-gray-500 text-xs rounded-l select-none whitespace-nowrap">https://vault.factory.</span>
+              <input
+                v-model="editOrg"
+                type="text"
+                :placeholder="t('adminView.orgPlaceholder')"
+                class="w-28 px-2 py-1.5 bg-gray-950 border-y border-gray-700 text-green-300 text-xs font-mono focus:outline-none focus:border-y-green-600"
+                @input="onEditOrgInput"
+              />
+              <span class="px-2 py-1.5 bg-gray-900 border border-gray-700 text-gray-500 text-xs rounded-r select-none whitespace-nowrap">.cloud</span>
+            </div>
+            <p v-if="editVaultAddr" class="text-green-800 font-mono text-xs truncate">{{ editVaultAddr }}</p>
+          </div>
+
+          <!-- Custom mode -->
+          <input
+            v-else
+            v-model="editVaultAddr"
+            type="url"
+            :placeholder="t('adminView.vaultUrlPlaceholder')"
+            class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 text-xs font-mono rounded focus:outline-none focus:border-green-600"
+          />
         </div>
 
         <!-- Mount -->
         <div class="space-y-1.5">
-          <label class="block text-gray-400 text-xs font-semibold">KV Mount</label>
+          <label class="block text-gray-400 text-xs font-semibold">{{ t('adminView.kvMountLabel') }}</label>
           <input
             v-model="editMount"
             type="text"
@@ -1062,26 +1116,26 @@ onUnmounted(() => clearInterval(pollTimer))
         <!-- Namespaces -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <label class="text-gray-400 text-xs font-semibold">Namespaces <span class="text-red-400">*</span></label>
+            <label class="text-gray-400 text-xs font-semibold">{{ t('adminView.namespacesLabel') }} <span class="text-red-400">*</span></label>
             <button
               type="button"
               class="text-green-400 hover:text-green-300 text-xs font-semibold"
               @click="addNamespaceRow"
-            >+ Ajouter</button>
+            >{{ t('adminView.addNamespace') }}</button>
           </div>
           <div class="space-y-1.5 max-h-48 overflow-y-auto">
             <div v-for="(ns, i) in editNamespaces" :key="i" class="flex gap-2 items-center">
               <input
                 v-model="ns.label"
                 type="text"
-                placeholder="Label"
+                :placeholder="t('adminView.labelPlaceholder')"
                 :disabled="ns.namespace === vault.currentNamespace"
                 class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed"
               />
               <input
                 v-model="ns.namespace"
                 type="text"
-                placeholder="company/path/..."
+                :placeholder="t('adminView.nsPathPlaceholder')"
                 :disabled="ns.namespace === vault.currentNamespace"
                 class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed font-mono"
               />
@@ -1090,7 +1144,7 @@ onUnmounted(() => clearInterval(pollTimer))
                 v-if="ns.namespace === vault.currentNamespace"
                 type="button"
                 class="text-gray-600 hover:text-orange-400 p-1 transition shrink-0 cursor-pointer"
-                title="Déconnecter ce namespace (token supprimé)"
+                :title="t('adminView.disconnectNs')"
                 @click="logoutNamespace(ns.namespace)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -1102,7 +1156,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <button
                 type="button"
                 class="text-gray-600 hover:text-red-400 p-1 transition shrink-0 cursor-pointer"
-                :title="ns.namespace === vault.currentNamespace ? 'Supprimer (namespace connecté)' : 'Supprimer'"
+                :title="ns.namespace === vault.currentNamespace ? t('adminView.deleteNsConnected') : t('adminView.deleteNs')"
                 @click="removeNamespaceRow(editNamespaces.indexOf(ns))"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -1114,7 +1168,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <div
                 v-if="ns.namespace === vault.currentNamespace"
                 class="text-green-400 p-1 shrink-0 flex items-center justify-center"
-                title="✓ Connecté"
+                :title="t('adminView.connected')"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-4 h-4">
                   <path fill-rule="evenodd" d="M19.915 11.086a.75.75 0 00-1.06-1.061l-6.387 6.387L7.06 10.061a.75.75 0 00-1.06 1.061l5.03 5.03a.75.75 0 001.06 0l7.06-7.06z" clip-rule="evenodd" />
@@ -1123,7 +1177,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <div
                 v-else
                 class="text-gray-600 p-1 shrink-0 flex items-center justify-center"
-                title="Non connecté"
+                :title="t('adminView.notConnected')"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1131,7 +1185,7 @@ onUnmounted(() => clearInterval(pollTimer))
               </div>
             </div>
             <div v-if="editNamespaces.length === 0" class="text-gray-600 text-xs py-2 text-center">
-              Aucun namespace configuré
+              {{ t('adminView.noNamespaces') }}
             </div>
           </div>
         </div>
@@ -1144,14 +1198,14 @@ onUnmounted(() => clearInterval(pollTimer))
           class="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition cursor-pointer"
           @click="showConfigEdit = false"
         >
-          Annuler
+          {{ t('adminView.cancelButton') }}
         </button>
         <button
           class="flex-1 px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-semibold transition cursor-pointer"
           :disabled="configSaving"
           @click="saveConfig"
         >
-          {{ configSaving ? 'Sauvegarde…' : 'Sauvegarder' }}
+          {{ configSaving ? t('adminView.saveButtonSaving') : t('adminView.saveButton') }}
         </button>
       </div>
 
@@ -1169,7 +1223,7 @@ onUnmounted(() => clearInterval(pollTimer))
       <!-- Header -->
       <div class="px-5 py-4 border-b border-gray-700">
         <h3 class="text-white font-semibold text-sm">
-          {{ confirmAction.type === 'delete' ? '⚠ Supprimer le namespace' : '🚪 Déconnecter' }}
+          {{ confirmAction.type === 'delete' ? t('adminView.confirmDeleteNsTitle') : t('adminView.confirmLogoutTitle') }}
         </h3>
       </div>
 
@@ -1177,13 +1231,13 @@ onUnmounted(() => clearInterval(pollTimer))
       <div class="px-5 py-4 space-y-3">
         <p class="text-gray-400 text-sm">
           <template v-if="confirmAction.type === 'delete'">
-            Êtes-vous sûr de vouloir <span class="font-semibold text-red-400">supprimer</span> le namespace <span class="font-mono text-gray-300">{{ confirmAction.label || confirmAction.namespace }}</span> ?
-            <span class="block text-xs text-gray-500 mt-2">Le namespace sera retiré de la configuration et le token sera supprimé.</span>
-            <span v-if="confirmAction.namespace === vault.currentNamespace" class="block text-xs text-orange-400 mt-2">⚠ C'est le namespace actuellement connecté. Vous serez basculé vers un autre namespace.</span>
+            {{ t('adminView.confirmDeleteNsMsg', { action: t('adminView.confirmDelete').toLowerCase(), label: confirmAction.label || confirmAction.namespace }) }}
+            <span class="block text-xs text-gray-500 mt-2">{{ t('adminView.confirmDeleteNsDetail') }}</span>
+            <span v-if="confirmAction.namespace === vault.currentNamespace" class="block text-xs text-orange-400 mt-2">{{ t('adminView.confirmDeleteNsWarning') }}</span>
           </template>
           <template v-else>
-            Êtes-vous sûr de vouloir <span class="font-semibold text-orange-400">déconnecter</span> le namespace <span class="font-mono text-gray-300">{{ confirmAction.label || confirmAction.namespace }}</span> ?
-            <span class="block text-xs text-gray-500 mt-2">Seul le token sera supprimé. Le namespace reste configuré.</span>
+            {{ t('adminView.confirmLogoutMsg', { label: confirmAction.label || confirmAction.namespace }) }}
+            <span class="block text-xs text-gray-500 mt-2">{{ t('adminView.confirmLogoutDetail') }}</span>
           </template>
         </p>
       </div>
@@ -1195,7 +1249,7 @@ onUnmounted(() => clearInterval(pollTimer))
           :disabled="confirmLoading"
           @click="showConfirmDialog = false"
         >
-          Annuler
+          {{ t('adminView.cancelButton') }}
         </button>
         <button
           class="flex-1 px-3 py-1.5 rounded text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1205,7 +1259,7 @@ onUnmounted(() => clearInterval(pollTimer))
           :disabled="confirmLoading"
           @click="executeConfirmAction"
         >
-          {{ confirmLoading ? 'Traitement…' : (confirmAction.type === 'delete' ? 'Supprimer' : 'Déconnecter') }}
+          {{ confirmLoading ? t('adminView.processing') : (confirmAction.type === 'delete' ? t('adminView.confirmDelete') : t('adminView.confirmDisconnect')) }}
         </button>
       </div>
 
