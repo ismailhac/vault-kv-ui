@@ -145,7 +145,7 @@ function handleManualLogin() {
         <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 text-gray-600 text-xs">
           <div class="flex items-center gap-2">
             <span class="text-green-700 font-bold">⬡ {{ t('app.vaultAdmin') }}</span>
-            <span>v1.0.0</span>
+            <span v-if="vault.appVersion">v{{ vault.appVersion }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <span>{{ t('app.builtWith') }}</span>
