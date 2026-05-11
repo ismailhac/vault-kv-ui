@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.3.0] — 2026-05-11
+### Features
+- nested-json-values: Display JSON object/array secret values as collapsible accordions with inline leaf editing, key renaming, nested diffs, and type-aware smart controls
+
 ## [1.2.0] - 2026-05-07
 
 ### Added

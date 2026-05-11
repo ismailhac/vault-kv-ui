@@ -55,7 +55,7 @@ export const useVaultStore = defineStore('vault', () => {
   const listError = ref<string | null>(null)
 
   // --- Selected secret ---
-  const selectedSecret = ref<{ path: string; data: Record<string, string>; metadata: Record<string, unknown> } | null>(null)
+  const selectedSecret = ref<{ path: string; data: Record<string, unknown>; metadata: Record<string, unknown> } | null>(null)
   const secretLoading = ref(false)
   const secretError = ref<string | null>(null)
 

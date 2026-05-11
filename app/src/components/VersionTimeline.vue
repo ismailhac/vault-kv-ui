@@ -2,6 +2,21 @@
 import { ref, computed, watch } from 'vue'
 import type { VersionMeta } from '../stores/vault'
 import { useVaultStore } from '../stores/vault'
+import NestedDiffRow from './NestedDiffRow.vue'
+
+function parseJsonValue(val: unknown): { isNested: boolean; parsed: unknown } {
+  if (val !== null && typeof val === 'object') return { isNested: true, parsed: val }
+  if (typeof val === 'string') {
+    const t = val.trim()
+    if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
+      try {
+        const p = JSON.parse(t)
+        if (typeof p === 'object' && p !== null) return { isNested: true, parsed: p }
+      } catch {}
+    }
+  }
+  return { isNested: false, parsed: val }
+}
 
 const props = defineProps<{
   path: string
@@ -87,15 +102,35 @@ const diffLines = computed<DiffLine[]>(() => {
   })
 })
 
-const diffSymbol: Record<DiffStatus, string> = { unchanged: '=', modified: '~', added: '+', removed: '−' }
+// Expanded nested-value keys in the "current version" plain KV display
+const expandedCurrentKeys = ref<Set<string>>(new Set())
+function toggleCurrentKey(key: string) {
+  const s = new Set(expandedCurrentKeys.value)
+  s.has(key) ? s.delete(key) : s.add(key)
+  expandedCurrentKeys.value = s
+}
+watch(() => expandedVersion.value, () => { expandedCurrentKeys.value = new Set() })
 
-function rowClass(status: DiffStatus) {
-  return {
-    'bg-green-950 text-green-300': status === 'added',
-    'bg-red-950 text-red-300': status === 'removed',
-    'bg-yellow-950 text-yellow-200': status === 'modified',
-    'text-gray-500': status === 'unchanged',
+function nestedBadge(parsed: unknown): string {
+  if (Array.isArray(parsed)) {
+    const n = parsed.length
+    return `[${n} élément${n > 1 ? 's' : ''}]`
   }
+  if (typeof parsed === 'object' && parsed !== null) {
+    const n = Object.keys(parsed).length
+    return `{${n} clé${n > 1 ? 's' : ''}}`
+  }
+  return ''
+}
+
+function nestedEntries(parsed: unknown): [string, unknown][] {
+  if (Array.isArray(parsed)) return parsed.map((v, i) => [String(i), v])
+  if (typeof parsed === 'object' && parsed !== null) return Object.entries(parsed as Record<string, unknown>)
+  return []
+}
+
+function toNestedStr(v: unknown): string {
+  return typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v ?? '')
 }
 </script>
 
@@ -177,14 +212,49 @@ function rowClass(status: DiffStatus) {
                   ⚠ {{ expandedVersionError }}
                 </div>
 
-                <!-- Current version: plain KV (no diff needed) -->
+                <!-- Current version: plain KV with nested JSON accordion -->
                 <template v-else-if="v.version === vault.versionCurrentVersion">
                   <table class="w-full text-xs font-mono">
                     <tbody>
-                      <tr v-for="(val, key) in expandedVersionData" :key="key" class="border-b border-gray-800 last:border-0">
-                        <td class="py-1.5 px-3 text-blue-300 w-1/3">{{ key }}</td>
-                        <td class="py-1.5 px-3 text-gray-300 break-all">{{ val }}</td>
-                      </tr>
+                      <template v-for="(val, key) in expandedVersionData" :key="key">
+                        <!-- Nested JSON value: accordion -->
+                        <tr
+                          v-if="parseJsonValue(val).isNested"
+                          class="border-b border-gray-800 last:border-0 cursor-pointer select-none"
+                          @click="toggleCurrentKey(String(key))"
+                        >
+                          <td class="py-1.5 px-3 text-blue-300 w-1/3">
+                            <div class="flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                class="w-3 h-3 shrink-0 transition-transform text-gray-500"
+                                :class="expandedCurrentKeys.has(String(key)) ? 'rotate-90' : ''">
+                                <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd"/>
+                              </svg>
+                              {{ key }}
+                            </div>
+                          </td>
+                          <td class="py-1.5 px-3 text-gray-500">
+                            {{ nestedBadge(parseJsonValue(val).parsed) }}
+                          </td>
+                        </tr>
+                        <!-- Expanded nested content rendered via NestedDiffRow (status=unchanged shows the tree) -->
+                        <template v-if="parseJsonValue(val).isNested && expandedCurrentKeys.has(String(key))">
+                          <NestedDiffRow
+                            v-for="([ck, cv]) in nestedEntries(parseJsonValue(val).parsed)"
+                            :key="ck"
+                            :diff-key="ck"
+                            :before="toNestedStr(cv)"
+                            :after="toNestedStr(cv)"
+                            status="unchanged"
+                            :depth="1"
+                          />
+                        </template>
+                        <!-- Plain scalar value -->
+                        <tr v-else-if="!parseJsonValue(val).isNested" class="border-b border-gray-800 last:border-0">
+                          <td class="py-1.5 px-3 text-blue-300 w-1/3">{{ key }}</td>
+                          <td class="py-1.5 px-3 text-gray-300 break-all">{{ val }}</td>
+                        </tr>
+                      </template>
                       <tr v-if="Object.keys(expandedVersionData).length === 0">
                         <td class="py-2 px-3 text-gray-600 italic">Secret vide</td>
                       </tr>
@@ -204,23 +274,15 @@ function rowClass(status: DiffStatus) {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr
+                      <NestedDiffRow
                         v-for="line in diffLines"
                         :key="line.key"
-                        class="border-b border-gray-800 last:border-0"
-                        :class="rowClass(line.status)"
-                      >
-                        <td class="py-1.5 px-3 font-semibold break-all">{{ line.key }}</td>
-                        <td class="py-1.5 pr-3 break-all opacity-90">
-                          <span v-if="line.historical !== undefined">{{ line.historical }}</span>
-                          <span v-else class="italic opacity-40">—</span>
-                        </td>
-                        <td class="py-1.5 pr-3 break-all opacity-90">
-                          <span v-if="line.current !== undefined">{{ line.current }}</span>
-                          <span v-else class="italic opacity-40">—</span>
-                        </td>
-                        <td class="py-1.5 px-3 text-right opacity-50">{{ diffSymbol[line.status] }}</td>
-                      </tr>
+                        :diff-key="line.key"
+                        :before="line.historical"
+                        :after="line.current"
+                        :status="line.status"
+                        :depth="0"
+                      />
                     </tbody>
                   </table>
 

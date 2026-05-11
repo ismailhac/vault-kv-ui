@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, provide } from 'vue'
 
 const vFocus = { mounted: (el: HTMLElement) => (el as HTMLInputElement).focus() }
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import VersionTimeline from './VersionTimeline.vue'
+import NestedJsonField from './NestedJsonField.vue'
+import SmartValueCell from './SmartValueCell.vue'
+import SmartEditValue from './SmartEditValue.vue'
 
 const vault = useVaultStore()
 const editingAllowed = computed(() => vault.editingEnabled)
+
+// Shared slot: only one NestedJsonField instance may be in edit mode at a time.
+// Each instance writes its own Symbol here when it starts editing; all others watch
+// and cancel themselves when the value changes away from their own Symbol.
+const activeNestedEdit = ref<symbol | null>(null)
+provide('activeNestedEdit', activeNestedEdit)
 
 // ---- JSON bulk edit mode (advanced) ----
 const editMode = ref(false)
@@ -78,6 +87,7 @@ const rowSaveSuccess = ref<string | null>(null) // new key name after successful
 
 function startEditRow(key: string, val: string) {
   if (!editingAllowed.value || editMode.value) return
+  activeNestedEdit.value = null  // cancel any open nested field edit
   editingRow.value = key
   editingRowKey.value = key
   editingRowValue.value = val
@@ -89,13 +99,22 @@ function cancelEditRow() {
   rowEditError.value = null
 }
 
+function cancelOnRowBlur(e: FocusEvent) {
+  if (!editingRow.value) return
+  const rel = e.relatedTarget as HTMLElement | null
+  if (rel && (e.currentTarget as HTMLElement).contains(rel)) return
+  cancelEditRow()
+}
+
 async function saveRow(originalKey: string) {
   if (!vault.selectedSecret) return
   const newKey = editingRowKey.value.trim()
   if (!newKey) { cancelEditRow(); return }
 
   // Skip write if nothing actually changed
-  if (newKey === originalKey && editingRowValue.value === vault.selectedSecret.data[originalKey]) {
+  const currentVal = vault.selectedSecret.data[originalKey]
+  const currentStr = currentVal !== null && typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal ?? '')
+  if (newKey === originalKey && editingRowValue.value === currentStr) {
     cancelEditRow()
     return
   }
@@ -106,7 +125,8 @@ async function saveRow(originalKey: string) {
   // Rebuild preserving key order, renaming in place if needed
   const newData: Record<string, string> = {}
   for (const [k, v] of Object.entries(vault.selectedSecret.data)) {
-    newData[k === originalKey ? newKey : k] = k === originalKey ? editingRowValue.value : v
+    const strV = v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
+    newData[k === originalKey ? newKey : k] = k === originalKey ? editingRowValue.value : strV
   }
 
   try {
@@ -130,7 +150,7 @@ function handleRestore(historicalData: Record<string, string>) {
 // ---- Delete key (via ConfirmDiffModal) ----
 function removeKey(key: string) {
   if (!vault.selectedSecret) return
-  const without = { ...vault.selectedSecret.data }
+  const without = stringifyData(vault.selectedSecret.data)
   delete without[key]
   pendingData.value = without
   showDiff.value = true
@@ -158,7 +178,110 @@ watch(() => vault.selectedSecret?.path, () => {
   rowSaveSuccess.value = null
 })
 
-const currentBefore = computed(() => vault.selectedSecret?.data ?? {})
+// Stringify unknown values so ConfirmDiffModal (Record<string,string>) works correctly
+function stringifyData(data: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [
+      k,
+      v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
+    ])
+  )
+}
+
+const currentBefore = computed<Record<string, string>>(() =>
+  vault.selectedSecret ? stringifyData(vault.selectedSecret.data) : {}
+)
+
+// Detect whether a value should render as a nested accordion
+function parseJsonValue(val: unknown): { isNested: boolean; parsed: unknown } {
+  if (val !== null && typeof val === 'object') return { isNested: true, parsed: val }
+  if (typeof val === 'string') {
+    const t = val.trim()
+    if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
+      try {
+        const p = JSON.parse(t)
+        if (typeof p === 'object' && p !== null) return { isNested: true, parsed: p }
+      } catch {}
+    }
+  }
+  return { isNested: false, parsed: val }
+}
+
+// Deep-set a value at a key path inside a cloned object
+function setNestedValue(obj: unknown, path: string[], value: string): void {
+  if (!path.length || typeof obj !== 'object' || obj === null) return
+  const [head, ...rest] = path
+  if (!rest.length) {
+    (obj as Record<string, unknown>)[head] = value
+  } else {
+    setNestedValue((obj as Record<string, unknown>)[head], rest, value)
+  }
+}
+
+// Rename a key at a given path inside a cloned object (preserves key order)
+function renameNestedKey(obj: unknown, path: string[], newKey: string): void {
+  if (!path.length || typeof obj !== 'object' || obj === null) return
+  const [head, ...rest] = path
+  const o = obj as Record<string, unknown>
+  if (!rest.length) {
+    if (!(head in o) || head === newKey) return
+    const rebuilt: Record<string, unknown> = {}
+    for (const k of Object.keys(o)) rebuilt[k === head ? newKey : k] = o[k]
+    for (const k of Object.keys(o)) delete o[k]
+    Object.assign(o, rebuilt)
+  } else {
+    renameNestedKey(o[head], rest, newKey)
+  }
+}
+
+// Handle key renames bubbled up from NestedJsonField
+function handleKeyRename(path: string[], newKey: string) {
+  if (!vault.selectedSecret) return
+  const topKey = path[0]
+
+  if (path.length === 1) {
+    // Renaming a top-level key
+    const before = stringifyData(vault.selectedSecret.data)
+    const after: Record<string, string> = {}
+    for (const k of Object.keys(before)) after[k === topKey ? newKey : k] = before[k]
+    pendingData.value = after
+  } else {
+    // Renaming a key nested inside a top-level object value
+    const raw = vault.selectedSecret.data[topKey]
+    let current: unknown = raw
+    if (typeof raw === 'string') { try { current = JSON.parse(raw) } catch {} }
+    const cloned = JSON.parse(JSON.stringify(current))
+    renameNestedKey(cloned, path.slice(1), newKey)
+    const after = stringifyData(vault.selectedSecret.data)
+    after[topKey] = JSON.stringify(cloned)
+    pendingData.value = after
+  }
+  showDiff.value = true
+}
+
+// Handle leaf edits bubbled up from NestedJsonField
+function handleLeafEdit(path: string[], newValue: string) {
+  if (!vault.selectedSecret) return
+  const topKey = path[0]
+  const raw = vault.selectedSecret.data[topKey]
+
+  // Parse the current top-level value (may be a native object or a JSON string)
+  let current: unknown = raw
+  if (typeof raw === 'string') {
+    try { current = JSON.parse(raw) } catch {}
+  }
+
+  // Deep-clone, patch the leaf, re-serialize
+  const cloned = JSON.parse(JSON.stringify(current))
+  setNestedValue(cloned, path.slice(1), newValue)
+  const serialized = JSON.stringify(cloned)
+
+  const after = stringifyData(vault.selectedSecret.data)
+  after[topKey] = serialized
+
+  pendingData.value = after
+  showDiff.value = true
+}
 </script>
 
 <template>
@@ -210,76 +333,79 @@ const currentBefore = computed(() => vault.selectedSecret?.data ?? {})
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(val, key) in vault.selectedSecret.data"
-              :key="key"
-              class="group border-b border-gray-800 last:border-0"
-              :class="editingAllowed && editingRow !== String(key) ? 'cursor-pointer' : ''"
-              @dblclick="startEditRow(String(key), String(val))"
-            >
-              <!-- Key cell -->
-              <td class="py-1.5 pr-4 align-middle">
-                <span
-                  v-if="editingRow !== String(key)"
-                  class="font-mono text-xs break-all"
-                  :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-blue-300'"
-                >{{ key }}</span>
-                <input
-                  v-else
-                  v-focus
-                  v-model="editingRowKey"
-                  class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
-                  placeholder="Nom de la clé"
-                  @keyup.enter="saveRow(String(key))"
-                  @keyup.escape="cancelEditRow"
-                  @click.stop
-                />
-              </td>
+            <template v-for="(val, key) in vault.selectedSecret.data" :key="key">
 
-              <!-- Value cell -->
-              <td class="py-1.5 font-mono text-xs align-middle">
-                <div v-if="editingRow !== String(key)" class="flex items-center gap-1.5">
+              <!-- Nested JSON value: accordion via NestedJsonField -->
+              <NestedJsonField
+                v-if="parseJsonValue(val).isNested"
+                :value="parseJsonValue(val).parsed"
+                :key-name="String(key)"
+                :depth="0"
+                :editing-allowed="editingAllowed"
+                @leaf-edit="handleLeafEdit"
+                @key-rename="handleKeyRename"
+              />
+
+              <!-- Plain value: inline editable row (existing behaviour) -->
+              <tr
+                v-else
+                class="group border-b border-gray-800 last:border-0"
+                :class="editingAllowed && editingRow !== String(key) ? 'cursor-pointer' : ''"
+                :title="editingAllowed && editingRow !== String(key) ? 'Double-cliquez pour modifier' : undefined"
+                @dblclick="startEditRow(String(key), String(val))"
+                @focusout="cancelOnRowBlur"
+              >
+                <!-- Key cell -->
+                <td class="py-1.5 pr-4 align-middle">
                   <span
-                    class="break-all"
-                    :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-gray-300'"
-                  >{{ val }}</span>
-                  <span v-if="rowSaveSuccess === String(key)" class="text-green-400 shrink-0">✓</span>
-                </div>
-                <div v-else class="flex items-center gap-1">
+                    v-if="editingRow !== String(key)"
+                    class="font-mono text-xs break-all"
+                    :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-blue-300'"
+                  >{{ key }}</span>
                   <input
-                    v-model="editingRowValue"
-                    class="flex-1 min-w-0 bg-gray-800 border border-blue-500 text-gray-100 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-blue-400"
+                    v-else
+                    v-focus
+                    v-model="editingRowKey"
+                    class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
+                    placeholder="Nom de la clé"
                     @keyup.enter="saveRow(String(key))"
                     @keyup.escape="cancelEditRow"
                     @click.stop
                   />
-                  <button
-                    class="text-green-400 hover:text-green-300 text-sm shrink-0"
-                    title="Sauvegarder (Entrée)"
-                    @click.stop="saveRow(String(key))"
-                  >✓</button>
-                  <button
-                    class="text-gray-500 hover:text-gray-300 text-xs shrink-0"
-                    title="Annuler (Échap)"
-                    @click.stop="cancelEditRow"
-                  >✕</button>
-                </div>
-              </td>
+                </td>
 
-              <!-- Delete key -->
-              <td v-if="editingAllowed" class="py-2 text-right align-middle">
-                <button
-                  v-if="editingRow !== String(key)"
-                  class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-red-400 rounded transition-colors"
-                  :title="`Supprimer la clé ${key}`"
-                  @click.stop="removeKey(String(key))"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                  </svg>
-                </button>
-              </td>
-            </tr>
+                <!-- Value cell -->
+                <td class="py-1.5 font-mono text-xs align-middle">
+                  <div v-if="editingRow !== String(key)" class="flex items-center gap-1.5">
+                    <SmartValueCell :value="val" />
+                    <span v-if="rowSaveSuccess === String(key)" class="text-green-400 shrink-0">✓</span>
+                  </div>
+                  <div v-else class="flex items-center gap-1" @click.stop @dblclick.stop>
+                    <SmartEditValue
+                      v-model="editingRowValue"
+                      :original-value="val"
+                      :autofocus="false"
+                      @confirm="saveRow(String(key))"
+                      @cancel="cancelEditRow"
+                    />
+                  </div>
+                </td>
+
+                <!-- Delete key -->
+                <td v-if="editingAllowed" class="py-2 text-right align-middle">
+                  <button
+                    v-if="editingRow !== String(key)"
+                    class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-red-400 rounded transition-colors"
+                    :title="`Supprimer la clé ${key}`"
+                    @click.stop="removeKey(String(key))"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
         <div class="mt-3 text-xs text-gray-600 flex items-center gap-2">
@@ -313,7 +439,7 @@ const currentBefore = computed(() => vault.selectedSecret?.data ?? {})
     <div class="bg-gray-900 border border-gray-700 rounded">
       <VersionTimeline
         :path="vault.selectedSecret.path"
-        :current-data="vault.selectedSecret.data"
+        :current-data="stringifyData(vault.selectedSecret.data)"
         @restore="handleRestore"
       />
     </div>

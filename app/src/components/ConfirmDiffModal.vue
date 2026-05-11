@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import NestedDiffRow from './NestedDiffRow.vue'
 
 const props = defineProps<{
   path: string
@@ -33,13 +34,6 @@ const diffLines = computed<DiffLine[]>(() => {
 })
 
 const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unchanged'))
-
-const rowClass = (status: DiffLine['status']) => ({
-  'bg-green-950 text-green-300': status === 'added',
-  'bg-red-950 text-red-300': status === 'removed',
-  'bg-yellow-950 text-yellow-200': status === 'modified',
-  'text-gray-400': status === 'unchanged',
-})
 </script>
 
 <template>
@@ -73,25 +67,15 @@ const rowClass = (status: DiffLine['status']) => ({
             </tr>
           </thead>
           <tbody>
-            <tr
+            <NestedDiffRow
               v-for="line in diffLines"
               :key="line.key"
-              class="border-b border-gray-800 last:border-0"
-              :class="rowClass(line.status)"
-            >
-              <td class="py-1.5 pr-4 font-semibold">{{ line.key }}</td>
-              <td class="py-1.5 pr-4 break-all opacity-80">
-                <span v-if="line.before !== undefined">{{ line.before }}</span>
-                <span v-else class="text-gray-600 italic">—</span>
-              </td>
-              <td class="py-1.5 break-all">
-                <span v-if="line.after !== undefined">{{ line.after }}</span>
-                <span v-else class="text-gray-600 italic">supprimée</span>
-              </td>
-              <td class="py-1.5 text-right text-xs opacity-60">
-                {{ { unchanged: '=', modified: '~', added: '+', removed: '−' }[line.status] }}
-              </td>
-            </tr>
+              :diff-key="line.key"
+              :before="line.before"
+              :after="line.after"
+              :status="line.status"
+              :depth="0"
+            />
           </tbody>
         </table>
       </div>
