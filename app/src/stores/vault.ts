@@ -151,21 +151,12 @@ export const useVaultStore = defineStore('vault', () => {
 
   async function checkForUpdate() {
     try {
-      const CACHE_KEY = 'vault-update-check'
-      const cached = localStorage.getItem(CACHE_KEY)
-      if (cached) {
-        const { latest: l, hasUpdate: u, checkedAt, currentVersion: cv } = JSON.parse(cached)
-        // Invalidate if the app was updated since the cache was written
-        if (cv === appVersion.value && Date.now() - checkedAt < 3_600_000) {
-          if (u && l) latestVersion.value = l
-          return
-        }
-      }
+      // No localStorage cache — the BFF already caches the npm registry response for 1 hour.
+      // Calling /api/version/check on every load is a fast local request with no external cost.
       const res = await fetch('/api/version/check')
       if (!res.ok) return
       const json = await res.json()
       if (json.hasUpdate && json.latest) latestVersion.value = json.latest
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ latest: json.latest, hasUpdate: json.hasUpdate, checkedAt: Date.now(), currentVersion: appVersion.value }))
     } catch {}
   }
 
