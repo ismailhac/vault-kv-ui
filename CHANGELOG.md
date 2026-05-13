@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.3] — 2026-05-13
+
+### Features
+- mini-update-popup: The update badge on the landing page (under Connect/Setup) now opens a compact inline popup instead of the full UpdateModal — shows the version badge, an X close button, and `npm install -g vault-admin@latest` with a one-click copy icon
+
 ## [1.5.2] — 2026-05-13
 
 ### Fixed

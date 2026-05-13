@@ -20,6 +20,13 @@ const vault = useVaultStore()
 const showBulk = ref(false)
 const showSearch = ref(false)
 const showUpdateModal = ref(false)
+const showMiniUpdate = ref(false)
+const miniCopied = ref(false)
+async function miniCopy() {
+  await navigator.clipboard.writeText('npm install -g vault-admin@latest')
+  miniCopied.value = true
+  setTimeout(() => { miniCopied.value = false }, 2000)
+}
 const searchQuery = ref('')
 const searchInputFocused = ref(false)
 
@@ -200,7 +207,7 @@ onBeforeUnmount(() => {
         <div v-if="vault.hasUpdate" class="flex justify-center mt-1">
           <button
             class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-900/50 border border-green-700/50 text-green-400 text-xs hover:bg-green-900 transition-colors cursor-pointer"
-            @click="showUpdateModal = true"
+            @click="showMiniUpdate = true"
           >
             <span>↑</span>
             <span>v{{ vault.latestVersion }} {{ t('updateModal.available') }}</span>
@@ -506,6 +513,26 @@ onBeforeUnmount(() => {
   <!-- Download overlay (blocks all interaction) -->
   <DownloadOverlay v-if="downloadLoading" />
   <UpdateModal v-if="showUpdateModal" @close="showUpdateModal = false" />
+
+  <!-- Mini update popup — landing page only -->
+  <div v-if="showMiniUpdate" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="showMiniUpdate = false">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-4 w-80 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <span class="text-green-400 text-xs font-semibold">↑ v{{ vault.latestVersion }} {{ t('updateModal.available') }}</span>
+        <button class="text-gray-500 hover:text-gray-300 leading-none cursor-pointer" @click="showMiniUpdate = false">✕</button>
+      </div>
+      <div class="bg-gray-950 border border-gray-700 rounded px-3 py-2.5 flex items-center gap-3">
+        <span class="text-gray-600 select-none font-mono text-xs">$</span>
+        <span class="text-green-300 font-mono text-xs flex-1 select-all">npm install -g vault-admin@latest</span>
+        <button class="shrink-0 text-gray-500 hover:text-gray-200 transition-colors cursor-pointer" @click="miniCopy">
+          <span v-if="miniCopied" class="text-green-400 text-xs">✓</span>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
   </template><!-- end v-else authenticated -->
 </template>
