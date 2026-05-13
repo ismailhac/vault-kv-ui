@@ -13,17 +13,44 @@ import DownloadOverlay from '../components/DownloadOverlay.vue'
 import CreateSecretModal from '../components/CreateSecretModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 import SearchModal from '../components/SearchModal.vue'
+import UpdateModal from '../components/UpdateModal.vue'
 
 const { t } = useI18n()
 const vault = useVaultStore()
 const showBulk = ref(false)
 const showSearch = ref(false)
+const showUpdateModal = ref(false)
 const searchQuery = ref('')
+const searchInputFocused = ref(false)
+
+const HISTORY_KEY = 'vault-search-history'
+const searchHistory = ref<string[]>(JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'))
+
+const historyVisible = computed(() =>
+  searchInputFocused.value && !searchQuery.value.trim() && searchHistory.value.length > 0
+)
+
+function removeFromHistory(q: string) {
+  searchHistory.value = searchHistory.value.filter(h => h !== q)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(searchHistory.value))
+}
+
+function pickHistory(q: string) {
+  searchQuery.value = q
+  searchInputFocused.value = false
+  showSearch.value = true
+}
 
 function triggerSearch() {
   if (!searchQuery.value.trim()) return
-  vault.searchSecrets(searchQuery.value.trim(), 'path')
   showSearch.value = true
+}
+
+function onSearchModalClose() {
+  // Refresh history in case SearchModal added new entries
+  searchHistory.value = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]')
+  showSearch.value = false
+  searchQuery.value = ''
 }
 const showFeatureFlag = ref(false)
 const showKeyRemoval = ref(false)
@@ -169,7 +196,16 @@ onBeforeUnmount(() => {
       <!-- Dev credit -->
       <div class="text-gray-700 text-xs space-y-1 leading-relaxed">
         <div>{{ t('app.builtWith') }}</div>
-        <div>{{ t('app.by') }} <span class="text-gray-500 font-medium">Ismail</span> · v1.0.0 · MIT</div>
+        <div>{{ t('app.by') }} <span class="text-gray-500 font-medium">Ismail</span><span v-if="vault.appVersion"> · v{{ vault.appVersion }}</span> · MIT</div>
+        <div v-if="vault.hasUpdate" class="flex justify-center mt-1">
+          <button
+            class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-900/50 border border-green-700/50 text-green-400 text-xs hover:bg-green-900 transition-colors"
+            @click="showUpdateModal = true"
+          >
+            <span>↑</span>
+            <span>v{{ vault.latestVersion }} {{ t('updateModal.available') }}</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -215,7 +251,7 @@ onBeforeUnmount(() => {
 
     <!-- Row 1 right: search input -->
     <div class="relative shrink-0">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-gray-500 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-gray-500 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none z-10">
         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
       </svg>
       <input
@@ -223,8 +259,32 @@ onBeforeUnmount(() => {
         type="text"
         :placeholder="t('browserView.searchPlaceholder')"
         class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded pl-7 pr-3 py-1.5 w-48 placeholder-gray-600 focus:outline-none focus:border-sky-600 transition-colors"
+        autocomplete="off"
         @keydown.enter="triggerSearch"
+        @focus="searchInputFocused = true"
+        @blur="searchInputFocused = false"
       />
+      <!-- History dropdown -->
+      <div
+        v-if="historyVisible"
+        class="absolute top-full right-0 z-50 mt-0.5 w-64 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden"
+      >
+        <div
+          v-for="h in searchHistory"
+          :key="h"
+          class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group"
+          @mousedown.prevent="pickHistory(h)"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-600 shrink-0">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <span class="flex-1 text-xs text-gray-300 font-mono truncate">{{ h }}</span>
+          <button
+            class="text-gray-700 hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-xs"
+            @mousedown.stop.prevent="removeFromHistory(h)"
+          >✕</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -441,10 +501,11 @@ onBeforeUnmount(() => {
   <KeyUpdateModal v-if="showKeyUpdate" @close="showKeyUpdate = false" />
   <KeyAdjustModal v-if="showKeyAdjust" @close="showKeyAdjust = false" />
   <KeyRenameModal v-if="showKeyRename" @close="showKeyRename = false" />
-  <SearchModal v-if="showSearch" :initial-query="searchQuery" @close="showSearch = false; searchQuery = ''" />
+  <SearchModal v-if="showSearch" :initial-query="searchQuery" :initial-scope="vault.currentPath" @close="onSearchModalClose" />
 
   <!-- Download overlay (blocks all interaction) -->
   <DownloadOverlay v-if="downloadLoading" />
+  <UpdateModal v-if="showUpdateModal" @close="showUpdateModal = false" />
 
   </template><!-- end v-else authenticated -->
 </template>

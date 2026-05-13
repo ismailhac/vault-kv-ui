@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.4.9] — 2026-05-13
+### Features
+- search-enhancement: Enhanced global search with value mode, path scope combobox, search history, result highlight, masked values with eye toggle, and flattened nested secret data in BFF
+- update-notifier: npm update check with terminal banner on startup, footer/landing badge, and UpdateModal with tabbed install instructions (macOS/Linux + Windows)
+
 ## [1.4.0] — 2026-05-11
 ### Features
 - i18n-english-first: Full internationalisation with vue-i18n v9 — English as default locale on first load, French as a fully supported locale, EN/FR language switcher in the header, locale persisted in localStorage; all UI strings extracted from 20+ Vue components into en.json and fr.json

@@ -32,6 +32,8 @@ export const useVaultStore = defineStore('vault', () => {
   const namespaces = ref<NamespaceOption[]>([])
   const vaultAddr = ref('')
   const appVersion = ref('')
+  const latestVersion = ref<string | null>(null)
+  const hasUpdate = computed(() => !!latestVersion.value && !!appVersion.value && latestVersion.value !== appVersion.value)
   const isConfigured = computed(() => !!vaultAddr.value)
   const showSetupStep = ref(false)
 
@@ -60,9 +62,11 @@ export const useVaultStore = defineStore('vault', () => {
   const secretError = ref<string | null>(null)
 
   // --- Search ---
-  const searchResults = ref<{ path: string; matchedIn: string; matchedKeys: string[] }[]>([])
+  const searchResults = ref<{ path: string; matchedIn: string; matchedKeys: string[]; matchedValues?: Record<string, string> }[]>([])
   const searchLoading = ref(false)
   const searchError = ref<string | null>(null)
+  const searchScannedCount = ref(0)
+  const searchElapsedMs = ref(0)
   let searchRequestSeq = 0
 
   // --- Version history ---
@@ -137,6 +141,25 @@ export const useVaultStore = defineStore('vault', () => {
         const v = await vres.json()
         appVersion.value = v.version ?? ''
       }
+    } catch {}
+  }
+
+  async function checkForUpdate() {
+    try {
+      const CACHE_KEY = 'vault-update-check'
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        const { latest: l, hasUpdate: u, checkedAt } = JSON.parse(cached)
+        if (Date.now() - checkedAt < 3_600_000) {
+          if (u && l) latestVersion.value = l
+          return
+        }
+      }
+      const res = await fetch('/api/version/check')
+      if (!res.ok) return
+      const json = await res.json()
+      if (json.hasUpdate && json.latest) latestVersion.value = json.latest
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ latest: json.latest, hasUpdate: json.hasUpdate, checkedAt: Date.now() }))
     } catch {}
   }
 
@@ -421,11 +444,13 @@ export const useVaultStore = defineStore('vault', () => {
     await initializeApp()
   }
 
-  async function searchSecrets(query: string, by: 'path' | 'key' = 'path') {
+  async function searchSecrets(query: string, by: string = 'path', pathPrefix?: string) {
     const requestId = ++searchRequestSeq
     searchLoading.value = true
     searchError.value = null
     searchResults.value = []
+    searchScannedCount.value = 0
+    searchElapsedMs.value = 0
     try {
       const params = new URLSearchParams({
         q: query,
@@ -433,6 +458,7 @@ export const useVaultStore = defineStore('vault', () => {
         mount: currentMount.value,
         namespace: currentNamespace.value,
       })
+      if (pathPrefix) params.set('path', pathPrefix)
       const res = await fetch(`/api/kv/search?${params}`)
       if (requestId !== searchRequestSeq) return
       if (!res.ok) {
@@ -441,6 +467,8 @@ export const useVaultStore = defineStore('vault', () => {
       } else {
         const json = await res.json()
         searchResults.value = json.results ?? []
+        searchScannedCount.value = json.scannedCount ?? 0
+        searchElapsedMs.value = json.searchTimeMs ?? 0
       }
     } catch (e: unknown) {
       if (requestId !== searchRequestSeq) return
@@ -485,8 +513,8 @@ export const useVaultStore = defineStore('vault', () => {
 
   return {
     // config
-    namespaces, vaultAddr, appVersion, isConfigured, showSetupStep,
-    loadAppConfig, saveAppConfig,
+    namespaces, vaultAddr, appVersion, latestVersion, hasUpdate, isConfigured, showSetupStep,
+    loadAppConfig, saveAppConfig, checkForUpdate,
     // namespace
     currentNamespace, showLoginModal, currentNamespaceLabel,
     // token
@@ -509,7 +537,7 @@ export const useVaultStore = defineStore('vault', () => {
     readSecret, writeSecret, deleteSecret, deleteFolder,
     initializeApp, retryInitialization, goHome, logout,
     // search
-    searchResults, searchLoading, searchError, searchSecrets,
+    searchResults, searchLoading, searchError, searchScannedCount, searchElapsedMs, searchSecrets,
     // version history
     versionList, versionCurrentVersion, versionLoading, versionError,
     fetchVersions, readSecretVersion,

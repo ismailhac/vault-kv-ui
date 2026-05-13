@@ -7,6 +7,7 @@ import { useLocale } from './composables/useLocale'
 import TokenStatusBar from './components/TokenStatusBar.vue'
 import LoadingSpinner from './components/LoadingSpinner.vue'
 import LoginModal from './components/LoginModal.vue'
+import UpdateModal from './components/UpdateModal.vue'
 
 const { t } = useI18n()
 const { locale, setLocale } = useLocale()
@@ -14,9 +15,11 @@ const { locale, setLocale } = useLocale()
 const vault = useVaultStore()
 const router = useRouter()
 const homeRefreshKey = ref(0)
+const showUpdateModal = ref(false)
 
 onMounted(() => {
   vault.initializeApp()
+  vault.checkForUpdate()
 })
 
 async function handleGoHome() {
@@ -146,6 +149,14 @@ function handleManualLogin() {
           <div class="flex items-center gap-2">
             <span class="text-green-700 font-bold">⬡ {{ t('app.vaultAdmin') }}</span>
             <span v-if="vault.appVersion">v{{ vault.appVersion }}</span>
+            <button
+              v-if="vault.hasUpdate"
+              class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-900/50 border border-green-700/50 text-green-400 text-xs hover:bg-green-900 transition-colors"
+              @click="showUpdateModal = true"
+            >
+              <span>↑</span>
+              <span>v{{ vault.latestVersion }} {{ t('updateModal.available') }}</span>
+            </button>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <span>{{ t('app.builtWith') }}</span>
@@ -160,4 +171,6 @@ function handleManualLogin() {
       </template><!-- end authenticated layout -->
     </template><!-- end isInitialized -->
   </div>
+
+  <UpdateModal v-if="showUpdateModal" @close="showUpdateModal = false" />
 </template>

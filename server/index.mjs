@@ -5,6 +5,7 @@ import { homedir } from 'os'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { createServer } from 'http'
+import { get as httpsGet } from 'https'
 import { randomUUID } from 'crypto'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -411,13 +412,39 @@ app.get('/api/kv/dump', async (req, res) => {
   }
 })
 
+// Mirrors SecretPanel's parseJsonValue: detects nested objects AND JSON strings
+function flattenSecretData(obj, prefix = '') {
+  const result = {}
+  for (const [k, v] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${k}` : k
+    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      Object.assign(result, flattenSecretData(v, fullKey))
+    } else if (typeof v === 'string') {
+      const trimmed = v.trim()
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          const parsed = JSON.parse(trimmed)
+          if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            Object.assign(result, flattenSecretData(parsed, fullKey))
+            continue
+          }
+        } catch {}
+      }
+      result[fullKey] = v
+    } else {
+      result[fullKey] = String(v ?? '')
+    }
+  }
+  return result
+}
+
 // GET /api/kv/search?q=&by=path|key|value&mount=&namespace=&limit=
 app.get('/api/kv/search', async (req, res) => {
   const namespace = getNamespace(req)
   const token = resolveToken(namespace)
   if (!token) return res.status(401).json({ error: 'No Vault token found' })
 
-  const { q = '', by = 'path', mount = 'secret', limit = '100' } = req.query
+  const { q = '', by = 'path', mount = 'secret', limit = '100', path: scopePath = '' } = req.query
   if (!q.trim()) return res.status(400).json({ error: 'q is required' })
 
   const maxResults = Math.min(parseInt(limit) || 100, 500)
@@ -452,14 +479,21 @@ app.get('/api/kv/search', async (req, res) => {
           try {
             const r = await vaultFetch(`${mount}/data/${fullPath}`, token, namespace)
             if (r.status !== 200) continue
-            const data = r.body.data?.data ?? {}
+            const flat = flattenSecretData(r.body.data?.data ?? {})
             const matchedKeys = []
-            for (const [k, v] of Object.entries(data)) {
-              if (by === 'key' && k.toLowerCase().includes(query)) matchedKeys.push(k)
-              if (by === 'value' && String(v).toLowerCase().includes(query)) matchedKeys.push(k)
+            const matchedValues = {}
+            for (const [k, v] of Object.entries(flat)) {
+              if (by === 'key' && k.toLowerCase().includes(query)) {
+                matchedKeys.push(k)
+                matchedValues[k] = v
+              }
+              if (by === 'value' && v.toLowerCase().includes(query)) {
+                matchedKeys.push(k)
+                matchedValues[k] = v
+              }
             }
             if (matchedKeys.length > 0) {
-              results.push({ path: fullPath, matchedIn: by, matchedKeys })
+              results.push({ path: fullPath, matchedIn: by, matchedKeys, matchedValues })
             }
           } catch (_) {}
         }
@@ -468,7 +502,7 @@ app.get('/api/kv/search', async (req, res) => {
   }
 
   try {
-    await searchPath('')
+    await searchPath(scopePath.replace(/\/$/, ''))
     res.json({ results, scannedCount, searchTimeMs: Date.now() - start })
   } catch (e) {
     res.status(502).json({ error: `Vault injoignable: ${e.message}` })
@@ -679,6 +713,63 @@ app.get('/api/version', (req, res) => {
   }
 })
 
+function semverGt(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] ?? 0) > (pb[i] ?? 0)) return true
+    if ((pa[i] ?? 0) < (pb[i] ?? 0)) return false
+  }
+  return false
+}
+
+function fetchNpmLatest() {
+  return new Promise((resolve, reject) => {
+    const req = httpsGet(
+      'https://registry.npmjs.org/vault-admin/latest',
+      { headers: { Accept: 'application/json' }, rejectUnauthorized: false, timeout: 6000 },
+      (r) => {
+        let body = ''
+        r.on('data', chunk => { body += chunk })
+        r.on('end', () => {
+          try { resolve(JSON.parse(body).version ?? null) } catch { reject(new Error('parse')) }
+        })
+      }
+    )
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    req.on('error', reject)
+  })
+}
+
+let _updateCache = null
+let _updateCachedAt = 0
+const UPDATE_CACHE_TTL = 3600_000
+
+async function resolveUpdateCheck(current) {
+  const now = Date.now()
+  if (_updateCache && now - _updateCachedAt < UPDATE_CACHE_TTL) {
+    return { current, ..._updateCache }
+  }
+  const latest = await fetchNpmLatest()
+  const hasUpdate = current !== 'unknown' && !!latest && semverGt(latest, current)
+  _updateCache = { latest, hasUpdate }
+  _updateCachedAt = now
+  return { current, latest, hasUpdate }
+}
+
+app.get('/api/version/check', async (req, res) => {
+  let current = 'unknown'
+  try {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'))
+    current = pkg.version ?? 'unknown'
+  } catch {}
+  try {
+    res.json(await resolveUpdateCheck(current))
+  } catch {
+    res.json({ current, latest: null, hasUpdate: false })
+  }
+})
+
 app.post('/api/auth/logout', (req, res) => {
   const token = resolveToken(getNamespace(req))
   if (!token) return res.status(401).json({ error: 'No Vault token found' })
@@ -847,6 +938,22 @@ app.use((err, req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' })
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`[BFF] Vault Admin running on http://localhost:${PORT}`)
+  let current = 'unknown'
+  try {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'))
+    current = pkg.version ?? 'unknown'
+  } catch {}
+  try {
+    const { latest, hasUpdate } = await resolveUpdateCheck(current)
+    if (hasUpdate) {
+      console.log()
+      console.log('\x1b[33m  ┌─────────────────────────────────────────────┐\x1b[0m')
+      console.log(`\x1b[33m  │  ↑ Update available: v${current} → v${latest}\x1b[0m`)
+      console.log('\x1b[33m  │  npm install -g vault-admin\x1b[0m')
+      console.log('\x1b[33m  └─────────────────────────────────────────────┘\x1b[0m')
+      console.log()
+    }
+  } catch {}
 })
