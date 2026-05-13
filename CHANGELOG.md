@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.0] — 2026-05-13
+
+### Features
+- **Global search enhancements** — search by value (in addition to path/key); path scope combobox restricts search to a subtree; results show matched key names with masked values (`••••••`) and per-key eye toggle + show/hide all; amber term highlighting; click any result to navigate the browser to the secret's parent folder and open it; result count + secrets scanned + elapsed time in footer; search history (last 8 queries) in both the modal and the inline nav bar
+- **Background service install** — `vault-admin --install-service` / `--uninstall-service` registers a silent background service that starts at login with no terminal required: systemd user service + `.desktop` app-launcher entry on Linux; launchd user agent on macOS; Task Scheduler job + Desktop/Start Menu shortcuts on Windows
+- **Update notifier** — npm registry check at startup prints an amber banner in the terminal when a new version is available; the UI footer shows a version badge that opens an UpdateModal with the exact update command for macOS/Linux and Windows; check result cached 1 h in localStorage
+- **CLI flags** — `--help` / `-h` prints full usage; `--version` / `-v` already existed; all flags documented in README
+
+### Fixed
+- Scope bug in value/key search: BFF was always searching from the mount root, ignoring the `path` query parameter — now correctly restricts to the requested subtree
+- Nested secret values (JSON strings or objects) now display the correct leaf value and dot-path key in search results, mirroring SecretPanel's existing `parseJsonValue` logic
+- Hardcoded `v1.0.0` on the landing page (not-yet-connected screen) replaced with a reactive `vault.appVersion` binding
+
 ## [1.4.9] — 2026-05-13
 ### Features
 - background-service-install: Platform-specific background service management — systemd (Linux), launchd (macOS), Task Scheduler (Windows) — with `--install-service` / `--uninstall-service` CLI flags, `--help` / `-h` usage text, and `VAULT_ADMIN_SERVICE` env guard to suppress browser auto-open when running as a service
