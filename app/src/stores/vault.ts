@@ -33,7 +33,12 @@ export const useVaultStore = defineStore('vault', () => {
   const vaultAddr = ref('')
   const appVersion = ref('')
   const latestVersion = ref<string | null>(null)
-  const hasUpdate = computed(() => !!latestVersion.value && !!appVersion.value && latestVersion.value !== appVersion.value)
+  function semverGt(a: string, b: string) {
+    const pa = a.split('.').map(Number), pb = b.split('.').map(Number)
+    for (let i = 0; i < 3; i++) { if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0) }
+    return false
+  }
+  const hasUpdate = computed(() => !!latestVersion.value && !!appVersion.value && semverGt(latestVersion.value, appVersion.value))
   const isConfigured = computed(() => !!vaultAddr.value)
   const showSetupStep = ref(false)
 
@@ -149,8 +154,9 @@ export const useVaultStore = defineStore('vault', () => {
       const CACHE_KEY = 'vault-update-check'
       const cached = localStorage.getItem(CACHE_KEY)
       if (cached) {
-        const { latest: l, hasUpdate: u, checkedAt } = JSON.parse(cached)
-        if (Date.now() - checkedAt < 3_600_000) {
+        const { latest: l, hasUpdate: u, checkedAt, currentVersion: cv } = JSON.parse(cached)
+        // Invalidate if the app was updated since the cache was written
+        if (cv === appVersion.value && Date.now() - checkedAt < 3_600_000) {
           if (u && l) latestVersion.value = l
           return
         }
@@ -159,7 +165,7 @@ export const useVaultStore = defineStore('vault', () => {
       if (!res.ok) return
       const json = await res.json()
       if (json.hasUpdate && json.latest) latestVersion.value = json.latest
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ latest: json.latest, hasUpdate: json.hasUpdate, checkedAt: Date.now() }))
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ latest: json.latest, hasUpdate: json.hasUpdate, checkedAt: Date.now(), currentVersion: appVersion.value }))
     } catch {}
   }
 

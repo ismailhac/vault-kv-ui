@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.2] — 2026-05-13
+
+### Fixed
+- update-check-stale-cache: `semverGt` helper replaces `!==` in `hasUpdate` — prevents a downgraded cached `latestVersion` from showing as an update; `checkForUpdate` now stores `currentVersion` in the localStorage cache and invalidates it when the running version changes, fixing "v1.5.0 available" shown on a v1.5.1 install after upgrade
+
 ## [1.5.1] — 2026-05-13
 
 ### Fixed
