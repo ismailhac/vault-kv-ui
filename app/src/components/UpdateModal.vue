@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 
@@ -11,11 +11,16 @@ type Tab = 'unix' | 'windows'
 const activeTab = ref<Tab>('unix')
 const copied = ref(false)
 
-const NPM_CMD = 'npm install -g vault-admin'
 const NPM_URL = 'https://www.npmjs.com/package/vault-admin'
 
+const command = computed(() =>
+  activeTab.value === 'unix'
+    ? 'npm install -g vault-admin@latest'
+    : 'npm install -g vault-admin@latest'
+)
+
 async function copy() {
-  await navigator.clipboard.writeText(NPM_CMD)
+  await navigator.clipboard.writeText(command.value)
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
 }
@@ -31,7 +36,7 @@ async function copy() {
           <span class="text-green-400 text-base">↑</span>
           <span class="text-white font-semibold text-sm">{{ t('updateModal.title') }}</span>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="emit('close')">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 text-lg leading-none cursor-pointer" @click="emit('close')">✕</button>
       </div>
 
       <!-- Version info -->
@@ -51,13 +56,13 @@ async function copy() {
       <div class="px-5 pt-4 pb-2">
         <div class="flex gap-1 mb-3">
           <button
-            :class="['px-3 py-1.5 text-xs rounded transition-colors', activeTab === 'unix' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300']"
+            :class="['px-3 py-1.5 text-xs rounded transition-colors font-mono cursor-pointer', activeTab === 'unix' ? 'bg-gray-700 text-green-300' : 'text-gray-500 hover:text-gray-300']"
             @click="activeTab = 'unix'"
-          >🍎 macOS / Linux</button>
+          ><span class="text-gray-500 mr-1">$</span> macOS / Linux</button>
           <button
-            :class="['px-3 py-1.5 text-xs rounded transition-colors', activeTab === 'windows' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300']"
+            :class="['px-3 py-1.5 text-xs rounded transition-colors font-mono cursor-pointer', activeTab === 'windows' ? 'bg-gray-700 text-blue-300' : 'text-gray-500 hover:text-gray-300']"
             @click="activeTab = 'windows'"
-          >🪟 Windows</button>
+          ><span class="text-gray-500 mr-1">PS&gt;</span> Windows</button>
         </div>
 
         <!-- Command block -->
@@ -65,15 +70,15 @@ async function copy() {
           <div class="flex-1 overflow-x-auto">
             <template v-if="activeTab === 'unix'">
               <span class="text-gray-600 select-none mr-1">$</span>
-              <span class="text-green-300 font-mono text-sm">{{ NPM_CMD }}</span>
+              <span class="text-green-300 font-mono text-sm">{{ command }}</span>
             </template>
             <template v-else>
               <span class="text-blue-400 select-none mr-1">PS&gt;</span>
-              <span class="text-green-300 font-mono text-sm">{{ NPM_CMD }}</span>
+              <span class="text-green-300 font-mono text-sm">{{ command }}</span>
             </template>
           </div>
           <button
-            class="shrink-0 text-gray-500 hover:text-gray-200 transition-colors"
+            class="shrink-0 text-gray-500 hover:text-gray-200 transition-colors cursor-pointer"
             :title="t('updateModal.copy')"
             @click="copy"
           >
@@ -84,16 +89,20 @@ async function copy() {
           </button>
         </div>
 
-        <!-- Hint for Windows -->
-        <p v-if="activeTab === 'windows'" class="text-gray-600 text-xs mt-2">
-          {{ t('updateModal.windowsHint') }}
-        </p>
-
-        <!-- Then restart hint -->
-        <p class="text-gray-700 text-xs mt-3">
-          {{ t('updateModal.restartHint') }}
-          <span class="font-mono text-gray-500">vault-admin</span>
-        </p>
+        <!-- Windows-specific steps -->
+        <template v-if="activeTab === 'windows'">
+          <ol class="mt-3 space-y-1 text-xs text-gray-500 list-none">
+            <li><span class="text-gray-700 mr-1">1.</span> {{ t('updateModal.windowsStep1') }}</li>
+            <li><span class="text-gray-700 mr-1">2.</span> {{ t('updateModal.windowsStep2') }}</li>
+            <li><span class="text-gray-700 mr-1">3.</span> {{ t('updateModal.windowsStep3') }} <span class="font-mono text-gray-400">vault-admin</span></li>
+          </ol>
+        </template>
+        <template v-else>
+          <p class="text-gray-700 text-xs mt-3">
+            {{ t('updateModal.restartHint') }}
+            <span class="font-mono text-gray-500">vault-admin</span>
+          </p>
+        </template>
       </div>
 
       <!-- Footer -->
@@ -102,10 +111,10 @@ async function copy() {
           :href="NPM_URL"
           target="_blank"
           rel="noopener"
-          class="text-xs text-sky-600 hover:text-sky-400 transition-colors"
+          class="text-xs text-sky-600 hover:text-sky-400 transition-colors cursor-pointer"
         >{{ t('updateModal.npmPage') }} ↗</a>
         <button
-          class="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          class="text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
           @click="emit('close')"
         >{{ t('updateModal.close') }}</button>
       </div>

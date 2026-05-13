@@ -199,7 +199,7 @@ onBeforeUnmount(() => {
         <div>{{ t('app.by') }} <span class="text-gray-500 font-medium">Ismail</span><span v-if="vault.appVersion"> · v{{ vault.appVersion }}</span> · MIT</div>
         <div v-if="vault.hasUpdate" class="flex justify-center mt-1">
           <button
-            class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-900/50 border border-green-700/50 text-green-400 text-xs hover:bg-green-900 transition-colors"
+            class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-900/50 border border-green-700/50 text-green-400 text-xs hover:bg-green-900 transition-colors cursor-pointer"
             @click="showUpdateModal = true"
           >
             <span>↑</span>

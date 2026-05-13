@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.1] — 2026-05-13
+
+### Fixed
+- **UpdateModal** — tab icons replaced with `$` / `PS>` prompt chars; Windows tab now shows 3 numbered steps (open Node prompt, run command, relaunch); `@latest` appended to the npm install command; `cursor-pointer` on tab buttons, copy button, Close button, and npm link; command reactive via `computed`
+- **en.json / fr.json** — replaced `updateModal.windowsHint` key with `windowsStep1`, `windowsStep2`, `windowsStep3` in both locales
+- **App.vue / BrowserView.vue** — `cursor-pointer` added to the update badge button in the footer and landing page
+- **server/index.mjs** — startup banner now shows `npm install -g vault-admin@latest` (was missing `@latest`)
+
 ## [1.5.0] — 2026-05-13
 
 ### Features

@@ -951,7 +951,7 @@ app.listen(PORT, async () => {
       console.log()
       console.log('\x1b[33m  ┌─────────────────────────────────────────────┐\x1b[0m')
       console.log(`\x1b[33m  │  ↑ Update available: v${current} → v${latest}\x1b[0m`)
-      console.log('\x1b[33m  │  npm install -g vault-admin\x1b[0m')
+      console.log('\x1b[33m  │  npm install -g vault-admin@latest\x1b[0m')
       console.log('\x1b[33m  └─────────────────────────────────────────────┘\x1b[0m')
       console.log()
     }
