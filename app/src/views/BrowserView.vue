@@ -13,13 +13,11 @@ import DownloadOverlay from '../components/DownloadOverlay.vue'
 import CreateSecretModal from '../components/CreateSecretModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 import SearchModal from '../components/SearchModal.vue'
-import UpdateModal from '../components/UpdateModal.vue'
 
 const { t } = useI18n()
 const vault = useVaultStore()
 const showBulk = ref(false)
 const showSearch = ref(false)
-const showUpdateModal = ref(false)
 const showMiniUpdate = ref(false)
 const miniCopied = ref(false)
 async function miniCopy() {
@@ -512,9 +510,10 @@ onBeforeUnmount(() => {
 
   <!-- Download overlay (blocks all interaction) -->
   <DownloadOverlay v-if="downloadLoading" />
-  <UpdateModal v-if="showUpdateModal" @close="showUpdateModal = false" />
 
-  <!-- Mini update popup — landing page only -->
+  </template><!-- end v-else authenticated -->
+
+  <!-- Mini update popup — available on both landing and authenticated pages -->
   <div v-if="showMiniUpdate" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="showMiniUpdate = false">
     <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-4 w-80 flex flex-col gap-3">
       <div class="flex items-center justify-between">
@@ -533,8 +532,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </div>
-
-  </template><!-- end v-else authenticated -->
 </template>
 
 <style scoped>

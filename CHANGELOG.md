@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.7] — 2026-05-13
+
+### Fixed
+- update-modal-routing: Footer badge now correctly opens the full OS-tabs UpdateModal (restored from v1.5.3); the minimal mini popup is exclusively for the landing page badges (Connect / Start Setup)
+- mini-popup-landing: Landing page update badge now actually opens the mini popup — the popup was erroneously placed inside the authenticated-only `<template v-else>` block and never rendered on the landing page
+
 ## [1.5.6] — 2026-05-13
 
 ### Changed
