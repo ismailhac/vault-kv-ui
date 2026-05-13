@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.4] — 2026-05-13
+
+### Changed
+- **UpdateModal** simplified to a minimal popup: only the version badge, ✕ close, and `npm install -g vault-admin@latest` with copy icon — no tabs, no steps, no footer links
+
 ## [1.5.3] — 2026-05-13
 
 ### Features
