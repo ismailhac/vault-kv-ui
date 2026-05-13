@@ -21,8 +21,9 @@ try {
     '╔' + '═'.repeat(inner) + '╗\n' +
     '║' + center('vault-admin v' + version + ' installed') + '║\n' +
     '╠' + '═'.repeat(inner) + '╣\n' +
-    '║' + ljust('  Run:   vault-admin') + '║\n' +
-    '║' + ljust('  Docs:  github.com/ismailhac/vault-kv-ui') + '║\n' +
+    '║' + ljust('  Run:      vault-admin') + '║\n' +
+    '║' + ljust('  Service:  vault-admin --install-service') + '║\n' +
+    '║' + ljust('  Docs:     github.com/ismailhac/vault-kv-ui') + '║\n' +
     '╚' + '═'.repeat(inner) + '╝\n'
 
   // Write directly to the terminal device — bypasses npm's stdio piping

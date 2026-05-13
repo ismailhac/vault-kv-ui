@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.4.9] — 2026-05-13
 ### Features
+- background-service-install: Platform-specific background service management — systemd (Linux), launchd (macOS), Task Scheduler (Windows) — with `--install-service` / `--uninstall-service` CLI flags, `--help` / `-h` usage text, and `VAULT_ADMIN_SERVICE` env guard to suppress browser auto-open when running as a service
 - search-enhancement: Enhanced global search with value mode, path scope combobox, search history, result highlight, masked values with eye toggle, and flattened nested secret data in BFF
 - update-notifier: npm update check with terminal banner on startup, footer/landing badge, and UpdateModal with tabbed install instructions (macOS/Linux + Windows)
 

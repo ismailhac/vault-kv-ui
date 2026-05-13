@@ -24,6 +24,40 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   process.exit(0)
 }
 
+// Help flag
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log([
+    '',
+    'Usage: vault-admin [options]',
+    '',
+    'Options:',
+    '  --install-service    Install as a background service (auto-starts at login)',
+    '  --uninstall-service  Remove the background service',
+    '  --version, -v        Print version and exit',
+    '  --help, -h           Show this help',
+    '',
+    'Environment:',
+    '  BFF_PORT             Port to listen on (default: 3001)',
+    '  VAULT_ADDR           Vault server URL',
+    '  VAULT_TOKEN          Default Vault token',
+    '',
+  ].join('\n'))
+  process.exit(0)
+}
+
+// Service management flags
+if (process.argv.includes('--install-service')) {
+  const { installService } = await import(pathToFileURL(join(__dirname, 'service.mjs')).href)
+  installService()
+  process.exit(0)
+}
+
+if (process.argv.includes('--uninstall-service')) {
+  const { uninstallService } = await import(pathToFileURL(join(__dirname, 'service.mjs')).href)
+  uninstallService()
+  process.exit(0)
+}
+
 const PORT = parseInt(process.env.BFF_PORT || '3001')
 const url = `http://localhost:${PORT}`
 const distPath = join(__dirname, '..', 'app', 'dist', 'index.html')
@@ -49,7 +83,7 @@ function waitAndOpen(attemptsLeft) {
     sock.destroy()
     console.log(`\n  🔓 Vault Admin → ${url}\n`)
     setTimeout(() => {
-      if (!process.env.SSH_CLIENT && !process.env.SSH_TTY) {
+      if (!process.env.SSH_CLIENT && !process.env.SSH_TTY && !process.env.VAULT_ADMIN_SERVICE) {
         const cmd =
           platform() === 'darwin' ? `open "${url}"` :
           platform() === 'win32' ? `start "" "${url}"` :

@@ -10,7 +10,7 @@
   <img src="app/public/hashicorp-vault.png" alt="HashiCorp Vault" height="75" />
 </p>
 
-> 🔐 Professional web console for **HashiCorp Vault KV v2** secret management. Browse, edit, audit, and restore secrets with a modern, intuitive interface.
+> 🔐 Professional web console for **HashiCorp Vault KV v2** secret management. Browse, edit, search, audit, and restore secrets with a modern, intuitive interface — no terminal required after setup.
 
 **Designed for**: DevOps engineers, platform teams, and Vault administrators who need a reliable local UI for daily secret management.
 
@@ -22,12 +22,15 @@
 # Install globally (requires Node.js ≥ 20)
 npm install -g vault-admin
 
-# Launch from anywhere
+# Launch — browser opens automatically
 vault-admin
+
+# Optional: install as a background service (no terminal needed)
+vault-admin --install-service
 ```
 
 The UI opens automatically at `http://localhost:3001`.  
-Config and audit logs persist in `~/.vault-admin/`.
+Config and audit logs persist in `~/.vault-kv-ui/`.
 
 ### Environment Setup
 
@@ -50,12 +53,25 @@ BFF_PORT=4000 vault-admin
 
 ### 🔍 Secret Browser
 - **Navigate** KV folders with breadcrumb trail and history
-- **View** secrets in clean key/value table with inline key deletion
-- **Edit** secrets with full before/after diff preview (copy-paste JSON or form mode)
+- **View** secrets in a clean key/value table with inline key deletion
+- **Edit** secrets with full before/after diff preview (form or paste-JSON mode)
 - **Create** secrets with intelligent namespace-based presets
 - **Delete** individual secrets or entire folder trees with selective checkboxes
 - **Download** any path or mount as a single JSON file
-- **Search** and filter by path, toggle display of empty secrets
+- **Auto-hide** empty secrets with a one-click reveal toggle
+
+### 🔎 Global Search
+Press `Ctrl+K` (or use the search bar) to open the full-power search modal.
+
+- **Search by path** — find secrets whose path matches a term
+- **Search by key** — find secrets containing a matching key name (default)
+- **Search by value** — find secrets whose values contain a term (scans all keys, including nested JSON)
+- **Path scope** — restrict the search to a subtree (e.g. `project/staging`); leave empty to search the entire mount
+- **Result count & stats** — always shows `N result(s)`, secrets scanned, and elapsed time
+- **Highlighted matches** — matched terms highlighted in amber in results
+- **Masked values** — matched values shown as `••••••` with a per-key eye toggle and global show/hide all
+- **Click to navigate** — clicking a result opens the secret AND navigates the browser to its parent folder
+- **Search history** — last 8 queries remembered (localStorage); searchable from both the modal and the inline bar
 
 ### ⚙️ Bulk Operations
 All bulk actions **exclude production paths** by default (configurable).
@@ -83,11 +99,33 @@ All bulk actions **exclude production paths** by default (configurable).
 - **Persistence** — auto-save on namespace switch; manual save; local JSON export
 - **Vault export** — write audit session as readable secret in Vault
 
+### 🔔 Update Notifier
+- A badge appears in the footer when a newer version is published to npm
+- Click it to open an update guide with the exact command for your OS (macOS/Linux or Windows)
+- The check is cached for 1 hour; a startup banner is also printed in the terminal
+
+### 🖥️ Background Service (no terminal required)
+
+Run Vault Admin silently in the background, starting automatically at login:
+
+```bash
+# Install the service
+vault-admin --install-service
+
+# Remove the service
+vault-admin --uninstall-service
+```
+
+| Platform | Method | Launcher |
+|---|---|---|
+| **Linux** | `systemd --user` service | `.desktop` entry in app launcher (GNOME, KDE…) |
+| **macOS** | `launchd` user agent | Open `http://localhost:3001` or drag to Dock |
+| **Windows** | Task Scheduler (at logon) | Desktop + Start Menu `.url` shortcuts |
+
 ### 🌐 User Interface
 - **Dark theme** optimized for extended use
+- **Keyboard shortcuts** — `Ctrl+K` global search, arrow keys for breadcrumbs, `Ctrl/Cmd+S` to save
 - **Responsive design** — works on desktop and tablet
-- **Keyboard shortcuts** — arrow keys for breadcrumbs, Ctrl/Cmd+S to save
-- **Accessible** — WCAG 2.1 compliant, screen reader support
 
 ---
 
@@ -107,6 +145,19 @@ npm install -g vault-admin
 vault-admin
 ```
 
+### As a Background Service
+
+```bash
+npm install -g vault-admin
+vault-admin --install-service
+# Vault Admin now starts automatically at login — no terminal needed
+```
+
+To remove:
+```bash
+vault-admin --uninstall-service
+```
+
 ### Local Development
 
 ```bash
@@ -117,6 +168,25 @@ npm run dev
 ```
 
 Open **http://localhost:5173** in your browser.
+
+---
+
+## 🖥️ CLI Reference
+
+```
+Usage: vault-admin [options]
+
+Options:
+  --install-service    Install as a background service (auto-starts at login)
+  --uninstall-service  Remove the background service
+  --version, -v        Print version and exit
+  --help, -h           Show this help
+
+Environment:
+  BFF_PORT             Port to listen on (default: 3001)
+  VAULT_ADDR           Vault server URL
+  VAULT_TOKEN          Default Vault token
+```
 
 ---
 
@@ -131,11 +201,11 @@ Open **http://localhost:5173** in your browser.
 | `VAULT_NAMESPACE` | *(none)* | Default namespace on startup |
 | `BFF_PORT` | `3001` | Backend server port |
 | `OIDC_CALLBACK_PORT` | `8250` | Local OIDC callback server port |
-| `LOGS_FILE` | `~/.vault-admin/audit-logs.json` | Audit log persistence path |
+| `LOGS_FILE` | `~/.vault-kv-ui/audit-logs.json` | Audit log persistence path |
 
 ### Adding Namespaces
 
-Launch the app and use the **Setup Wizard** to add Vault namespaces via the UI. They're stored in `~/.vault-admin/config.json`.
+Launch the app and use the **Setup Wizard** to add Vault namespaces via the UI. They're stored in `~/.vault-kv-ui/config.json`.
 
 Or pre-configure in your shell:
 ```bash
@@ -151,23 +221,23 @@ vault-admin
 ```
 ┌─────────────────────┐
 │   Browser UI        │  Vue 3 + TypeScript + Pinia
-│  (localhost:5173)   │
+│  (localhost:3001)   │  served as static files by BFF
 └──────────┬──────────┘
            │ /api/* →
 ┌──────────▼──────────┐
-│  BFF Server         │  Express.js (ESM)
+│  BFF Server         │  Express.js (ESM, single file)
 │  (localhost:3001)   │  • Token management
 └──────────┬──────────┘  • Vault proxying
            │ ←HTTP→      • Audit logging
 ┌──────────▼──────────┐  • OIDC orchestration
-│  HashiCorp Vault    │
+│  HashiCorp Vault    │  • Global search (path/key/value)
 │  (KV v2 + OIDC)     │
 └─────────────────────┘
 ```
 
 - **Frontend** — Single-page Vue app with centralized Pinia state
-- **Backend** — Single Express file handling all Vault proxying, auth, and logging
-- **Persistence** — `~/.vault-admin/config.json` (settings), `~/.vault-admin/audit-logs.json` (logs)
+- **Backend** — Single Express file handling all Vault proxying, auth, logging, and search
+- **Persistence** — `~/.vault-kv-ui/config.json` (settings), `~/.vault-kv-ui/audit-logs.json` (logs)
 
 ---
 
@@ -192,12 +262,13 @@ See [CHANGELOG.md](./CHANGELOG.md) for release notes and version history.
 
 ## 🔒 Security
 
-Vault KV UI is a **local development tool** designed for single-user workstations in trusted environments.
+Vault Admin is a **local development tool** designed for single-user workstations in trusted environments.
 
 - **Localhost-only** — BFF binds to `127.0.0.1` by default
 - **No per-user auth** — whoever runs the CLI has full access
 - **Audit logging** — all operations logged to persistent JSON
-- **Token management** — tokens cached in-memory and `~/.vault-admin/`
+- **Token management** — tokens cached in-memory and `~/.vault-kv-ui/`
+- **Value masking** — search results mask secret values by default (eye toggle to reveal)
 
 For security disclosures, email **imil.dev01@gmail.com** instead of opening a public issue.
 
@@ -224,11 +295,13 @@ MIT © [Ismail](https://github.com/ismailhac)
 ## 💡 Use Cases
 
 - **Local secret inspection** — quickly view and search secrets without Vault CLI
+- **Value search** — find which secret contains a specific API key or password
 - **Testing & development** — safely edit/restore test environment secrets
 - **Onboarding** — familiar UI for new team members to understand secret structure
 - **Bulk operations** — rename keys, apply flags, or adjust values across namespaces
 - **Audit trail** — full before/after history with restore capability
 - **Configuration rotation** — update database passwords, API keys, certificates in bulk
+- **Always-on access** — install as a service; open `http://localhost:3001` from any app
 
 ---
 
