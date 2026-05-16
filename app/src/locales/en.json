@@ -7,6 +7,8 @@
   "app.by": "By",
   "app.langEn": "EN",
   "app.langFr": "FR",
+  "themeToggle.switchToLight": "Switch to light mode",
+  "themeToggle.switchToDark": "Switch to dark mode",
   "updateModal.available": "available",
   "updateModal.title": "Update available",
   "updateModal.current": "Current version",

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from './stores/vault'
 import { useLocale } from './composables/useLocale'
+import ThemeToggle from './components/ThemeToggle.vue'
 import TokenStatusBar from './components/TokenStatusBar.vue'
 import LoadingSpinner from './components/LoadingSpinner.vue'
 import LoginModal from './components/LoginModal.vue'
@@ -104,6 +105,9 @@ function handleManualLogin() {
             :class="locale === 'fr' ? 'bg-green-800 text-green-200' : 'text-gray-500 hover:text-gray-300'"
             @click="setLocale('fr')"
           >{{ t('app.langFr') }}</button>
+
+          <!-- Theme toggle -->
+          <ThemeToggle />
 
           <!-- Divider -->
           <span class="text-gray-700 mx-1 select-none">|</span>
