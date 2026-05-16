@@ -10,6 +10,7 @@ import VersionTimeline from './VersionTimeline.vue'
 import NestedJsonField from './NestedJsonField.vue'
 import SmartValueCell from './SmartValueCell.vue'
 import SmartEditValue from './SmartEditValue.vue'
+import CloneModal from './CloneModal.vue'
 
 const vault = useVaultStore()
 const editingAllowed = computed(() => vault.editingEnabled)
@@ -154,6 +155,97 @@ function removeKey(key: string) {
   showDiff.value = true
 }
 
+// ---- Row selection ----
+const selectedRowKeys = ref<Set<string>>(new Set())
+const showRowFormatPicker = ref(false)
+const showCloneRows = ref(false)
+
+const flatKeys = computed(() => {
+  if (!vault.selectedSecret) return []
+  return Object.keys(vault.selectedSecret.data).filter(k => !parseJsonValue(vault.selectedSecret!.data[k]).isNested)
+})
+
+const allRowsSelected = computed(() =>
+  flatKeys.value.length > 0 && flatKeys.value.every(k => selectedRowKeys.value.has(k))
+)
+const someRowsSelected = computed(() =>
+  flatKeys.value.some(k => selectedRowKeys.value.has(k))
+)
+const selectedRowsData = computed<Record<string, string>>(() => {
+  if (!vault.selectedSecret) return {}
+  return Object.fromEntries(
+    [...selectedRowKeys.value]
+      .filter(k => k in vault.selectedSecret!.data)
+      .map(k => [k, String(vault.selectedSecret!.data[k] ?? '')])
+  )
+})
+
+function toggleRowSelect(key: string) {
+  const s = new Set(selectedRowKeys.value)
+  if (s.has(key)) s.delete(key); else s.add(key)
+  selectedRowKeys.value = s
+}
+
+function toggleAllRows() {
+  if (allRowsSelected.value) {
+    selectedRowKeys.value = new Set()
+  } else {
+    selectedRowKeys.value = new Set(flatKeys.value)
+  }
+}
+
+function clearRowSelection() {
+  selectedRowKeys.value = new Set()
+}
+
+function serializeRowJson(data: Record<string, string>): string {
+  return JSON.stringify(data, null, 2)
+}
+
+function serializeRowCsv(data: Record<string, string>): string {
+  const rows = ['key,value']
+  for (const [k, v] of Object.entries(data)) rows.push(`${k},${JSON.stringify(v)}`)
+  return rows.join('\n')
+}
+
+function serializeRowYaml(data: Record<string, string>): string {
+  return Object.entries(data).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n')
+}
+
+function downloadSelectedRows(format: 'json' | 'csv' | 'yaml') {
+  showRowFormatPicker.value = false
+  const data = selectedRowsData.value
+  const secretName = vault.selectedSecret?.path.split('/').pop() ?? 'secret'
+  const mimeType = format === 'json' ? 'application/json' : format === 'csv' ? 'text/csv' : 'text/yaml'
+  const filename = `${secretName}-selection.${format}`
+  let content: string
+  if (format === 'json') content = serializeRowJson(data)
+  else if (format === 'csv') content = serializeRowCsv(data)
+  else content = serializeRowYaml(data)
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+// ---- Copy + masking ----
+const valuesVisible = ref(false)
+const copiedCell = ref<string | null>(null)
+const toastMessage = ref('')
+const toastVisible = ref(false)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+async function copyCell(text: string, id: string, label: string) {
+  await navigator.clipboard.writeText(text)
+  copiedCell.value = id
+  setTimeout(() => { if (copiedCell.value === id) copiedCell.value = null }, 1500)
+  toastMessage.value = label
+  toastVisible.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toastVisible.value = false }, 1800)
+}
+
 // ---- Download ----
 function downloadSecret() {
   if (!vault.selectedSecret) return
@@ -174,6 +266,7 @@ watch(() => vault.selectedSecret?.path, () => {
   isRestoring.value = false
   cancelEditRow()
   rowSaveSuccess.value = null
+  clearRowSelection()
 })
 
 // Stringify unknown values so ConfirmDiffModal (Record<string,string>) works correctly
@@ -304,6 +397,19 @@ function handleLeafEdit(path: string[], newValue: string) {
             :title="t('secretPanel.downloadSecret')"
             @click="downloadSecret"
           >{{ t('secretPanel.downloadSecret') }}</button>
+          <button
+            v-if="!editMode"
+            class="p-1 rounded text-gray-500 hover:text-gray-200 hover:bg-gray-700 transition-colors"
+            :title="valuesVisible ? t('secretPanel.hideValues') : t('secretPanel.showValues')"
+            @click="valuesVisible = !valuesVisible"
+          >
+            <svg v-if="valuesVisible" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+          </button>
           <button class="text-gray-500 hover:text-gray-300 text-xs" @click="vault.selectedSecret = null">✕</button>
         </div>
       </div>
@@ -318,10 +424,74 @@ function handleLeafEdit(path: string[], newValue: string) {
 
       <!-- Read mode: inline editable table -->
       <div v-else-if="!editMode" class="px-4 py-3">
+
+        <!-- Format picker backdrop -->
+        <div v-if="showRowFormatPicker" class="fixed inset-0 z-20" @click="showRowFormatPicker = false" />
+
+        <!-- Row selection action bar -->
+        <div
+          v-if="selectedRowKeys.size > 0"
+          class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-950/40 border border-blue-800/50 rounded"
+        >
+          <span class="text-blue-300 text-xs font-medium">{{ t('selectionBar.selected', { n: selectedRowKeys.size }) }}</span>
+          <div class="flex-1" />
+          <button
+            class="text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors cursor-pointer"
+            @click="clearRowSelection"
+          >✕ {{ t('selectionBar.clear') }}</button>
+          <div class="relative z-30">
+            <button
+              class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors cursor-pointer"
+              :title="t('selectionBar.downloadTooltip')"
+              @click="showRowFormatPicker = !showRowFormatPicker"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-green-400">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              {{ t('selectionBar.download') }}
+            </button>
+            <div
+              v-if="showRowFormatPicker"
+              class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden w-28"
+            >
+              <button
+                v-for="fmt in (['json', 'csv', 'yaml'] as const)"
+                :key="fmt"
+                class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white transition-colors font-mono uppercase cursor-pointer"
+                @click="downloadSelectedRows(fmt)"
+              >{{ fmt }}</button>
+            </div>
+          </div>
+          <button
+            v-if="vault.editingEnabled"
+            class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 text-blue-100 rounded transition-colors cursor-pointer"
+            :title="t('selectionBar.cloneTooltip')"
+            @click="showCloneRows = true"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+            </svg>
+            {{ t('selectionBar.clone') }}
+          </button>
+        </div>
+
         <table class="w-full text-sm">
           <thead>
             <tr class="text-gray-500 text-xs uppercase border-b border-gray-700">
-              <th class="text-left py-1 pr-4 w-1/3">{{ t('secretPanel.keyHeader') }}</th>
+              <th class="text-left py-1 pr-4 w-1/3">
+                <div class="flex items-center gap-2">
+                  <input
+                    v-if="flatKeys.length > 0"
+                    type="checkbox"
+                    class="accent-blue-500 w-3.5 h-3.5 cursor-pointer shrink-0"
+                    :checked="allRowsSelected"
+                    :indeterminate="someRowsSelected && !allRowsSelected"
+                    :title="t('selectionBar.selectAll')"
+                    @change="toggleAllRows"
+                  />
+                  {{ t('secretPanel.keyHeader') }}
+                </div>
+              </th>
               <th class="text-left py-1">{{ t('secretPanel.valueHeader') }}</th>
               <th v-if="editingAllowed" class="w-14"></th>
             </tr>
@@ -351,11 +521,29 @@ function handleLeafEdit(path: string[], newValue: string) {
               >
                 <!-- Key cell -->
                 <td class="py-1.5 pr-4 align-middle">
-                  <span
-                    v-if="editingRow !== String(key)"
-                    class="font-mono text-xs break-all"
-                    :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-blue-300'"
-                  >{{ key }}</span>
+                  <div v-if="editingRow !== String(key)" class="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      class="accent-blue-500 w-3.5 h-3.5 cursor-pointer shrink-0 mr-0.5"
+                      :checked="selectedRowKeys.has(String(key))"
+                      @click.stop
+                      @change="toggleRowSelect(String(key))"
+                    />
+                    <button
+                      class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-gray-300 rounded transition-colors shrink-0 cursor-pointer"
+                      :title="t('secretPanel.copyKey')"
+                      @click.stop="copyCell(String(key), `key-${String(key)}`, t('secretPanel.copiedKey'))"
+                    >
+                      <span v-if="copiedCell === `key-${String(key)}`" class="text-green-400 text-xs">✓</span>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                      </svg>
+                    </button>
+                    <span
+                      class="font-mono text-xs break-all"
+                      :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-blue-300'"
+                    >{{ key }}</span>
+                  </div>
                   <input
                     v-else
                     v-focus
@@ -371,7 +559,17 @@ function handleLeafEdit(path: string[], newValue: string) {
                 <!-- Value cell -->
                 <td class="py-1.5 font-mono text-xs align-middle">
                   <div v-if="editingRow !== String(key)" class="flex items-center gap-1.5">
-                    <SmartValueCell :value="val" />
+                    <button
+                      class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-gray-300 rounded transition-colors shrink-0 cursor-pointer"
+                      :title="t('secretPanel.copyValue')"
+                      @click.stop="copyCell(String(val), `val-${String(key)}`, t('secretPanel.copiedValue'))"
+                    >
+                      <span v-if="copiedCell === `val-${String(key)}`" class="text-green-400 text-xs">✓</span>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                      </svg>
+                    </button>
+                    <SmartValueCell :value="val" :masked="!valuesVisible" />
                     <span v-if="rowSaveSuccess === String(key)" class="text-green-400 shrink-0">✓</span>
                   </div>
                   <div v-else class="flex items-center gap-1" @click.stop @dblclick.stop>
@@ -440,6 +638,17 @@ function handleLeafEdit(path: string[], newValue: string) {
 
   </div>
 
+  <!-- Copy toast -->
+  <Transition name="toast">
+    <div
+      v-if="toastVisible"
+      class="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-xs text-gray-200"
+    >
+      <span class="text-green-400">✓</span>
+      {{ toastMessage }}
+    </div>
+  </Transition>
+
   <!-- Diff confirmation modal (JSON bulk edit, key delete, restore) -->
   <ConfirmDiffModal
     v-if="showDiff && vault.selectedSecret"
@@ -449,4 +658,18 @@ function handleLeafEdit(path: string[], newValue: string) {
     @confirm="confirmSave"
     @cancel="showDiff = false"
   />
+
+  <!-- Clone selected KV rows -->
+  <CloneModal
+    v-if="showCloneRows"
+    :selected-data="selectedRowsData"
+    @close="showCloneRows = false"
+    @cloned="() => { clearRowSelection(); showCloneRows = false }"
+  />
 </template>
+
+<style scoped>
+.toast-enter-active { transition: opacity 0.15s ease, transform 0.15s ease; }
+.toast-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(6px); }
+</style>

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import cronstrue from 'cronstrue'
 import 'cronstrue/locales/fr'
 
-const props = defineProps<{ value: unknown }>()
+const props = defineProps<{ value: unknown; masked?: boolean }>()
 
 function isCron(v: unknown): boolean {
   const parts = String(v ?? '').trim().split(/\s+/)
@@ -26,8 +26,13 @@ const cronLabel = computed(() => {
 </script>
 
 <template>
+  <!-- Masked -->
+  <template v-if="masked">
+    <span class="text-gray-600 font-mono tracking-widest select-none">••••••••</span>
+  </template>
+
   <!-- Boolean: non-clickable colored pill -->
-  <template v-if="isBoolean(value)">
+  <template v-else-if="isBoolean(value)">
     <span
       class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border select-none"
       :class="boolVal ? 'bg-green-950 border-green-700 text-green-300' : 'bg-gray-800 border-gray-700 text-gray-500'"
@@ -38,13 +43,13 @@ const cronLabel = computed(() => {
   </template>
 
   <!-- Cron: value + human-readable description -->
-  <template v-else-if="isCron(value)">
+  <template v-else-if="!masked && isCron(value)">
     <span class="font-mono text-gray-300 break-all">{{ value }}</span>
     <span v-if="cronLabel" class="text-xs text-gray-500 italic ml-1">— {{ cronLabel }}</span>
   </template>
 
   <!-- Everything else: plain text -->
-  <template v-else>
+  <template v-else-if="!masked">
     <span class="break-all text-gray-300">{{ value }}</span>
   </template>
 </template>

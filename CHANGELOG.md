@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.5.9] — 2026-05-16
+
+### Features
+- secret-cloning: KV row selection (checkboxes, select-all, selection action bar with Download and Clone), CloneModal for copying selected secrets to a sibling environment path with smart env-path detection suggestions
+
 ## [1.5.8] — 2026-05-13
 
 ### Changed
