@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable class-based light mode: add `light` class to <html> to activate light: utilities */
+@custom-variant light (&:where(.light, .light *));
+
 
 :root {
   --text: #6b6375;

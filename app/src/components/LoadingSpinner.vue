@@ -23,7 +23,7 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
 
 <template>
   <div class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-8 max-w-md w-full text-center space-y-6">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-8 max-w-md w-full text-center space-y-6 light:bg-gray-50 light:border-gray-300">
       <!-- Loading state -->
       <div v-if="status === 'loading'" class="space-y-4">
         <div class="flex justify-center">
@@ -35,7 +35,7 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             ></div>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ message || t('loadingSpinner.verifyingToken') }}</h2>
+        <h2 class="text-white font-semibold text-lg light:text-gray-900">{{ message || t('loadingSpinner.verifyingToken') }}</h2>
         <p class="text-gray-400 text-sm">{{ t('loadingSpinner.pleaseWait') }}</p>
       </div>
 
@@ -43,12 +43,12 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
       <div v-else-if="status === 'success'" class="space-y-4">
         <div class="flex justify-center">
           <div
-            class="w-16 h-16 bg-green-900 rounded-full flex items-center justify-center border-2 border-green-500 animate-pulse"
+            class="w-16 h-16 bg-green-900 rounded-full flex items-center justify-center border-2 border-green-500 animate-pulse light:bg-green-100"
           >
             <span class="text-green-400 text-3xl">✓</span>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ t('loadingSpinner.authSuccess') }}</h2>
+        <h2 class="text-white font-semibold text-lg light:text-gray-900">{{ t('loadingSpinner.authSuccess') }}</h2>
         <p class="text-green-400 text-sm">{{ t('loadingSpinner.connectionEstablished') }}</p>
         <p class="text-gray-500 text-xs">{{ t('loadingSpinner.redirecting') }}</p>
       </div>
@@ -56,13 +56,13 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
       <!-- Error state -->
       <div v-else-if="status === 'error'" class="space-y-4">
         <div class="flex justify-center">
-          <div class="w-16 h-16 bg-red-900 rounded-full flex items-center justify-center border-2 border-red-500">
+          <div class="w-16 h-16 bg-red-900 rounded-full flex items-center justify-center border-2 border-red-500 light:bg-red-100">
             <span class="text-red-400 text-3xl">⚠</span>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ t('loadingSpinner.authError') }}</h2>
-        <div class="bg-red-950 border border-red-800 rounded p-3 text-left">
-          <p class="text-red-300 text-xs font-mono">{{ error || t('loadingSpinner.unknownError') }}</p>
+        <h2 class="text-white font-semibold text-lg light:text-gray-900">{{ t('loadingSpinner.authError') }}</h2>
+        <div class="bg-red-950 border border-red-800 rounded p-3 text-left light:bg-red-100 light:border-red-200">
+          <p class="text-red-300 text-xs font-mono light:text-red-700">{{ error || t('loadingSpinner.unknownError') }}</p>
         </div>
         <p class="text-gray-400 text-sm">
           {{ t('loadingSpinner.tokenExpiredOrInvalid') }}

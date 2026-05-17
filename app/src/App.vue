@@ -42,7 +42,7 @@ function handleManualLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-gray-100 font-mono flex flex-col">
+  <div class="min-h-screen bg-gray-950 text-gray-100 font-mono flex flex-col light:bg-white light:text-gray-900">
 
     <!-- Init overlay -->
     <LoadingSpinner
@@ -69,7 +69,7 @@ function handleManualLogin() {
       <template v-else>
 
       <!-- ── Header ── -->
-      <header class="border-b border-gray-800 px-4 h-12 flex items-center gap-3">
+      <header class="border-b border-gray-800 px-4 h-12 flex items-center gap-3 light:border-gray-200">
 
         <!-- Branding -->
         <button
@@ -96,13 +96,13 @@ function handleManualLogin() {
           <button
             type="button"
             class="px-2 py-0.5 rounded text-xs font-bold transition cursor-pointer"
-            :class="locale === 'en' ? 'bg-green-800 text-green-200' : 'text-gray-500 hover:text-gray-300'"
+            :class="locale === 'en' ? 'bg-green-800 text-green-200 light:bg-green-100 light:text-green-800' : 'text-gray-500 hover:text-gray-300 light:hover:text-gray-700'"
             @click="setLocale('en')"
           >{{ t('app.langEn') }}</button>
           <button
             type="button"
             class="px-2 py-0.5 rounded text-xs font-bold transition cursor-pointer"
-            :class="locale === 'fr' ? 'bg-green-800 text-green-200' : 'text-gray-500 hover:text-gray-300'"
+            :class="locale === 'fr' ? 'bg-green-800 text-green-200 light:bg-green-100 light:text-green-800' : 'text-gray-500 hover:text-gray-300 light:hover:text-gray-700'"
             @click="setLocale('fr')"
           >{{ t('app.langFr') }}</button>
 
@@ -115,7 +115,7 @@ function handleManualLogin() {
           <!-- Config / reconnect -->
           <button
             type="button"
-            class="flex items-center justify-center p-1.5 rounded transition cursor-pointer text-gray-500 hover:text-gray-200 hover:bg-gray-800"
+            class="flex items-center justify-center p-1.5 rounded transition cursor-pointer text-gray-500 hover:text-gray-200 hover:bg-gray-800 light:hover:text-gray-700 light:hover:bg-gray-100"
             :title="t('app.configTitle')"
             @click="vault.showSetupStep = true; vault.showLoginModal = true"
           >
@@ -128,7 +128,7 @@ function handleManualLogin() {
           <RouterLink
             to="/admin"
             class="flex items-center justify-center p-1.5 rounded transition"
-            :class="$route.path === '/admin' ? 'bg-gray-700 text-gray-200' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800'"
+            :class="$route.path === '/admin' ? 'bg-gray-700 text-gray-200 light:bg-gray-200 light:text-gray-800' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800 light:hover:text-gray-700 light:hover:bg-gray-100'"
             :title="t('app.adminDashboardTitle')"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -148,7 +148,7 @@ function handleManualLogin() {
 
 
       <!-- ── Footer ── -->
-      <footer class="border-t border-gray-800 px-6 py-3 mt-4">
+      <footer class="border-t border-gray-800 px-6 py-3 mt-4 light:border-gray-200">
         <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 text-gray-600 text-xs">
           <div class="flex items-center gap-2">
             <span class="text-green-700 font-bold">⬡ {{ t('app.vaultAdmin') }}</span>

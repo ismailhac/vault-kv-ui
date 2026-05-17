@@ -368,25 +368,25 @@ function getRowStatus(entry: PathDiff, key: string) {
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 light:bg-gray-50 border border-gray-700 light:border-gray-200 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <span class="text-white font-semibold text-sm">{{ t('bulkEditModal.title') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
-        <button class="text-gray-500 hover:text-gray-300" @click="emit('close')">✕</button>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-200">
+        <span class="text-white light:text-gray-900 font-semibold text-sm">{{ t('bulkEditModal.title') }} <span class="text-green-400 light:text-green-700">{{ vault.currentMount }}</span></span>
+        <button class="text-gray-500 hover:text-gray-300 light:hover:text-gray-700" @click="emit('close')">✕</button>
       </div>
 
       <!-- Spinner while paths are loading -->
       <div v-if="loadingPaths" class="flex-1 flex flex-col items-center justify-center py-16 gap-4">
-        <div class="w-12 h-12 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
-        <p class="text-gray-400 text-sm">{{ t('bulkEditModal.loadingSecrets') }}</p>
-        <p class="text-gray-600 text-xs">{{ t('bulkEditModal.scanningMount') }} <span class="text-green-500">{{ vault.currentMount }}</span></p>
+        <div class="w-12 h-12 border-2 border-gray-700 light:border-gray-300 border-t-green-400 rounded-full animate-spin"></div>
+        <p class="text-gray-400 light:text-gray-600 text-sm">{{ t('bulkEditModal.loadingSecrets') }}</p>
+        <p class="text-gray-600 light:text-gray-500 text-xs">{{ t('bulkEditModal.scanningMount') }} <span class="text-green-500 light:text-green-700">{{ vault.currentMount }}</span></p>
       </div>
 
       <div v-else class="overflow-auto flex-1 px-5 py-4 space-y-4">
         <!-- Success notification -->
         <div
           v-if="successMessage"
-          class="px-4 py-3 bg-green-900 border border-green-700 text-green-200 rounded text-sm animate-pulse"
+          class="px-4 py-3 bg-green-900 light:bg-green-100 border border-green-700 light:border-green-400 text-green-200 light:text-green-800 rounded text-sm animate-pulse"
         >
           {{ successMessage }}
         </div>
@@ -395,7 +395,7 @@ function getRowStatus(entry: PathDiff, key: string) {
         <div v-if="!previewReady">
           <!-- Preset selector -->
           <div class="mb-4">
-            <label class="text-gray-400 text-xs block mb-2">{{ t('bulkEditModal.projectPreset') }}</label>
+            <label class="text-gray-400 light:text-gray-600 text-xs block mb-2">{{ t('bulkEditModal.projectPreset') }}</label>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="preset in presetOptions"
@@ -415,7 +415,7 @@ function getRowStatus(entry: PathDiff, key: string) {
           <!-- Path selector -->
           <div class="mb-4">
             <div class="flex items-center gap-2 mb-2">
-              <label class="text-gray-400 text-xs">{{ t('bulkEditModal.pathToEdit') }}</label>
+              <label class="text-gray-400 light:text-gray-600 text-xs">{{ t('bulkEditModal.pathToEdit') }}</label>
               <button
                 type="button"
                 class="px-2 py-0.5 rounded-full border text-xs font-medium transition cursor-pointer"
@@ -427,7 +427,7 @@ function getRowStatus(entry: PathDiff, key: string) {
               <select
                 v-model="selectedPath"
                 :disabled="loadingPaths || filteredPaths.length === 0"
-                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 rounded text-sm focus:outline-none focus:border-green-600 disabled:opacity-50"
+                class="flex-1 px-3 py-2 bg-gray-950 light:bg-gray-100 border border-gray-700 light:border-gray-200 text-green-300 light:text-gray-700 rounded text-sm focus:outline-none focus:border-green-600 light:focus:border-green-400 disabled:opacity-50"
               >
                 <option value="" disabled>{{ loadingPaths ? t('bulkEditModal.loadingPaths') : t('bulkEditModal.selectPath') }}</option>
                 <option v-for="path in filteredPaths" :key="path" :value="path">
@@ -435,17 +435,17 @@ function getRowStatus(entry: PathDiff, key: string) {
                 </option>
               </select>
               <button
-                class="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
+                class="px-3 py-2 text-sm bg-gray-700 light:bg-gray-200 hover:bg-gray-600 light:hover:bg-gray-300 text-gray-200 light:text-gray-700 rounded"
                 :disabled="loadingPaths"
                 @click="loadAvailablePaths"
               >
                 🔄
               </button>
             </div>
-            <div v-if="availablePaths.length > 0" class="text-gray-500 text-xs mt-1">
+            <div v-if="availablePaths.length > 0" class="text-gray-500 light:text-gray-500 text-xs mt-1">
               {{ t('bulkEditModal.pathCount', { filtered: filteredPaths.length, total: availablePaths.length }) }}
             </div>
-            <div v-else-if="!loadingPaths && pathsError" class="text-red-400 text-xs mt-1">
+            <div v-else-if="!loadingPaths && pathsError" class="text-red-400 light:text-red-700 text-xs mt-1">
               ⚠ {{ pathsError }}
             </div>
             <div v-else-if="!loadingPaths" class="text-gray-500 text-xs mt-1">
@@ -454,22 +454,22 @@ function getRowStatus(entry: PathDiff, key: string) {
           </div>
 
           <!-- JSON input -->
-          <p class="text-gray-400 text-xs mb-2">
+          <p class="text-gray-400 light:text-gray-600 text-xs mb-2">
             {{ t('bulkEditModal.editJsonHint') }}
           </p>
-          <div v-if="loadingSelectedPathJson" class="text-blue-300 text-xs mb-2">
+          <div v-if="loadingSelectedPathJson" class="text-blue-300 light:text-blue-700 text-xs mb-2">
             {{ t('bulkEditModal.loadingJson') }}
           </div>
-          <div v-if="selectedPathJsonError" class="text-amber-300 text-xs mb-2">
+          <div v-if="selectedPathJsonError" class="text-amber-300 light:text-amber-700 text-xs mb-2">
             {{ t('bulkEditModal.cannotLoadPath') }} {{ selectedPathJsonError }}
           </div>
           <textarea
             v-model="bulkJson"
-            class="w-full h-72 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600"
+            class="w-full h-72 bg-gray-950 light:bg-gray-100 border border-gray-700 light:border-gray-200 text-green-300 light:text-gray-700 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600 light:focus:border-green-400"
             :disabled="loadingSelectedPathJson"
             spellcheck="false"
           />
-          <div v-if="jsonError" class="mt-2 text-red-400 text-xs">⚠ {{ jsonError }}</div>
+          <div v-if="jsonError" class="mt-2 text-red-400 light:text-red-700 text-xs">⚠ {{ jsonError }}</div>
           <div class="flex gap-2 mt-3">
             <button
               class="px-4 py-1.5 text-sm bg-blue-700 hover:bg-blue-600 text-white rounded"
@@ -484,10 +484,10 @@ function getRowStatus(entry: PathDiff, key: string) {
         <!-- Preview diffs -->
         <div v-if="previewReady" class="space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-gray-400 text-sm">{{ t('bulkEditModal.pathsModified', { paths: previews.length, modified: totalChanges }) }}</span>
+            <span class="text-gray-400 light:text-gray-600 text-sm">{{ t('bulkEditModal.pathsModified', { paths: previews.length, modified: totalChanges }) }}</span>
             <div class="flex gap-2">
               <button
-                class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
+                class="text-xs px-3 py-1 bg-gray-700 light:bg-gray-200 hover:bg-gray-600 light:hover:bg-gray-300 text-gray-200 light:text-gray-700 rounded"
                 @click="previewReady = false"
               >{{ t('bulkEditModal.editBack') }}</button>
               <button
@@ -501,10 +501,10 @@ function getRowStatus(entry: PathDiff, key: string) {
           <div
             v-for="(entry, i) in previews"
             :key="entry.path"
-            class="border border-gray-700 rounded"
+            class="border border-gray-700 light:border-gray-200 rounded"
           >
-            <div class="flex items-center justify-between px-4 py-2 bg-gray-800 rounded-t">
-              <span class="font-mono text-xs text-green-300">{{ entry.path }}</span>
+            <div class="flex items-center justify-between px-4 py-2 bg-gray-800 light:bg-gray-100 rounded-t">
+              <span class="font-mono text-xs text-green-300 light:text-green-700">{{ entry.path }}</span>
               <div class="flex items-center gap-2">
                 <span
                   v-if="applyResults.find(r => r.path === entry.path)"
@@ -513,10 +513,10 @@ function getRowStatus(entry: PathDiff, key: string) {
                 >
                   {{ applyResults.find(r => r.path === entry.path)!.ok ? '✓ OK' : '✗ ' + applyResults.find(r => r.path === entry.path)!.error }}
                 </span>
-                <span v-if="entry.fetchError" class="text-red-400 text-xs">⚠ {{ entry.fetchError }}</span>
+                <span v-if="entry.fetchError" class="text-red-400 light:text-red-700 text-xs">⚠ {{ entry.fetchError }}</span>
                 <button
                   v-if="!applyResults.find(r => r.path === entry.path)"
-                  class="text-xs px-2 py-0.5 bg-green-800 hover:bg-green-700 text-green-200 rounded"
+                  class="text-xs px-2 py-0.5 bg-green-800 light:bg-green-100 hover:bg-green-700 light:hover:bg-green-200 text-green-200 light:text-green-800 rounded"
                   @click="startConfirm(i)"
                 >{{ t('bulkEditModal.apply') }}</button>
               </div>
@@ -527,7 +527,7 @@ function getRowStatus(entry: PathDiff, key: string) {
                 <tr
                   v-for="key in [...new Set([...Object.keys(entry.before), ...Object.keys(entry.after)])].sort()"
                   :key="key"
-                  class="border-b border-gray-800 last:border-0"
+                  class="border-b border-gray-800 light:border-gray-200 last:border-0"
                   :class="{
                     'text-green-300 bg-green-950': getRowStatus(entry, key) === 'added',
                     'text-red-300 bg-red-950': getRowStatus(entry, key) === 'removed',
@@ -545,7 +545,7 @@ function getRowStatus(entry: PathDiff, key: string) {
         </div>
       </div><!-- end v-else body (paths loaded) -->
 
-      <div v-if="allApplied" class="px-5 py-3 border-t border-gray-700 text-green-400 text-sm text-center">
+      <div v-if="allApplied" class="px-5 py-3 border-t border-gray-700 light:border-gray-200 text-green-400 light:text-green-700 text-sm text-center">
         {{ t('bulkEditModal.allApplied') }}
       </div>
     </div>

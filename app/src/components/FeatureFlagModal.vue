@@ -293,14 +293,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl light:bg-white light:border-gray-300">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-300">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">{{ t('featureFlagModal.title') }}</span>
+          <span class="text-white font-semibold text-sm light:text-gray-900">{{ t('featureFlagModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">{{ t('featureFlagModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs">{{ t('featureFlagModal.mount') }} <span class="text-green-400 light:text-green-700">{{ vault.currentMount }}</span></span>
         </div>
         <!-- Step indicator -->
         <div class="flex items-center gap-1">
@@ -315,7 +315,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <span v-if="s < 5" class="text-gray-700 text-xs">›</span>
           </template>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0" @click="emit('close')">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0 light:hover:text-gray-700" @click="emit('close')">✕</button>
       </div>
 
       <!-- Body -->
@@ -331,7 +331,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               v-model="ffKey"
               type="text"
               placeholder="FF_OPEN_MODAL"
-              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
+              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700 light:bg-gray-100 light:border-gray-300 light:text-gray-700 light:placeholder-gray-500"
               spellcheck="false"
             />
           </div>
@@ -358,14 +358,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 @click="ffValue = 'false'">false</button>
             </div>
             <input v-else v-model="ffValue" :type="ffValueType === 'number' ? 'number' : 'text'"
-              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600"
+              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 light:bg-gray-100 light:border-gray-300 light:text-gray-700"
               spellcheck="false" />
           </div>
 
-          <div v-if="ffKey.trim()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-xs font-mono">
-            <span class="text-gray-400">{{ ffKey }}</span>
+          <div v-if="ffKey.trim()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-xs font-mono light:bg-gray-100 light:border-gray-300">
+            <span class="text-gray-400 light:text-gray-600">{{ ffKey }}</span>
             <span class="text-gray-600">=</span>
-            <span class="text-green-300">{{ ffValue }}</span>
+            <span class="text-green-300 light:text-green-700">{{ ffValue }}</span>
           </div>
         </div>
 
@@ -374,16 +374,16 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <div class="flex items-center justify-between">
             <p class="text-gray-400 text-sm">{{ t('featureFlagModal.step2Desc') }}</p>
             <div class="flex gap-2">
-              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = [...projectSegments]">{{ t('featureFlagModal.all') }}</button>
-              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = []">{{ t('featureFlagModal.none') }}</button>
+              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedProjects = [...projectSegments]">{{ t('featureFlagModal.all') }}</button>
+              <button class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedProjects = []">{{ t('featureFlagModal.none') }}</button>
             </div>
           </div>
 
           <div v-if="loadingPaths" class="flex flex-col items-center py-10 gap-3">
-            <div class="w-10 h-10 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
+            <div class="w-10 h-10 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin light:border-gray-300 light:border-t-green-600"></div>
             <p class="text-gray-400 text-sm">{{ t('featureFlagModal.scanningMount') }}</p>
           </div>
-          <div v-else-if="loadError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded">⚠ {{ loadError }}</div>
+          <div v-else-if="loadError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded light:bg-red-100 light:border-red-300 light:text-red-700">⚠ {{ loadError }}</div>
 
           <template v-else>
             <div v-if="suggestedProjects.length > 0">
@@ -426,7 +426,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
             <div v-if="projectSegments.length === 0" class="text-gray-500 text-sm text-center py-8">{{ t('featureFlagModal.noProjects') }}</div>
 
-            <div class="text-gray-600 text-xs pt-2 border-t border-gray-800">
+            <div class="text-gray-600 text-xs pt-2 border-t border-gray-800 light:border-gray-200">
               {{ t('featureFlagModal.projectCount', { n: selectedProjects.length, paths: allPaths.filter(p => selectedProjects.includes(seg(p, 0))).length }) }}
             </div>
           </template>
@@ -440,8 +440,8 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <div class="flex items-center justify-between mb-2">
               <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('featureFlagModal.step3BU') }}</label>
               <div class="flex gap-1.5">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = [...availableBUs]">{{ t('featureFlagModal.allEnvs') }}</button>
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = []">{{ t('featureFlagModal.none') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedBUs = [...availableBUs]">{{ t('featureFlagModal.allEnvs') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedBUs = []">{{ t('featureFlagModal.none') }}</button>
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -467,9 +467,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('featureFlagModal.step3Envs') }}</label>
               <!-- Quick-select presets -->
               <div class="flex gap-1.5 ml-auto">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="quickSelectEnvs('all')">{{ t('featureFlagModal.allEnvs') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="quickSelectEnvs('all')">{{ t('featureFlagModal.allEnvs') }}</button>
                 <button class="text-xs px-2 py-0.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-300 border border-emerald-800 rounded" @click="quickSelectEnvs('no-prod')">{{ t('featureFlagModal.noProdsLabel') }}</button>
-                <button class="text-xs px-2 py-0.5 bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded" @click="quickSelectEnvs('prod-only')">{{ t('featureFlagModal.prodOnlyLabel') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded light:bg-red-100 light:hover:bg-red-200 light:text-red-700 light:border-red-300" @click="quickSelectEnvs('prod-only')">{{ t('featureFlagModal.prodOnlyLabel') }}</button>
               </div>
             </div>
 
@@ -541,7 +541,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             </div>
 
             <!-- Prod value inputs -->
-            <div v-if="activeProdMode" class="ml-7 flex gap-4 p-3 bg-gray-800 border border-gray-700 rounded" @click.stop>
+            <div v-if="activeProdMode" class="ml-7 flex gap-4 p-3 bg-gray-800 border border-gray-700 rounded light:bg-gray-100 light:border-gray-300" @click.stop>
               <div class="flex-1">
                 <label class="text-gray-400 text-xs block mb-1">{{ t('featureFlagModal.nonProdValue') }}</label>
                 <div v-if="ffValueType === 'boolean'" class="flex gap-2">
@@ -555,7 +555,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <input v-else v-model="ffValue" class="px-2 py-1 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-xs w-full" />
               </div>
               <div class="flex-1">
-                <label class="text-amber-400 text-xs block mb-1">{{ t('featureFlagModal.prodValue') }}</label>
+                <label class="text-amber-400 text-xs block mb-1 light:text-amber-700">{{ t('featureFlagModal.prodValue') }}</label>
                 <div v-if="ffValueType === 'boolean'" class="flex gap-2">
                   <button type="button" class="px-3 py-1 rounded border text-xs font-bold"
                     :class="ffProdValue === 'true' ? 'bg-green-700 text-white border-green-500' : 'bg-gray-700 text-gray-400 border-gray-600'"
@@ -564,7 +564,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                     :class="ffProdValue === 'false' ? 'bg-red-800 text-white border-red-600' : 'bg-gray-700 text-gray-400 border-gray-600'"
                     @click="ffProdValue = 'false'">false</button>
                 </div>
-                <input v-else v-model="ffProdValue" class="px-2 py-1 bg-gray-950 border border-gray-700 text-amber-300 font-mono rounded text-xs w-full" />
+                <input v-else v-model="ffProdValue" class="px-2 py-1 bg-gray-950 border border-gray-700 text-amber-300 font-mono rounded text-xs w-full light:bg-gray-100 light:border-gray-300 light:text-gray-700" />
               </div>
             </div>
 
@@ -585,7 +585,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               </div>
             </div>
 
-            <div v-if="perEnvValues && !activeProdMode" class="ml-7 space-y-2 p-3 bg-gray-800 border border-gray-700 rounded" @click.stop>
+            <div v-if="perEnvValues && !activeProdMode" class="ml-7 space-y-2 p-3 bg-gray-800 border border-gray-700 rounded light:bg-gray-100 light:border-gray-300" @click.stop>
               <div v-for="env in selectedEnvs" :key="env" class="flex items-center gap-3">
                 <span class="font-mono text-xs w-20 shrink-0" :class="isProd(env) ? 'text-red-300' : 'text-green-300'">{{ env }}</span>
                 <span v-if="isProd(env)" class="text-red-500 text-xs shrink-0">{{ t('featureFlagModal.prod') }}</span>
@@ -598,17 +598,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                     @click="envValueMap[env] = 'false'">false</button>
                 </div>
                 <input v-else v-model="envValueMap[env]"
-                  class="flex-1 px-2 py-0.5 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-xs focus:outline-none focus:border-green-600"
+                  class="flex-1 px-2 py-0.5 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-xs focus:outline-none focus:border-green-600 light:bg-gray-100 light:border-gray-300 light:text-gray-700"
                   @click.stop />
               </div>
             </div>
           </div>
 
           <!-- Summary -->
-          <div class="p-3 bg-gray-800 border border-gray-700 rounded text-xs space-y-1.5">
-            <div class="text-gray-300 font-semibold mb-1">{{ t('featureFlagModal.summary') }}</div>
-            <div class="text-gray-400">{{ t('featureFlagModal.summaryProjects') }} <span class="text-white font-mono">{{ selectedProjects.join(', ') || '—' }}</span></div>
-            <div class="text-gray-400">{{ t('featureFlagModal.summaryBUs') }} <span class="text-blue-300 font-mono">{{ selectedBUs.join(', ') || '—' }}</span></div>
+          <div class="p-3 bg-gray-800 border border-gray-700 rounded text-xs space-y-1.5 light:bg-gray-100 light:border-gray-300">
+            <div class="text-gray-300 font-semibold mb-1 light:text-gray-700">{{ t('featureFlagModal.summary') }}</div>
+            <div class="text-gray-400 light:text-gray-600">{{ t('featureFlagModal.summaryProjects') }} <span class="text-white font-mono light:text-gray-900">{{ selectedProjects.join(', ') || '—' }}</span></div>
+            <div class="text-gray-400 light:text-gray-600">{{ t('featureFlagModal.summaryBUs') }} <span class="text-blue-300 font-mono light:text-blue-700">{{ selectedBUs.join(', ') || '—' }}</span></div>
             <div class="text-gray-400">{{ t('featureFlagModal.summaryEnvs') }} <span class="font-mono">
               <span v-for="(e, i) in selectedEnvs" :key="e">
                 <span :class="isProd(e) ? 'text-red-300' : 'text-emerald-300'">{{ e }}</span>
@@ -616,9 +616,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               </span>
               <span v-if="!selectedEnvs.length" class="text-gray-600">—</span>
             </span></div>
-            <div class="text-gray-400">{{ t('featureFlagModal.summarySubPaths') }} <span :class="includeSubPaths ? 'text-amber-300' : 'text-gray-300'">{{ includeSubPaths ? t('featureFlagModal.included') : t('featureFlagModal.excluded') }}</span></div>
-            <div class="text-gray-400">
-              {{ t('featureFlagModal.summaryKey') }} <span class="font-mono text-green-300">{{ ffKey }}</span> =
+            <div class="text-gray-400 light:text-gray-600">{{ t('featureFlagModal.summarySubPaths') }} <span :class="includeSubPaths ? 'text-amber-300' : 'text-gray-300'">{{ includeSubPaths ? t('featureFlagModal.included') : t('featureFlagModal.excluded') }}</span></div>
+            <div class="text-gray-400 light:text-gray-600">
+              {{ t('featureFlagModal.summaryKey') }} <span class="font-mono text-green-300 light:text-green-700">{{ ffKey }}</span> =
               <template v-if="activeProdMode">
                 <span class="text-emerald-300">{{ ffValue }}</span>{{ t('featureFlagModal.summaryProdMode') }}
                 <span class="text-amber-300">{{ ffProdValue }}</span>
@@ -630,17 +630,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <span class="text-green-300">{{ ffValue }}</span>
               </template>
             </div>
-            <div class="pt-1 border-t border-gray-700">
-              {{ t('featureFlagModal.targetedPaths') }} <span class="text-green-400 font-bold text-sm">{{ targetPaths.length }}</span>
+            <div class="pt-1 border-t border-gray-700 light:border-gray-300">
+              {{ t('featureFlagModal.targetedPaths') }} <span class="text-green-400 font-bold text-sm light:text-green-700">{{ targetPaths.length }}</span>
             </div>
-            <div v-if="!step3Valid && selectedBUs.length > 0" class="text-amber-400">{{ t('featureFlagModal.noPathsWarning') }}</div>
+            <div v-if="!step3Valid && selectedBUs.length > 0" class="text-amber-400 light:text-amber-700">{{ t('featureFlagModal.noPathsWarning') }}</div>
           </div>
         </div>
 
         <!-- ── STEP 4 — Diff ── -->
         <div v-else-if="step === 4" class="space-y-4">
           <div v-if="previewLoading" class="flex flex-col items-center py-10 gap-3">
-            <div class="w-10 h-10 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
+            <div class="w-10 h-10 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin light:border-gray-300 light:border-t-green-600"></div>
             <p class="text-gray-400 text-sm">{{ t('featureFlagModal.loadingDiffs') }}</p>
             <p class="text-gray-600 text-xs">{{ previews.length }} / {{ targetPaths.length }} paths</p>
           </div>
@@ -651,7 +651,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 {{ t('featureFlagModal.step4PathsModified', { paths: previews.length, modified: totalPathsChanged }) }}
               </span>
               <div class="flex gap-2">
-                <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 3">{{ t('featureFlagModal.adjust') }}</button>
+                <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700" @click="step = 3">{{ t('featureFlagModal.adjust') }}</button>
                 <button
                   class="text-xs px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded font-semibold disabled:opacity-40"
                   :disabled="totalPathsChanged === 0"
@@ -660,31 +660,31 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               </div>
             </div>
 
-            <div v-for="([group, entries]) in previewsByGroup" :key="group" class="border border-gray-700 rounded">
+            <div v-for="([group, entries]) in previewsByGroup" :key="group" class="border border-gray-700 rounded light:border-gray-300">
               <!-- Group header: project / BU / env -->
-              <div class="px-4 py-2 bg-gray-800 rounded-t flex items-center gap-1.5 text-xs font-mono flex-wrap">
-                <span class="text-purple-300 font-semibold">{{ group.split('/')[0] }}</span>
+              <div class="px-4 py-2 bg-gray-800 rounded-t flex items-center gap-1.5 text-xs font-mono flex-wrap light:bg-gray-100">
+                <span class="text-purple-300 font-semibold light:text-purple-700">{{ group.split('/')[0] }}</span>
                 <span class="text-gray-600">/</span>
-                <span class="text-blue-300 font-semibold">{{ group.split('/')[1] }}</span>
+                <span class="text-blue-300 font-semibold light:text-blue-700">{{ group.split('/')[1] }}</span>
                 <span class="text-gray-600">/</span>
                 <span class="font-semibold" :class="isProd(group.split('/')[2] ?? '') ? 'text-red-300' : 'text-emerald-300'">{{ group.split('/')[2] }}</span>
                 <span v-if="isProd(group.split('/')[2] ?? '')" class="text-red-500 text-xs">(prod)</span>
                 <span class="ml-auto text-gray-500">{{ entries.length }} path(s)</span>
               </div>
 
-              <div v-for="entry in entries" :key="entry.path" class="border-t border-gray-800 first:border-0">
+              <div v-for="entry in entries" :key="entry.path" class="border-t border-gray-800 first:border-0 light:border-gray-200">
                 <div class="px-4 py-1 flex items-center gap-2">
-                  <span class="font-mono text-xs text-gray-400">{{ entry.path }}</span>
+                  <span class="font-mono text-xs text-gray-400 light:text-gray-600">{{ entry.path }}</span>
                   <span v-if="depth(entry.path) > 3" class="text-amber-600 text-xs ml-1">{{ t('featureFlagModal.subPath') }}</span>
                   <span v-if="entry.fetchError" class="text-red-400 text-xs ml-auto">⚠ {{ entry.fetchError }}</span>
                 </div>
                 <table class="w-full text-xs font-mono">
                   <tbody>
                     <tr
-                      class="border-t border-gray-800"
+                      class="border-t border-gray-800 light:border-gray-200"
                       :class="{
-                        'text-green-300 bg-green-950': !(ffKey in entry.before),
-                        'text-yellow-200 bg-yellow-950': ffKey in entry.before && entry.before[ffKey] !== entry.after[ffKey],
+                        'text-green-300 bg-green-950 light:text-green-700 light:bg-green-100': !(ffKey in entry.before),
+                        'text-yellow-200 bg-yellow-950 light:text-amber-800 light:bg-yellow-100': ffKey in entry.before && entry.before[ffKey] !== entry.after[ffKey],
                         'text-gray-500': ffKey in entry.before && entry.before[ffKey] === entry.after[ffKey],
                       }"
                     >
@@ -698,7 +698,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             </div>
 
             <div v-if="totalPathsChanged === 0" class="text-gray-500 text-sm text-center py-4">
-              <span class="font-mono text-gray-300">{{ ffKey }}</span>{{ t('featureFlagModal.alreadyCorrect') }}
+              <span class="font-mono text-gray-300 light:text-gray-700">{{ ffKey }}</span>{{ t('featureFlagModal.alreadyCorrect') }}
             </div>
           </template>
         </div>
@@ -711,12 +711,12 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               {{ applyErrCount === 0 ? '✓' : '⚠' }}
             </div>
             <div class="text-center">
-              <div class="text-white font-semibold text-base mb-1">
+              <div class="text-white font-semibold text-base mb-1 light:text-gray-900">
                 {{ applyErrCount === 0 ? t('featureFlagModal.step5Success') : t('featureFlagModal.step5Errors') }}
               </div>
               <div class="text-gray-400 text-sm">
-                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> {{ t('featureFlagModal.pathsUpdated', { n: applyOkCount }) }}
-                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> {{ t('featureFlagModal.errors', { n: applyErrCount }) }}</template>
+                <span class="text-green-400 font-bold light:text-green-700">{{ applyOkCount }}</span> {{ t('featureFlagModal.pathsUpdated', { n: applyOkCount }) }}
+                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold light:text-red-700">{{ applyErrCount }}</span> {{ t('featureFlagModal.errors', { n: applyErrCount }) }}</template>
               </div>
               <div class="mt-1 text-gray-500 text-xs font-mono">
                 {{ ffKey }} = {{ ffValue }}<template v-if="activeProdMode">{{ t('featureFlagModal.prodValueSuffix') }} {{ ffProdValue }}</template>
@@ -726,10 +726,10 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
           <div v-if="applyErrCount > 0" class="space-y-1">
             <div v-for="r in applyResults.filter(r => !r.ok)" :key="r.path"
-              class="flex items-center gap-2 px-3 py-1.5 bg-red-950 border border-red-800 rounded text-xs">
-              <span class="text-red-400 shrink-0">✗</span>
-              <span class="font-mono text-red-300 flex-1">{{ r.path }}</span>
-              <span class="text-red-400">{{ r.error }}</span>
+              class="flex items-center gap-2 px-3 py-1.5 bg-red-950 border border-red-800 rounded text-xs light:bg-red-100 light:border-red-300">
+              <span class="text-red-400 shrink-0 light:text-red-700">✗</span>
+              <span class="font-mono text-red-300 flex-1 light:text-red-700">{{ r.path }}</span>
+              <span class="text-red-400 light:text-red-700">{{ r.error }}</span>
             </div>
           </div>
 
@@ -744,17 +744,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
       </div><!-- end body -->
 
       <!-- Footer -->
-      <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0">
+      <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0 light:border-gray-300">
         <button
           v-if="step > 1 && step < 5"
-          class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded disabled:opacity-40"
+          class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded disabled:opacity-40 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
           :disabled="previewLoading"
           @click="step = (step - 1) as Step"
         >{{ t('featureFlagModal.back') }}</button>
         <div v-else></div>
 
         <div class="flex gap-2">
-          <button v-if="step === 5" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">{{ t('featureFlagModal.close') }}</button>
+          <button v-if="step === 5" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700" @click="emit('close')">{{ t('featureFlagModal.close') }}</button>
 
           <button v-if="step === 1"
             class="text-sm px-4 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold disabled:opacity-40"

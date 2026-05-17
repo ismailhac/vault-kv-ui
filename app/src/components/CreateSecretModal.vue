@@ -139,32 +139,32 @@ async function confirmCreate() {
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 light:bg-gray-50 border border-gray-700 light:border-gray-200 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <span class="text-white font-semibold text-sm">{{ t('createSecretModal.title') }}</span>
-        <button class="text-gray-500 hover:text-gray-300" @click="emit('close')">✕</button>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-200">
+        <span class="text-white light:text-gray-900 font-semibold text-sm">{{ t('createSecretModal.title') }}</span>
+        <button class="text-gray-500 hover:text-gray-300 light:hover:text-gray-700" @click="emit('close')">✕</button>
       </div>
 
       <div class="overflow-auto flex-1 px-5 py-4 space-y-4">
 
         <!-- Path input -->
         <div>
-          <label class="text-gray-400 text-xs block mb-1.5">{{ t('createSecretModal.pathLabel') }}</label>
-          <div class="flex items-center gap-1 bg-gray-950 border rounded px-3 py-2 focus-within:border-green-600 transition-colors"
+          <label class="text-gray-400 light:text-gray-600 text-xs block mb-1.5">{{ t('createSecretModal.pathLabel') }}</label>
+          <div class="flex items-center gap-1 bg-gray-950 light:bg-gray-100 border rounded px-3 py-2 focus-within:border-green-600 light:focus-within:border-green-400 transition-colors"
                :class="pathError ? 'border-red-600' : 'border-gray-700'">
-            <span v-if="vault.currentPath" class="text-gray-600 text-xs font-mono shrink-0 select-none">
+            <span v-if="vault.currentPath" class="text-gray-600 light:text-gray-400 text-xs font-mono shrink-0 select-none">
               {{ vault.currentPath }}/
             </span>
             <input
               v-model="newPath"
               placeholder="mon-app/prod/config"
-              class="flex-1 bg-transparent text-green-300 font-mono text-xs focus:outline-none placeholder-gray-700"
+              class="flex-1 bg-transparent text-green-300 light:text-gray-700 font-mono text-xs focus:outline-none placeholder-gray-700 light:placeholder-gray-500"
               @keydown.enter="requestPreview"
             />
           </div>
-          <p v-if="pathError" class="mt-1 text-red-400 text-xs">⚠ {{ pathError }}</p>
+          <p v-if="pathError" class="mt-1 text-red-400 light:text-red-700 text-xs">⚠ {{ pathError }}</p>
           <p v-else-if="newPath.trim()" class="mt-1 text-gray-600 text-xs font-mono">
             → {{ fullPath }}
           </p>
@@ -182,14 +182,14 @@ async function confirmCreate() {
             <button
               v-for="p in otherFolders" :key="p"
               type="button"
-              class="px-2 py-0.5 text-[11px] font-mono rounded border transition bg-gray-900 border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300"
+              class="px-2 py-0.5 text-[11px] font-mono rounded border transition bg-gray-900 light:bg-gray-50 border-gray-700 light:border-gray-300 text-gray-500 hover:border-gray-500 light:hover:border-gray-400 hover:text-gray-300 light:hover:text-gray-700"
               @click="applyPreset(p)"
             >{{ p }}</button>
           </div>
         </div>
 
         <!-- Mode selector -->
-        <div class="flex gap-1 p-0.5 bg-gray-800 rounded w-fit">
+        <div class="flex gap-1 p-0.5 bg-gray-800 light:bg-gray-100 rounded w-fit">
           <button
             type="button"
             class="px-3 py-1 text-xs rounded transition"
@@ -206,7 +206,7 @@ async function confirmCreate() {
 
         <!-- Form mode -->
         <div v-if="mode === 'form'" class="space-y-2">
-          <div class="grid grid-cols-[1fr_2fr_auto] gap-2 text-xs text-gray-600 px-1">
+          <div class="grid grid-cols-[1fr_2fr_auto] gap-2 text-xs text-gray-600 light:text-gray-500 px-1">
             <span>{{ t('createSecretModal.keyColumn') }}</span><span>{{ t('createSecretModal.valueColumn') }}</span><span></span>
           </div>
           <div
@@ -217,23 +217,23 @@ async function confirmCreate() {
             <input
               v-model="row.key"
               :placeholder="t('createSecretModal.keyPlaceholder')"
-              class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-blue-300 font-mono text-xs rounded focus:outline-none focus:border-blue-700 placeholder-gray-700"
+              class="px-2 py-1.5 bg-gray-950 light:bg-gray-100 border border-gray-700 light:border-gray-200 text-blue-300 light:text-blue-700 font-mono text-xs rounded focus:outline-none focus:border-blue-700 light:focus:border-blue-400 placeholder-gray-700 light:placeholder-gray-500"
             />
             <input
               v-model="row.value"
               :placeholder="t('createSecretModal.valuePlaceholder')"
-              class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 font-mono text-xs rounded focus:outline-none focus:border-gray-500 placeholder-gray-700"
+              class="px-2 py-1.5 bg-gray-950 light:bg-gray-100 border border-gray-700 light:border-gray-200 text-gray-300 light:text-gray-700 font-mono text-xs rounded focus:outline-none focus:border-gray-500 placeholder-gray-700 light:placeholder-gray-500"
               @keydown.enter="requestPreview"
             />
             <button
               type="button"
-              class="text-gray-700 hover:text-red-400 transition text-sm w-6 text-center"
+              class="text-gray-700 light:text-gray-400 hover:text-red-400 light:hover:text-red-700 transition text-sm w-6 text-center"
               @click="removeRow(i)"
             >✕</button>
           </div>
           <button
             type="button"
-            class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-200 transition mt-1"
+            class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-200 light:hover:text-gray-700 transition mt-1"
             @click="addRow"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
@@ -247,15 +247,15 @@ async function confirmCreate() {
         <div v-else>
           <textarea
             v-model="jsonInput"
-            class="w-full h-64 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600"
+            class="w-full h-64 bg-gray-950 light:bg-gray-100 border border-gray-700 light:border-gray-200 text-green-300 light:text-gray-700 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600 light:focus:border-green-400"
             spellcheck="false"
             autocomplete="off"
           />
         </div>
 
         <!-- Errors -->
-        <p v-if="jsonError" class="text-red-400 text-xs">⚠ {{ jsonError }}</p>
-        <p v-if="saveError" class="text-red-400 text-xs">⚠ {{ saveError }}</p>
+        <p v-if="jsonError" class="text-red-400 light:text-red-700 text-xs">⚠ {{ jsonError }}</p>
+        <p v-if="saveError" class="text-red-400 light:text-red-700 text-xs">⚠ {{ saveError }}</p>
 
         <!-- Actions -->
         <div class="flex gap-2 pt-1">
@@ -267,7 +267,7 @@ async function confirmCreate() {
             {{ saving ? t('createSecretModal.creating') : t('createSecretModal.preview') }}
           </button>
           <button
-            class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded transition"
+            class="px-4 py-1.5 text-sm text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-700 border border-gray-700 light:border-gray-300 rounded transition"
             @click="emit('close')"
           >{{ t('createSecretModal.cancel') }}</button>
         </div>

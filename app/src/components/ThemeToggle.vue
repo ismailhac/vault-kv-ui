@@ -9,7 +9,7 @@ const { isDark, toggle } = useTheme()
 <template>
   <button
     type="button"
-    class="flex items-center justify-center p-1.5 rounded transition cursor-pointer text-gray-500 hover:text-gray-200 hover:bg-gray-800"
+    class="flex items-center justify-center p-1.5 rounded transition cursor-pointer text-gray-500 hover:text-gray-200 hover:bg-gray-800 light:hover:text-gray-700 light:hover:bg-gray-100"
     :title="isDark ? t('themeToggle.switchToLight') : t('themeToggle.switchToDark')"
     @click="toggle"
   >

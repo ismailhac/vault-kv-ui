@@ -165,16 +165,16 @@ function onKeydown(e: KeyboardEvent) {
     class="fixed inset-0 bg-black/70 z-40 flex items-start justify-center pt-16 px-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[75vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[75vh] flex flex-col shadow-2xl light:bg-gray-50 light:border-gray-300">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
-        <span class="text-white font-semibold text-sm">{{ t('searchModal.title') }}</span>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-300">
+        <span class="text-white font-semibold text-sm light:text-gray-900">{{ t('searchModal.title') }}</span>
         <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="emit('close')">✕</button>
       </div>
 
       <!-- Search controls -->
-      <div class="px-5 py-3 border-b border-gray-700 shrink-0 space-y-2">
+      <div class="px-5 py-3 border-b border-gray-700 shrink-0 space-y-2 light:border-gray-300">
         <!-- Query + search button -->
         <div class="flex gap-2">
           <div class="relative flex-1">
@@ -182,7 +182,7 @@ function onKeydown(e: KeyboardEvent) {
               v-model="query"
               type="text"
               :placeholder="t('searchModal.searchPlaceholder')"
-              class="w-full bg-gray-950 border border-gray-700 text-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-sky-600 placeholder-gray-600"
+              class="w-full bg-gray-950 border border-gray-700 text-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-sky-600 placeholder-gray-600 light:bg-gray-100 light:border-gray-300 light:text-gray-800"
               autocomplete="off"
               @keydown="onKeydown"
               @focus="queryFocused = true"
@@ -192,18 +192,18 @@ function onKeydown(e: KeyboardEvent) {
             <!-- Search history dropdown -->
             <div
               v-if="historyVisible"
-              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden"
+              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden light:bg-gray-50 light:border-gray-300"
             >
               <div
                 v-for="h in searchHistory"
                 :key="h"
-                class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group"
+                class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group light:hover:bg-gray-100"
                 @mousedown.prevent="pickHistory(h)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-600 shrink-0">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span class="flex-1 text-sm text-gray-300 font-mono truncate">{{ h }}</span>
+                <span class="flex-1 text-sm text-gray-300 font-mono truncate light:text-gray-700">{{ h }}</span>
                 <button
                   class="text-gray-700 hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                   @mousedown.stop.prevent="removeFromHistory(h)"
@@ -226,15 +226,15 @@ function onKeydown(e: KeyboardEvent) {
           <div class="flex items-center gap-2">
             <span>{{ t('searchModal.searchBy') }}</span>
             <button
-              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'path' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
+              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'path' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300 light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700']"
               @click="searchBy = 'path'"
             >{{ t('searchModal.byPath') }}</button>
             <button
-              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'key' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
+              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'key' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300 light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700']"
               @click="searchBy = 'key'"
             >{{ t('searchModal.byKey') }}</button>
             <button
-              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'value' ? 'bg-amber-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
+              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'value' ? 'bg-amber-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300 light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700']"
               @click="searchBy = 'value'"
             >{{ t('searchModal.byValue') }}</button>
           </div>
@@ -253,7 +253,7 @@ function onKeydown(e: KeyboardEvent) {
               v-model="scopePath"
               type="text"
               :placeholder="t('searchModal.scopePlaceholder')"
-              class="w-full bg-gray-950 border border-gray-700 text-gray-400 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-700 placeholder-gray-700 font-mono"
+              class="w-full bg-gray-950 border border-gray-700 text-gray-400 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-700 placeholder-gray-700 font-mono light:bg-gray-100 light:border-gray-300 light:text-gray-600"
               autocomplete="off"
               @focus="scopeFocused = true"
               @blur="scopeFocused = false"
@@ -262,12 +262,12 @@ function onKeydown(e: KeyboardEvent) {
             <!-- Level-1 dropdown -->
             <div
               v-if="scopeFocused && filteredScopeOptions.length > 0"
-              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl max-h-40 overflow-y-auto"
+              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl max-h-40 overflow-y-auto light:bg-gray-50 light:border-gray-300"
             >
               <button
                 v-for="opt in filteredScopeOptions"
                 :key="opt"
-                class="w-full text-left px-3 py-1.5 text-xs font-mono text-gray-300 hover:bg-gray-700 transition-colors"
+                class="w-full text-left px-3 py-1.5 text-xs font-mono text-gray-300 hover:bg-gray-700 transition-colors light:text-gray-700 light:hover:bg-gray-100"
                 @mousedown.prevent="selectScope(opt)"
               >{{ opt }}/</button>
             </div>
@@ -327,7 +327,7 @@ function onKeydown(e: KeyboardEvent) {
           <div
             v-for="result in filteredResults"
             :key="result.path"
-            class="flex flex-col gap-1 px-3 py-2 bg-gray-800 border border-transparent hover:border-sky-800 rounded transition-colors"
+            class="flex flex-col gap-1 px-3 py-2 bg-gray-800 border border-transparent hover:border-sky-800 rounded transition-colors light:bg-gray-100 light:hover:border-sky-400"
           >
             <!-- Path row — click to navigate -->
             <div class="flex items-center gap-2 cursor-pointer" @click="openSecret(result.path)">

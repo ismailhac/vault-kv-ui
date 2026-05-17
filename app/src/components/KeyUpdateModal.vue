@@ -153,14 +153,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 light:bg-gray-50 border border-gray-700 light:border-gray-200 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-200 shrink-0">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">{{ t('keyUpdateModal.title') }}</span>
+          <span class="text-white light:text-gray-900 font-semibold text-sm">{{ t('keyUpdateModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">{{ t('keyUpdateModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs">{{ t('keyUpdateModal.mount') }} <span class="text-green-400 light:text-green-700">{{ vault.currentMount }}</span></span>
         </div>
         <div class="flex items-center gap-1">
           <template v-for="s in [1, 2, 3]" :key="s">
@@ -174,7 +174,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <span v-if="s < 3" class="text-gray-700 text-xs">›</span>
           </template>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0" @click="emit('close')">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 light:hover:text-gray-700 ml-3 shrink-0" @click="emit('close')">✕</button>
       </div>
 
       <!-- Body -->
@@ -186,10 +186,10 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <!-- Search bar -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-gray-400 text-xs">{{ t('keyUpdateModal.keyLabel') }}</label>
+              <label class="text-gray-400 light:text-gray-600 text-xs">{{ t('keyUpdateModal.keyLabel') }}</label>
               <button
                 class="px-2 py-0.5 rounded border text-xs font-mono font-semibold transition pointer"
-                :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'"
+                :class="includeProd ? 'bg-red-900 border-red-700 text-red-200 light:bg-red-100 light:border-red-300 light:text-red-800' : 'bg-gray-800 light:bg-gray-100 border-gray-700 light:border-gray-200 text-gray-500 hover:border-gray-500'"
                 @click="includeProd = !includeProd"
                 :title="t('keyUpdateModal.includeProdTitle')"
               >{{ includeProd ? t('keyUpdateModal.prodIncluded') : t('keyUpdateModal.prodExcluded') }}</button>
@@ -199,7 +199,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 v-model="keyName"
                 type="text"
                 placeholder="API_KOBI_REGISTRY_V2_API_KEY"
-                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-blue-300 font-mono rounded text-sm focus:outline-none focus:border-blue-600 placeholder-gray-700"
+                class="flex-1 px-3 py-2 bg-gray-950 light:bg-white border border-gray-700 light:border-gray-200 text-blue-300 light:text-blue-700 font-mono rounded text-sm focus:outline-none focus:border-blue-600 placeholder-gray-700 light:placeholder-gray-500"
                 spellcheck="false"
                 @keydown.enter="scan"
               />
@@ -213,20 +213,20 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
           <!-- Scanning -->
           <div v-if="scanning" class="flex flex-col items-center py-8 gap-3">
-            <div class="w-10 h-10 border-2 border-gray-700 border-t-blue-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">{{ t('keyUpdateModal.scanningMount') }}</p>
+            <div class="w-10 h-10 border-2 border-gray-700 light:border-gray-200 border-t-blue-400 rounded-full animate-spin"></div>
+            <p class="text-gray-400 light:text-gray-600 text-sm">{{ t('keyUpdateModal.scanningMount') }}</p>
           </div>
 
           <!-- Scan error -->
-          <div v-if="scanError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded">
+          <div v-if="scanError" class="text-red-400 light:text-red-700 text-sm px-3 py-2 bg-red-950 light:bg-red-100 border border-red-800 light:border-red-300 rounded">
             ⚠ {{ scanError }}
           </div>
 
           <!-- No results -->
-          <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center">
-            <div class="text-gray-300 font-semibold mb-1">{{ t('keyUpdateModal.keyNotFound') }}</div>
+          <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 light:bg-gray-100 border border-gray-700 light:border-gray-200 rounded text-center">
+            <div class="text-gray-300 light:text-gray-700 font-semibold mb-1">{{ t('keyUpdateModal.keyNotFound') }}</div>
             <div class="text-gray-500 text-xs font-mono">
-              « {{ keyName }} »{{ t('keyUpdateModal.keyNotFoundDesc') }} <span class="text-green-400">{{ vault.currentMount }}</span>.
+              « {{ keyName }} »{{ t('keyUpdateModal.keyNotFoundDesc') }} <span class="text-green-400 light:text-green-700">{{ vault.currentMount }}</span>.
             </div>
           </div>
 
@@ -234,16 +234,16 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <template v-if="scanned && !scanning && matchingPaths.length > 0">
 
             <!-- Found banner -->
-            <div class="flex items-center gap-3 px-4 py-2.5 bg-blue-950 border border-blue-800 rounded">
-              <span class="text-blue-400 text-base shrink-0">🔍</span>
+            <div class="flex items-center gap-3 px-4 py-2.5 bg-blue-950 light:bg-blue-100 border border-blue-800 light:border-blue-300 rounded">
+              <span class="text-blue-400 light:text-blue-700 text-base shrink-0">🔍</span>
               <div class="flex-1 min-w-0">
-                <span class="text-blue-200 font-semibold text-sm font-mono">{{ keyName }}</span>
-                <span class="text-blue-300 text-sm">{{ t('keyUpdateModal.foundIn') }}
-                  <span class="text-white font-bold">{{ matchingPaths.length }}</span> {{ t('keyUpdateModal.secrets') }}
+                <span class="text-blue-200 light:text-blue-800 font-semibold text-sm font-mono">{{ keyName }}</span>
+                <span class="text-blue-300 light:text-blue-700 text-sm">{{ t('keyUpdateModal.foundIn') }}
+                  <span class="text-white light:text-gray-900 font-bold">{{ matchingPaths.length }}</span> {{ t('keyUpdateModal.secrets') }}
                 </span>
                 <div class="text-blue-500 text-xs mt-0.5">
                   <template v-if="allSameCurrentValue !== null">
-                    {{ t('keyUpdateModal.sameValueEverywhere') }} <span class="font-mono text-amber-400">{{ allSameCurrentValue }}</span>
+                    {{ t('keyUpdateModal.sameValueEverywhere') }} <span class="font-mono text-amber-400 light:text-amber-700">{{ allSameCurrentValue }}</span>
                   </template>
                   <template v-else>
                     {{ t('keyUpdateModal.differentValues', { n: uniqueCurrentValues.length }) }}
@@ -254,16 +254,16 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             </div>
 
             <!-- New value input -->
-            <div class="p-3 bg-gray-800 border border-gray-700 rounded space-y-2">
-              <label class="text-gray-300 text-xs font-semibold block">{{ t('keyUpdateModal.newValueLabel') }}</label>
+            <div class="p-3 bg-gray-800 light:bg-gray-100 border border-gray-700 light:border-gray-200 rounded space-y-2">
+              <label class="text-gray-300 light:text-gray-700 text-xs font-semibold block">{{ t('keyUpdateModal.newValueLabel') }}</label>
               <input
                 v-model="newValue"
                 type="text"
                 :placeholder="t('keyUpdateModal.newValuePlaceholder')"
-                class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
+                class="w-full px-3 py-2 bg-gray-950 light:bg-white border border-gray-700 light:border-gray-200 text-green-300 light:text-green-700 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700 light:placeholder-gray-500"
                 spellcheck="false"
               />
-              <div v-if="newValue.trim() && allSameCurrentValue !== null && newValue.trim() === allSameCurrentValue" class="text-amber-400 text-xs">
+              <div v-if="newValue.trim() && allSameCurrentValue !== null && newValue.trim() === allSameCurrentValue" class="text-amber-400 light:text-amber-700 text-xs">
                 {{ t('keyUpdateModal.sameValueWarning') }}
               </div>
             </div>
@@ -271,39 +271,39 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <!-- Path list with individual checkboxes -->
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-gray-400 text-xs">
+                <span class="text-gray-400 light:text-gray-600 text-xs">
                   {{ t('keyUpdateModal.selectedPaths', { selected: selectedPaths.size, total: matchingPaths.length }) }}
                 </span>
                 <div class="flex gap-2">
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectAll">{{ t('keyUpdateModal.all') }}</button>
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectNone">{{ t('keyUpdateModal.none') }}</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 light:bg-gray-100 hover:bg-gray-700 light:hover:bg-gray-200 text-gray-300 light:text-gray-700 border border-gray-700 light:border-gray-200 rounded" @click="selectAll">{{ t('keyUpdateModal.all') }}</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 light:bg-gray-100 hover:bg-gray-700 light:hover:bg-gray-200 text-gray-300 light:text-gray-700 border border-gray-700 light:border-gray-200 rounded" @click="selectNone">{{ t('keyUpdateModal.none') }}</button>
                 </div>
               </div>
 
-              <div class="border border-gray-700 rounded divide-y divide-gray-800">
+              <div class="border border-gray-700 light:border-gray-200 rounded divide-y divide-gray-800 light:divide-gray-200">
                 <div
                   v-for="path in matchingPaths"
                   :key="path"
                   class="flex items-center gap-3 px-4 py-2 cursor-pointer transition select-none"
-                  :class="selectedPaths.has(path) ? 'hover:bg-gray-800' : 'opacity-40 hover:opacity-60'"
+                  :class="selectedPaths.has(path) ? 'hover:bg-gray-800 light:hover:bg-gray-100' : 'opacity-40 hover:opacity-60'"
                   @click="togglePath(path)"
                 >
                   <!-- Checkbox -->
                   <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
-                    :class="selectedPaths.has(path) ? 'bg-blue-500 border-blue-400' : 'border-gray-600 bg-gray-800'">
+                    :class="selectedPaths.has(path) ? 'bg-blue-500 border-blue-400' : 'border-gray-600 light:border-gray-300 bg-gray-800 light:bg-gray-100'">
                     <span v-if="selectedPaths.has(path)">✓</span>
                   </span>
 
                   <!-- Path -->
-                  <span class="font-mono text-xs flex-1 min-w-0 truncate text-gray-300">{{ path }}</span>
+                  <span class="font-mono text-xs flex-1 min-w-0 truncate text-gray-300 light:text-gray-700">{{ path }}</span>
 
                   <!-- Current → new value preview -->
                   <div class="flex items-center gap-1.5 shrink-0 text-xs font-mono">
-                    <span class="text-amber-400 max-w-32 truncate" :title="dumpData[path]?.[keyName]">
+                    <span class="text-amber-400 light:text-amber-700 max-w-32 truncate" :title="dumpData[path]?.[keyName]">
                       {{ dumpData[path]?.[keyName] ?? '' }}
                     </span>
                     <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-gray-600">→</span>
-                    <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-green-400 max-w-32 truncate" :title="newValue">
+                    <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-green-400 light:text-green-700 max-w-32 truncate" :title="newValue">
                       {{ newValue }}
                     </span>
                   </div>
@@ -316,11 +316,11 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
         <!-- ── STEP 2 — Diff ── -->
         <div v-else-if="step === 2" class="space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
-            <span class="text-gray-400 text-sm">
-              {{ t('keyUpdateModal.diffTitle', { n: previews.length }) }} <span class="font-mono text-blue-300">{{ keyName }}</span> → <span class="font-mono text-green-300">{{ newValue }}</span>
+            <span class="text-gray-400 light:text-gray-600 text-sm">
+              {{ t('keyUpdateModal.diffTitle', { n: previews.length }) }} <span class="font-mono text-blue-300 light:text-blue-700">{{ keyName }}</span> → <span class="font-mono text-green-300 light:text-green-700">{{ newValue }}</span>
             </span>
             <div class="flex gap-2">
-              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 1">{{ t('keyUpdateModal.adjust') }}</button>
+              <button class="text-xs px-3 py-1 bg-gray-700 light:bg-gray-200 hover:bg-gray-600 light:hover:bg-gray-300 text-gray-200 light:text-gray-800 rounded" @click="step = 1">{{ t('keyUpdateModal.adjust') }}</button>
               <button
                 class="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded font-semibold disabled:opacity-40"
                 :disabled="previews.length === 0"
@@ -329,15 +329,15 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             </div>
           </div>
 
-          <div class="border border-gray-700 rounded divide-y divide-gray-800">
+          <div class="border border-gray-700 light:border-gray-200 rounded divide-y divide-gray-800 light:divide-gray-200">
             <div v-for="entry in previews" :key="entry.path" class="px-4 py-2">
-              <div class="font-mono text-xs text-gray-400 mb-1.5">{{ entry.path }}</div>
+              <div class="font-mono text-xs text-gray-400 light:text-gray-600 mb-1.5">{{ entry.path }}</div>
               <table class="w-full text-xs font-mono">
                 <tbody>
-                  <tr class="text-yellow-200 bg-yellow-950 rounded">
+                  <tr class="text-yellow-200 light:text-amber-800 bg-yellow-950 light:bg-yellow-100 rounded">
                     <td class="py-1 pr-4 w-1/3 font-semibold">{{ keyName }}</td>
                     <td class="py-1 pr-4 w-1/3 opacity-70 line-through">{{ entry.before[keyName] }}</td>
-                    <td class="py-1 w-1/3 font-bold text-green-300">{{ entry.after[keyName] }}</td>
+                    <td class="py-1 w-1/3 font-bold text-green-300 light:text-green-700">{{ entry.after[keyName] }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -353,28 +353,28 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
         <div v-else-if="step === 3" class="space-y-4">
           <div class="flex flex-col items-center py-10 gap-4">
             <div class="w-14 h-14 rounded-full flex items-center justify-center text-2xl border-2"
-              :class="applyErrCount === 0 ? 'border-green-500 bg-green-950 text-green-400' : 'border-amber-500 bg-amber-950 text-amber-400'">
+              :class="applyErrCount === 0 ? 'border-green-500 bg-green-950 light:bg-green-100 text-green-400 light:text-green-700' : 'border-amber-500 bg-amber-950 light:bg-amber-100 text-amber-400 light:text-amber-700'">
               {{ applyErrCount === 0 ? '✓' : '⚠' }}
             </div>
             <div class="text-center">
-              <div class="text-white font-semibold text-base mb-1">
+              <div class="text-white light:text-gray-900 font-semibold text-base mb-1">
                 {{ applyErrCount === 0 ? t('keyUpdateModal.step3Success') : t('keyUpdateModal.step3Errors') }}
               </div>
-              <div class="text-gray-400 text-sm">
-                <span class="font-mono text-blue-300">{{ keyName }}</span> {{ t('keyUpdateModal.updatedIn') }}
-                <span class="text-green-400 font-bold">{{ applyOkCount }}</span> {{ t('keyUpdateModal.secrets') }}
-                <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span> {{ t('keyUpdateModal.applyError') }}</template>
+              <div class="text-gray-400 light:text-gray-600 text-sm">
+                <span class="font-mono text-blue-300 light:text-blue-700">{{ keyName }}</span> {{ t('keyUpdateModal.updatedIn') }}
+                <span class="text-green-400 light:text-green-700 font-bold">{{ applyOkCount }}</span> {{ t('keyUpdateModal.secrets') }}
+                <template v-if="applyErrCount > 0"> · <span class="text-red-400 light:text-red-700 font-bold">{{ applyErrCount }}</span> {{ t('keyUpdateModal.applyError') }}</template>
               </div>
-              <div class="mt-1 text-gray-500 text-xs font-mono">→ <span class="text-green-300">{{ newValue }}</span></div>
+              <div class="mt-1 text-gray-500 text-xs font-mono">→ <span class="text-green-300 light:text-green-700">{{ newValue }}</span></div>
             </div>
           </div>
 
           <div v-if="applyErrCount > 0" class="space-y-1">
             <div v-for="r in applyResults.filter(r => !r.ok)" :key="r.path"
-              class="flex items-center gap-2 px-3 py-1.5 bg-red-950 border border-red-800 rounded text-xs">
-              <span class="text-red-400 shrink-0">✗</span>
-              <span class="font-mono text-red-300 flex-1">{{ r.path }}</span>
-              <span class="text-red-400">{{ r.error }}</span>
+              class="flex items-center gap-2 px-3 py-1.5 bg-red-950 light:bg-red-100 border border-red-800 light:border-red-300 rounded text-xs">
+              <span class="text-red-400 light:text-red-700 shrink-0">✗</span>
+              <span class="font-mono text-red-300 light:text-red-700 flex-1">{{ r.path }}</span>
+              <span class="text-red-400 light:text-red-700">{{ r.error }}</span>
             </div>
           </div>
 
@@ -389,17 +389,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
       </div><!-- end body -->
 
       <!-- Footer -->
-      <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0">
+      <div class="px-5 py-3 border-t border-gray-700 light:border-gray-200 flex items-center justify-between shrink-0">
         <button
           v-if="step > 1 && step < 3"
-          class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded disabled:opacity-40"
+          class="text-sm px-4 py-1.5 bg-gray-700 light:bg-gray-200 hover:bg-gray-600 light:hover:bg-gray-300 text-gray-200 light:text-gray-800 rounded disabled:opacity-40"
           :disabled="applying"
           @click="step = (step - 1) as Step"
         >{{ t('keyUpdateModal.back') }}</button>
         <div v-else></div>
 
         <div class="flex gap-2">
-          <button v-if="step === 3" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">{{ t('keyUpdateModal.close') }}</button>
+          <button v-if="step === 3" class="text-sm px-4 py-1.5 bg-gray-700 light:bg-gray-200 hover:bg-gray-600 light:hover:bg-gray-300 text-gray-200 light:text-gray-800 rounded" @click="emit('close')">{{ t('keyUpdateModal.close') }}</button>
 
           <button
             v-if="step === 1"

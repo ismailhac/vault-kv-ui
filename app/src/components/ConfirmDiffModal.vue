@@ -38,10 +38,10 @@ const diffLines = computed<DiffLine[]>(() => {
 const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unchanged'))
 
 const rowClass = (status: DiffLine['status']) => ({
-  'bg-green-950 text-green-300': status === 'added',
-  'bg-red-950 text-red-300': status === 'removed',
-  'bg-yellow-950 text-yellow-200': status === 'modified',
-  'text-gray-400': status === 'unchanged',
+  'bg-green-950 text-green-300 light:bg-green-100 light:text-green-700': status === 'added',
+  'bg-red-950 text-red-300 light:bg-red-100 light:text-red-700': status === 'removed',
+  'bg-yellow-950 text-yellow-200 light:bg-amber-100 light:text-amber-700': status === 'modified',
+  'text-gray-400 light:text-gray-600': status === 'unchanged',
 })
 </script>
 
@@ -51,11 +51,11 @@ const rowClass = (status: DiffLine['status']) => ({
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('cancel')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl z-50">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl z-50 light:bg-gray-50 light:border-gray-300">
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-300">
         <div>
-          <span class="text-white font-semibold text-sm">{{ t('confirmDiffModal.title') }}</span>
+          <span class="text-white font-semibold text-sm light:text-gray-900">{{ t('confirmDiffModal.title') }}</span>
           <span class="ml-2 text-gray-500 text-xs font-mono">{{ path }}</span>
         </div>
         <button class="text-gray-500 hover:text-gray-300" @click="emit('cancel')">✕</button>
@@ -68,7 +68,7 @@ const rowClass = (status: DiffLine['status']) => ({
         </div>
         <table v-else class="w-full text-xs font-mono border-collapse">
           <thead>
-            <tr class="text-gray-500 uppercase text-left border-b border-gray-700">
+            <tr class="text-gray-500 uppercase text-left border-b border-gray-700 light:border-gray-300">
               <th class="pb-2 pr-4 w-1/4">{{ t('confirmDiffModal.keyHeader') }}</th>
               <th class="pb-2 pr-4 w-1/3">{{ t('confirmDiffModal.beforeHeader') }}</th>
               <th class="pb-2 w-1/3">{{ t('confirmDiffModal.afterHeader') }}</th>
@@ -79,7 +79,7 @@ const rowClass = (status: DiffLine['status']) => ({
             <tr
               v-for="line in diffLines"
               :key="line.key"
-              class="border-b border-gray-800 last:border-0"
+              class="border-b border-gray-800 last:border-0 light:border-gray-200"
               :class="rowClass(line.status)"
             >
               <td class="py-1.5 pr-4 font-semibold">{{ line.key }}</td>
@@ -100,9 +100,9 @@ const rowClass = (status: DiffLine['status']) => ({
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center justify-end gap-3 px-5 py-3 border-t border-gray-700">
+      <div class="flex items-center justify-end gap-3 px-5 py-3 border-t border-gray-700 light:border-gray-300">
         <button
-          class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded"
+          class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded light:text-gray-600 light:hover:text-gray-800 light:border-gray-300"
           @click="emit('cancel')"
         >{{ t('confirmDiffModal.cancel') }}</button>
         <button

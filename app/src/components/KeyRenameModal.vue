@@ -155,14 +155,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 light:bg-gray-50 border border-gray-700 light:border-gray-200 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-200 shrink-0">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">{{ t('keyRenameModal.title') }}</span>
+          <span class="text-white light:text-gray-900 font-semibold text-sm">{{ t('keyRenameModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">{{ t('keyRenameModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs">{{ t('keyRenameModal.mount') }} <span class="text-green-400 light:text-green-700">{{ vault.currentMount }}</span></span>
         </div>
         <div class="flex items-center gap-1">
           <template v-for="s in [1, 2, 3]" :key="s">
@@ -176,7 +176,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <span v-if="s < 3" class="text-gray-700 text-xs">›</span>
           </template>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0" @click="emit('close')">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 light:hover:text-gray-700 ml-3 shrink-0" @click="emit('close')">✕</button>
       </div>
 
       <!-- Body -->
@@ -184,7 +184,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
         <!-- ── STEP 1 — Scan + rename input ── -->
         <div v-if="step === 1" class="space-y-4">
-          <p class="text-gray-400 text-sm">
+          <p class="text-gray-400 light:text-gray-600 text-sm">
             {{ t('keyRenameModal.step1Desc') }}
           </p>
 
@@ -192,10 +192,10 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <div class="grid grid-cols-2 gap-3">
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label class="text-gray-400 text-xs">{{ t('keyRenameModal.oldKeyLabel') }}</label>
+                <label class="text-gray-400 light:text-gray-600 text-xs">{{ t('keyRenameModal.oldKeyLabel') }}</label>
                 <button
                   class="px-2 py-0.5 rounded border text-xs font-mono font-semibold transition pointer"
-                  :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'"
+                  :class="includeProd ? 'bg-red-900 border-red-700 text-red-200 light:bg-red-100 light:border-red-300 light:text-red-800' : 'bg-gray-800 light:bg-gray-100 border-gray-700 light:border-gray-200 text-gray-500 hover:border-gray-500'"
                   @click="includeProd = !includeProd"
                 >{{ includeProd ? t('keyRenameModal.prodIncluded') : t('keyRenameModal.prodExcluded') }}</button>
               </div>
@@ -204,7 +204,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                   v-model="oldKeyName"
                   type="text"
                   placeholder="KOBI_WORKSPACE_DI"
-                  class="flex-1 px-3 py-2 bg-gray-950 border border-red-900 text-red-300 font-mono rounded text-sm focus:outline-none focus:border-red-600 placeholder-gray-700"
+                  class="flex-1 px-3 py-2 bg-gray-950 light:bg-white border border-red-900 light:border-red-300 text-red-300 light:text-red-700 font-mono rounded text-sm focus:outline-none focus:border-red-600 placeholder-gray-700 light:placeholder-gray-500"
                   spellcheck="false"
                   @keydown.enter="scan"
                 />
@@ -216,12 +216,12 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               </div>
             </div>
             <div>
-              <label class="text-gray-400 text-xs block mb-1.5">{{ t('keyRenameModal.newKeyLabel') }}</label>
+              <label class="text-gray-400 light:text-gray-600 text-xs block mb-1.5">{{ t('keyRenameModal.newKeyLabel') }}</label>
               <input
                 v-model="newKeyName"
                 type="text"
                 placeholder="KOBI_WORKSPACE_ID"
-                class="w-full px-3 py-2 bg-gray-950 border border-green-900 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700"
+                class="w-full px-3 py-2 bg-gray-950 light:bg-white border border-green-900 light:border-green-300 text-green-300 light:text-green-700 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700 light:placeholder-gray-500"
                 :class="{ 'opacity-40': !scanned }"
                 :disabled="!scanned"
                 spellcheck="false"
@@ -232,7 +232,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <!-- Rename arrow preview -->
           <div
             v-if="oldKeyName.trim() && newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()"
-            class="flex items-center gap-3 px-4 py-2 bg-gray-800 border border-gray-700 rounded text-xs font-mono"
+            class="flex items-center gap-3 px-4 py-2 bg-gray-800 light:bg-gray-100 border border-gray-700 light:border-gray-200 rounded text-xs font-mono"
           >
             <span class="text-red-400 line-through">{{ oldKeyName.trim() }}</span>
             <span class="text-gray-500">→</span>
@@ -241,25 +241,25 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           </div>
           <div
             v-else-if="newKeyName.trim() && newKeyName.trim() === oldKeyName.trim()"
-            class="text-amber-400 text-xs"
+            class="text-amber-400 light:text-amber-700 text-xs"
           >
             {{ t('keyRenameModal.sameNameWarning') }}
           </div>
 
           <!-- Scanning -->
           <div v-if="scanning" class="flex flex-col items-center py-8 gap-3">
-            <div class="w-10 h-10 border-2 border-gray-700 border-t-orange-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">{{ t('keyRenameModal.scanningMount') }}</p>
+            <div class="w-10 h-10 border-2 border-gray-700 light:border-gray-200 border-t-orange-400 rounded-full animate-spin"></div>
+            <p class="text-gray-400 light:text-gray-600 text-sm">{{ t('keyRenameModal.scanningMount') }}</p>
           </div>
 
           <!-- Error -->
-          <div v-if="scanError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded">⚠ {{ scanError }}</div>
+          <div v-if="scanError" class="text-red-400 light:text-red-700 text-sm px-3 py-2 bg-red-950 light:bg-red-100 border border-red-800 light:border-red-300 rounded">⚠ {{ scanError }}</div>
 
           <!-- No results -->
-          <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center">
-            <div class="text-gray-300 font-semibold mb-1">{{ t('keyRenameModal.keyNotFound') }}</div>
+          <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 light:bg-gray-100 border border-gray-700 light:border-gray-200 rounded text-center">
+            <div class="text-gray-300 light:text-gray-700 font-semibold mb-1">{{ t('keyRenameModal.keyNotFound') }}</div>
             <div class="text-gray-500 text-xs font-mono">
-              « {{ oldKeyName }} »{{ t('keyRenameModal.keyNotFoundDesc') }} <span class="text-green-400">{{ vault.currentMount }}</span>.
+              « {{ oldKeyName }} »{{ t('keyRenameModal.keyNotFoundDesc') }} <span class="text-green-400 light:text-green-700">{{ vault.currentMount }}</span>.
             </div>
           </div>
 
@@ -281,31 +281,31 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <!-- Path list with checkboxes + current value display -->
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-gray-400 text-xs">
+                <span class="text-gray-400 light:text-gray-600 text-xs">
                   {{ t('keyRenameModal.selectedPaths', { selected: selectedPaths.size, total: matchingPaths.length }) }}
                 </span>
                 <div class="flex gap-2">
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectAll">{{ t('keyRenameModal.all') }}</button>
-                  <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectNone">{{ t('keyRenameModal.none') }}</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 light:bg-gray-100 hover:bg-gray-700 light:hover:bg-gray-200 text-gray-300 light:text-gray-700 border border-gray-700 light:border-gray-200 rounded" @click="selectAll">{{ t('keyRenameModal.all') }}</button>
+                  <button class="text-xs px-2 py-0.5 bg-gray-800 light:bg-gray-100 hover:bg-gray-700 light:hover:bg-gray-200 text-gray-300 light:text-gray-700 border border-gray-700 light:border-gray-200 rounded" @click="selectNone">{{ t('keyRenameModal.none') }}</button>
                 </div>
               </div>
 
-              <div class="border border-gray-700 rounded divide-y divide-gray-800">
+              <div class="border border-gray-700 light:border-gray-200 rounded divide-y divide-gray-800 light:divide-gray-200">
                 <div
                   v-for="path in matchingPaths"
                   :key="path"
                   class="flex items-center gap-3 px-3 py-2 cursor-pointer transition select-none"
-                  :class="selectedPaths.has(path) ? 'hover:bg-gray-800' : 'opacity-35'"
+                  :class="selectedPaths.has(path) ? 'hover:bg-gray-800 light:hover:bg-gray-100' : 'opacity-35'"
                   @click="togglePath(path)"
                 >
                   <!-- Checkbox -->
                   <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
-                    :class="selectedPaths.has(path) ? 'bg-orange-500 border-orange-400' : 'border-gray-600 bg-gray-800'">
+                    :class="selectedPaths.has(path) ? 'bg-orange-500 border-orange-400' : 'border-gray-600 light:border-gray-300 bg-gray-800 light:bg-gray-100'">
                     <span v-if="selectedPaths.has(path)">✓</span>
                   </span>
 
                   <!-- Path -->
-                  <span class="font-mono text-xs text-gray-300 shrink-0 min-w-0 truncate" style="max-width:220px" :title="path">
+                  <span class="font-mono text-xs text-gray-300 light:text-gray-700 shrink-0 min-w-0 truncate" style="max-width:220px" :title="path">
                     {{ path }}
                   </span>
 
@@ -313,7 +313,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                   <div class="flex items-center gap-1.5 flex-1 min-w-0 text-xs font-mono">
                     <span class="text-red-400 line-through truncate max-w-24" :title="oldKeyName">{{ oldKeyName }}</span>
                     <span class="text-gray-600 shrink-0">=</span>
-                    <span class="text-amber-300 truncate max-w-28" :title="dumpData[path]?.[oldKeyName]">
+                    <span class="text-amber-300 light:text-amber-700 truncate max-w-28" :title="dumpData[path]?.[oldKeyName]">
                       {{ dumpData[path]?.[oldKeyName] ?? '' }}
                     </span>
                     <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-gray-600 shrink-0">→</span>

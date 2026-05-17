@@ -93,10 +93,10 @@ const badgeAfter  = computed(() => parsedAfter.value  !== undefined ? makeBadge(
 const pad = computed(() => `calc(12px + ${props.depth * 14}px)`)
 
 const rowClass = computed(() => ({
-  'bg-green-950 text-green-300': props.status === 'added',
-  'bg-red-950 text-red-300':    props.status === 'removed',
-  'bg-yellow-950 text-yellow-200': props.status === 'modified',
-  'text-gray-400': props.status === 'unchanged',
+  'bg-green-950 text-green-300 light:bg-green-100 light:text-green-700': props.status === 'added',
+  'bg-red-950 text-red-300 light:bg-red-100 light:text-red-700':    props.status === 'removed',
+  'bg-yellow-950 text-yellow-200 light:bg-amber-100 light:text-amber-700': props.status === 'modified',
+  'text-gray-400 light:text-gray-600': props.status === 'unchanged',
 }))
 
 const diffSymbol: Record<DiffStatus, string> = { unchanged: '=', modified: '~', added: '+', removed: '−' }
@@ -106,7 +106,7 @@ const diffSymbol: Record<DiffStatus, string> = { unchanged: '=', modified: '~', 
   <!-- Nested JSON value: accordion header row -->
   <template v-if="isNested">
     <tr
-      class="border-b border-gray-800 last:border-0 cursor-pointer select-none"
+      class="border-b border-gray-800 last:border-0 cursor-pointer select-none light:border-gray-200"
       :class="rowClass"
       @click.stop="expanded = !expanded"
     >
@@ -146,7 +146,7 @@ const diffSymbol: Record<DiffStatus, string> = { unchanged: '=', modified: '~', 
   </template>
 
   <!-- Plain value: single row (existing behaviour) -->
-  <tr v-else class="border-b border-gray-800 last:border-0" :class="rowClass">
+  <tr v-else class="border-b border-gray-800 last:border-0 light:border-gray-200" :class="rowClass">
     <td class="py-1.5 font-semibold break-all" :style="{ paddingLeft: pad }">{{ diffKey }}</td>
     <td class="py-1.5 pr-3 break-all opacity-80">
       <span v-if="before !== undefined">{{ before }}</span>

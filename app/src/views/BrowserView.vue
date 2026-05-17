@@ -177,13 +177,13 @@ onBeforeUnmount(() => {
 
   <!-- ── LANDING (not authenticated) ────────────────────────────────────────── -->
   <template v-if="!vault.isAuthenticated">
-    <div class="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center gap-12 text-center select-none px-4">
+    <div class="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center gap-12 text-center select-none px-4 light:bg-white">
 
       <!-- Logo + name -->
       <div class="space-y-6">
         <div class="landing-logo text-green-400 font-black leading-none" style="font-size: 9rem;">⬡</div>
         <div>
-          <h1 class="text-white font-bold tracking-wide" style="font-size: 2.75rem;">{{ t('app.vaultAdmin') }}</h1>
+          <h1 class="text-white font-bold tracking-wide light:text-gray-900" style="font-size: 2.75rem;">{{ t('app.vaultAdmin') }}</h1>
           <p class="text-gray-500 text-sm mt-2 tracking-widest uppercase">{{ t('browserView.secretManager') }}</p>
         </div>
       </div>
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
       <select
         v-model="vault.currentMount"
         @change="resetToRoot"
-        class="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded px-2 py-1 shrink-0"
+        class="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded px-2 py-1 shrink-0 light:bg-gray-100 light:border-gray-300 light:text-gray-800"
       >
         <option value="secret">secret</option>
         <option value="kv">kv</option>
@@ -263,7 +263,7 @@ onBeforeUnmount(() => {
         v-model="searchQuery"
         type="text"
         :placeholder="t('browserView.searchPlaceholder')"
-        class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded pl-7 pr-3 py-1.5 w-48 placeholder-gray-600 focus:outline-none focus:border-sky-600 transition-colors"
+        class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded pl-7 pr-3 py-1.5 w-48 placeholder-gray-600 focus:outline-none focus:border-sky-600 transition-colors light:bg-gray-100 light:border-gray-300 light:text-gray-800"
         autocomplete="off"
         @keydown.enter="triggerSearch"
         @focus="searchInputFocused = true"
@@ -272,18 +272,18 @@ onBeforeUnmount(() => {
       <!-- History dropdown -->
       <div
         v-if="historyVisible"
-        class="absolute top-full right-0 z-50 mt-0.5 w-64 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden"
+        class="absolute top-full right-0 z-50 mt-0.5 w-64 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden light:bg-gray-50 light:border-gray-300"
       >
         <div
           v-for="h in searchHistory"
           :key="h"
-          class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group"
+          class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group light:hover:bg-gray-100"
           @mousedown.prevent="pickHistory(h)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-600 shrink-0">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
-          <span class="flex-1 text-xs text-gray-300 font-mono truncate">{{ h }}</span>
+          <span class="flex-1 text-xs text-gray-300 font-mono truncate light:text-gray-700">{{ h }}</span>
           <button
             class="text-gray-700 hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-xs"
             @mousedown.stop.prevent="removeFromHistory(h)"
@@ -309,7 +309,7 @@ onBeforeUnmount(() => {
       <div class="w-px h-5 bg-gray-600 mx-0.5" />
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
         @click="showFeatureFlag = true"
         :title="t('browserView.featureFlagTooltip')"
       >
@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
       </button>
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
         @click="showKeyUpdate = true"
         :title="t('browserView.replaceTooltip')"
       >
@@ -331,7 +331,7 @@ onBeforeUnmount(() => {
       </button>
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
         @click="showKeyAdjust = true"
         :title="t('browserView.adjustTooltip')"
       >
@@ -342,7 +342,7 @@ onBeforeUnmount(() => {
       </button>
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
         @click="showKeyRename = true"
         :title="t('browserView.renameTooltip')"
       >
@@ -353,7 +353,7 @@ onBeforeUnmount(() => {
       </button>
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-200 hover:text-red-300 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-red-900/60 text-gray-200 hover:text-red-300 rounded pointer transition-colors light:bg-gray-100 light:text-gray-800 light:hover:bg-red-100 light:hover:text-red-700"
         @click="showKeyRemoval = true"
         :title="t('browserView.deleteTooltip')"
       >
@@ -366,7 +366,7 @@ onBeforeUnmount(() => {
       <div class="w-px h-5 bg-gray-600 mx-0.5" />
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
         @click="showBulk = true"
         :title="t('browserView.bulkTooltip')"
       >
@@ -377,7 +377,7 @@ onBeforeUnmount(() => {
       </button>
 
       <button
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
         :disabled="downloadLoading"
         @click="downloadPath"
         :title="t('browserView.downloadTooltip')"
@@ -392,7 +392,7 @@ onBeforeUnmount(() => {
   <!-- Read-only banner -->
   <div
     v-if="!vault.editingEnabled"
-    class="mb-3 flex items-center gap-2 px-3 py-2 bg-amber-950 border border-amber-800 rounded text-amber-300 text-xs"
+    class="mb-3 flex items-center gap-2 px-3 py-2 bg-amber-950 border border-amber-800 rounded text-amber-300 text-xs light:bg-amber-100 light:border-amber-300 light:text-amber-700"
   >
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 shrink-0">
       <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -432,7 +432,7 @@ onBeforeUnmount(() => {
   </div>
 
   <!-- Entries list -->
-  <div class="bg-gray-900 border border-gray-800 rounded overflow-hidden">
+  <div class="bg-gray-900 border border-gray-800 rounded overflow-hidden light:bg-gray-50 light:border-gray-200">
     <div v-if="vault.listLoading" class="px-4 py-8 text-center text-gray-500 text-sm animate-pulse">
       {{ t('browserView.loading') }}
     </div>
@@ -449,7 +449,7 @@ onBeforeUnmount(() => {
     <!-- Back row -->
     <div
       v-if="vault.pathHistory.length > 0"
-      class="flex items-center gap-3 px-4 py-2 border-b border-gray-800 hover:bg-gray-800 cursor-pointer text-sm text-gray-400"
+      class="flex items-center gap-3 px-4 py-2 border-b border-gray-800 hover:bg-gray-800 cursor-pointer text-sm text-gray-400 light:border-gray-200 light:hover:bg-gray-100"
       @click="vault.navigateBack"
     >
       <span>←</span>
@@ -460,17 +460,17 @@ onBeforeUnmount(() => {
     <div
       v-for="entry in filteredEntries"
       :key="entry.key"
-      class="group flex items-center justify-between px-4 py-2 border-b border-gray-800 last:border-0 hover:bg-gray-800 cursor-pointer text-sm"
+      class="group flex items-center justify-between px-4 py-2 border-b border-gray-800 last:border-0 hover:bg-gray-800 cursor-pointer text-sm light:border-gray-200 light:hover:bg-gray-100"
       @click="entry.isFolder ? vault.navigateTo(entry.key) : openSecret(entry.key)"
     >
-      <div class="flex items-center gap-3" :class="entry.isFolder ? 'text-yellow-300' : 'text-gray-200'">
+      <div class="flex items-center gap-3" :class="entry.isFolder ? 'text-yellow-300 light:text-amber-700' : 'text-gray-200 light:text-gray-800'">
         <span>{{ entry.isFolder ? '📁' : '🔑' }}</span>
         <span>{{ entry.key }}</span>
       </div>
       <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
         <button
           v-if="!entry.isFolder"
-          class="text-xs text-gray-500 hover:text-gray-200 px-2 py-0.5 border border-gray-700 rounded"
+          class="text-xs text-gray-500 hover:text-gray-200 px-2 py-0.5 border border-gray-700 rounded light:border-gray-300 light:hover:text-gray-700"
           :title="t('browserView.openSecret')"
           @click.stop="openSecret(entry.key)"
         >⬇</button>
@@ -515,14 +515,14 @@ onBeforeUnmount(() => {
 
   <!-- Mini update popup — available on both landing and authenticated pages -->
   <div v-if="showMiniUpdate" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="showMiniUpdate = false">
-    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-4 w-80 flex flex-col gap-3">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-4 w-80 flex flex-col gap-3 light:bg-gray-50 light:border-gray-300">
       <div class="flex items-center justify-between">
         <span class="text-green-400 text-xs font-semibold">↑ v{{ vault.latestVersion }} {{ t('updateModal.available') }}</span>
         <button class="text-gray-500 hover:text-gray-300 leading-none cursor-pointer" @click="showMiniUpdate = false">✕</button>
       </div>
-      <div class="bg-gray-950 border border-gray-700 rounded px-3 py-2.5 flex items-center gap-3">
+      <div class="bg-gray-950 border border-gray-700 rounded px-3 py-2.5 flex items-center gap-3 light:bg-gray-100 light:border-gray-300">
         <span class="text-gray-600 select-none font-mono text-xs">$</span>
-        <span class="text-green-300 font-mono text-xs flex-1 select-all">npm install -g vault-admin@latest</span>
+        <span class="text-green-300 font-mono text-xs flex-1 select-all light:text-gray-700">npm install -g vault-admin@latest</span>
         <button class="shrink-0 text-gray-500 hover:text-gray-200 transition-colors cursor-pointer" @click="miniCopy">
           <span v-if="miniCopied" class="text-green-400 text-xs">✓</span>
           <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">

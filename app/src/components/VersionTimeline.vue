@@ -105,7 +105,7 @@ function rowClass(status: DiffStatus) {
 <template>
   <!-- Panel header / toggle -->
   <button
-    class="w-full flex items-center justify-between px-4 py-3 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+    class="w-full flex items-center justify-between px-4 py-3 text-xs text-gray-400 hover:text-gray-200 light:hover:text-gray-700 transition-colors"
     :class="expanded ? 'border-b border-gray-800' : ''"
     @click="toggleHistory"
   >
@@ -126,7 +126,7 @@ function rowClass(status: DiffStatus) {
 
     <table v-else class="w-full text-xs">
       <thead>
-        <tr class="text-gray-600 uppercase border-b border-gray-800">
+        <tr class="text-gray-600 uppercase border-b border-gray-800 light:border-gray-200">
           <th class="text-left pb-1.5 pr-4 font-medium w-16">{{ t('versionTimeline.versionHeader') }}</th>
           <th class="text-left pb-1.5 pr-4 font-medium">{{ t('versionTimeline.dateHeader') }}</th>
           <th class="text-left pb-1.5 pr-4 font-medium">{{ t('versionTimeline.byHeader') }}</th>
@@ -153,7 +153,7 @@ function rowClass(status: DiffStatus) {
             >
               v{{ v.version }}
             </td>
-            <td class="py-2 pr-4 text-gray-400 font-mono">{{ formatDate(v.created_time) }}</td>
+            <td class="py-2 pr-4 text-gray-400 font-mono light:text-gray-600">{{ formatDate(v.created_time) }}</td>
             <td class="py-2 pr-4 text-gray-500 font-mono">{{ v.created_by || '—' }}</td>
             <td class="py-2">
               <span v-if="v.destroyed" class="px-1.5 py-0.5 rounded text-red-400 bg-red-950">{{ t('versionTimeline.destroyed') }}</span>
@@ -168,7 +168,7 @@ function rowClass(status: DiffStatus) {
           <!-- Inline accordion -->
           <tr v-if="expandedVersion === v.version">
             <td colspan="5" class="pb-3 pt-0.5">
-              <div class="bg-gray-950 rounded border border-gray-700">
+              <div class="bg-gray-950 rounded border border-gray-700 light:bg-white light:border-gray-300">
 
                 <!-- Loading -->
                 <div v-if="expandedVersionLoading" class="px-3 py-3 text-gray-500 text-xs animate-pulse">
@@ -184,9 +184,9 @@ function rowClass(status: DiffStatus) {
                 <template v-else-if="v.version === vault.versionCurrentVersion">
                   <table class="w-full text-xs font-mono">
                     <tbody>
-                      <tr v-for="(val, key) in expandedVersionData" :key="key" class="border-b border-gray-800 last:border-0">
-                        <td class="py-1.5 px-3 text-blue-300 w-1/3">{{ key }}</td>
-                        <td class="py-1.5 px-3 text-gray-300 break-all">{{ val }}</td>
+                      <tr v-for="(val, key) in expandedVersionData" :key="key" class="border-b border-gray-800 last:border-0 light:border-gray-200">
+                        <td class="py-1.5 px-3 text-blue-300 w-1/3 light:text-blue-700">{{ key }}</td>
+                        <td class="py-1.5 px-3 text-gray-300 break-all light:text-gray-700">{{ val }}</td>
                       </tr>
                       <tr v-if="Object.keys(expandedVersionData).length === 0">
                         <td class="py-2 px-3 text-gray-600 italic">{{ t('versionTimeline.emptySecret') }}</td>
@@ -199,7 +199,7 @@ function rowClass(status: DiffStatus) {
                 <template v-else>
                   <table class="w-full text-xs font-mono border-collapse">
                     <thead>
-                      <tr class="text-gray-600 uppercase text-left border-b border-gray-700">
+                      <tr class="text-gray-600 uppercase text-left border-b border-gray-700 light:border-gray-300">
                         <th class="pb-1.5 px-3 w-1/4 font-medium">{{ t('versionTimeline.keyHeader') }}</th>
                         <th class="pb-1.5 pr-3 font-medium">{{ t('versionTimeline.thisVersionHeader') }}</th>
                         <th class="pb-1.5 pr-3 font-medium">{{ t('versionTimeline.currentVersionHeader') }}</th>
@@ -210,7 +210,7 @@ function rowClass(status: DiffStatus) {
                       <tr
                         v-for="line in diffLines"
                         :key="line.key"
-                        class="border-b border-gray-800 last:border-0"
+                        class="border-b border-gray-800 last:border-0 light:border-gray-200"
                         :class="rowClass(line.status)"
                       >
                         <td class="py-1.5 px-3 font-semibold break-all">{{ line.key }}</td>
@@ -228,7 +228,7 @@ function rowClass(status: DiffStatus) {
                   </table>
 
                   <!-- Restore button -->
-                  <div class="flex justify-end px-3 py-2 border-t border-gray-800">
+                  <div class="flex justify-end px-3 py-2 border-t border-gray-800 light:border-gray-200">
                     <button
                       class="px-3 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded"
                       @click.stop="restore()"

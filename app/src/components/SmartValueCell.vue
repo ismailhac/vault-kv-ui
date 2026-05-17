@@ -35,7 +35,7 @@ const cronLabel = computed(() => {
   <template v-else-if="isBoolean(value)">
     <span
       class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border select-none"
-      :class="boolVal ? 'bg-green-950 border-green-700 text-green-300' : 'bg-gray-800 border-gray-700 text-gray-500'"
+      :class="boolVal ? 'bg-green-950 border-green-700 text-green-300 light:bg-green-100 light:border-green-400 light:text-green-800' : 'bg-gray-800 border-gray-700 text-gray-500 light:bg-gray-100 light:border-gray-300 light:text-gray-600'"
     >
       <span class="w-2 h-2 rounded-full shrink-0" :class="boolVal ? 'bg-green-400' : 'bg-gray-600'"></span>
       {{ boolVal ? 'true' : 'false' }}
@@ -44,12 +44,12 @@ const cronLabel = computed(() => {
 
   <!-- Cron: value + human-readable description -->
   <template v-else-if="!masked && isCron(value)">
-    <span class="font-mono text-gray-300 break-all">{{ value }}</span>
+    <span class="font-mono text-gray-300 break-all light:text-gray-700">{{ value }}</span>
     <span v-if="cronLabel" class="text-xs text-gray-500 italic ml-1">— {{ cronLabel }}</span>
   </template>
 
   <!-- Everything else: plain text -->
   <template v-else-if="!masked">
-    <span class="break-all text-gray-300">{{ value }}</span>
+    <span class="break-all text-gray-300 light:text-gray-700">{{ value }}</span>
   </template>
 </template>

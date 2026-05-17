@@ -131,7 +131,7 @@ function onChildKeyRename(path: string[], newKey: string) {
   <!-- Object / Array: accordion -->
   <template v-if="isNested">
     <tr
-      class="group border-b border-gray-800 last:border-0 cursor-pointer select-none"
+      class="group border-b border-gray-800 last:border-0 cursor-pointer select-none light:border-gray-200"
       :title="editingAllowed ? t('nestedJsonField.expandCollapseRename') : t('nestedJsonField.expandCollapse')"
       @click.stop="toggleExpand"
       @dblclick.stop="toggleExpand"
@@ -143,7 +143,7 @@ function onChildKeyRename(path: string[], newKey: string) {
           <input
             v-focus
             v-model="editingKeyValue"
-            class="flex-1 min-w-0 bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
+            class="flex-1 min-w-0 bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400 light:bg-gray-100 light:text-gray-800"
             :placeholder="t('nestedJsonField.keyNamePlaceholder')"
             @keyup.enter="commitKeyEdit"
             @keyup.escape="cancelEditKey"
@@ -162,7 +162,7 @@ function onChildKeyRename(path: string[], newKey: string) {
           >
             <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" />
           </svg>
-          <span class="font-mono text-xs text-blue-300 break-all">{{ keyName }}</span>
+          <span class="font-mono text-xs text-blue-300 break-all light:text-blue-700">{{ keyName }}</span>
           <button
             v-if="editingAllowed"
             class="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-gray-400 hover:text-yellow-300 text-xs shrink-0 ml-0.5 leading-none"
@@ -196,7 +196,7 @@ function onChildKeyRename(path: string[], newKey: string) {
   <!-- Scalar: inline-editable row -->
   <tr
     v-else
-    class="group border-b border-gray-800 last:border-0"
+    class="group border-b border-gray-800 last:border-0 light:border-gray-200"
     :class="editingAllowed && !editingLeaf && !editingKey ? 'cursor-pointer' : ''"
     :title="editingAllowed && !editingLeaf && !editingKey ? t('nestedJsonField.dblClickEditRename') : undefined"
     @dblclick.stop="startEditLeaf"
@@ -208,7 +208,7 @@ function onChildKeyRename(path: string[], newKey: string) {
         <input
           v-focus
           v-model="editingKeyValue"
-          class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
+          class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400 light:bg-gray-100 light:text-gray-800"
           :placeholder="t('nestedJsonField.keyNamePlaceholder')"
           @keyup.enter="commitKeyEdit"
           @keyup.escape="cancelEditKey"

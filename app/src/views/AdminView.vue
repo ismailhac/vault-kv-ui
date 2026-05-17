@@ -514,10 +514,10 @@ onUnmounted(() => clearInterval(pollTimer))
 
     <!-- Page header -->
     <div class="flex items-center justify-between gap-4">
-      <h1 class="text-white font-semibold text-sm">{{ t('adminView.dashboard') }}</h1>
+      <h1 class="text-white font-semibold text-sm light:text-gray-900">{{ t('adminView.dashboard') }}</h1>
       <div class="flex gap-2">
         <button
-          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition cursor-pointer"
+          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition cursor-pointer light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
           :disabled="refreshing"
           @click="fetchAll(true)"
         >
@@ -527,7 +527,7 @@ onUnmounted(() => clearInterval(pollTimer))
           {{ t('adminView.refresh') }}
         </button>
         <button
-          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-blue-900 hover:bg-blue-800 text-blue-200 rounded transition cursor-pointer"
+          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-blue-900 hover:bg-blue-800 text-blue-200 rounded transition cursor-pointer light:bg-blue-100 light:hover:bg-blue-200 light:text-blue-700"
           @click="openConfigEdit"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -536,7 +536,7 @@ onUnmounted(() => clearInterval(pollTimer))
           {{ t('adminView.editConfig') }}
         </button>
         <button
-          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-red-900 hover:bg-red-800 text-red-200 rounded transition cursor-pointer disabled:opacity-50 disabled:hover:bg-red-900"
+          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-red-900 hover:bg-red-800 text-red-200 rounded transition cursor-pointer disabled:opacity-50 disabled:hover:bg-red-900 light:bg-red-100 light:hover:bg-red-200 light:text-red-700 light:disabled:hover:bg-red-100"
           :disabled="loggingOut"
           @click="handleLogout"
         >
@@ -554,37 +554,37 @@ onUnmounted(() => clearInterval(pollTimer))
 
     <!-- Loading skeleton -->
     <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-      <div v-for="i in 5" :key="i" class="h-20 bg-gray-800 rounded-lg animate-pulse" />
+      <div v-for="i in 5" :key="i" class="h-20 bg-gray-800 rounded-lg animate-pulse light:bg-gray-200" />
     </div>
 
     <template v-else>
       <!-- Stats cards -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.totalWrites') }}</div>
           <div class="text-white text-2xl font-bold font-mono">{{ nsStats.totalWrites }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.writesToday') }}</div>
-          <div class="text-blue-400 text-2xl font-bold font-mono">{{ nsStats.writesToday }}</div>
+          <div class="text-blue-400 text-2xl font-bold font-mono light:text-blue-700">{{ nsStats.writesToday }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.successLogins') }}</div>
-          <div class="text-green-400 text-2xl font-bold font-mono">{{ nsStats.totalLogins }}</div>
+          <div class="text-green-400 text-2xl font-bold font-mono light:text-green-700">{{ nsStats.totalLogins }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.failedLogins') }}</div>
-          <div class="text-red-400 text-2xl font-bold font-mono">{{ nsStats.totalLoginFails }}</div>
+          <div class="text-red-400 text-2xl font-bold font-mono light:text-red-700">{{ nsStats.totalLoginFails }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.logEntries') }}</div>
-          <div class="text-gray-300 text-2xl font-bold font-mono">{{ nsStats.logsCount }}</div>
+          <div class="text-gray-300 text-2xl font-bold font-mono light:text-gray-700">{{ nsStats.logsCount }}</div>
         </div>
       </div>
 
       <!-- Settings panel -->
-      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">{{ t('adminView.settings') }}</h2>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 light:bg-gray-50 light:border-gray-200">
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4 light:text-gray-600">{{ t('adminView.settings') }}</h2>
         <!-- Feedback toast -->
         <transition name="fade">
           <div
@@ -615,7 +615,7 @@ onUnmounted(() => clearInterval(pollTimer))
               />
             </button>
             <div>
-              <div class="text-sm text-gray-200 group-hover:text-white transition">{{ t('adminView.logging') }}</div>
+              <div class="text-sm text-gray-200 group-hover:text-white transition light:text-gray-800 light:group-hover:text-gray-900">{{ t('adminView.logging') }}</div>
               <div class="text-xs text-gray-600">{{ t('adminView.loggingDesc') }}</div>
             </div>
           </label>
@@ -637,27 +637,27 @@ onUnmounted(() => clearInterval(pollTimer))
               />
             </button>
             <div>
-              <div class="text-sm text-gray-200 group-hover:text-white transition">{{ t('adminView.editingEnabled') }}</div>
+              <div class="text-sm text-gray-200 group-hover:text-white transition light:text-gray-800 light:group-hover:text-gray-900">{{ t('adminView.editingEnabled') }}</div>
               <div class="text-xs text-gray-600">{{ t('adminView.editingDesc') }}</div>
             </div>
           </label>
 
         </div>
-        <div v-if="!localSettings.editingEnabled" class="mt-4 px-3 py-2 bg-red-950 border border-red-800 rounded text-red-300 text-xs">
+        <div v-if="!localSettings.editingEnabled" class="mt-4 px-3 py-2 bg-red-950 border border-red-800 rounded text-red-300 text-xs light:bg-red-100 light:border-red-300 light:text-red-700">
           ⚠ {{ t('adminView.readOnlyActive') }}
         </div>
       </div>
 
       <!-- Persistence panel -->
-      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 space-y-4">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider">{{ t('adminView.logPersistence') }}</h2>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 space-y-4 light:bg-gray-50 light:border-gray-200">
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider light:text-gray-600">{{ t('adminView.logPersistence') }}</h2>
 
         <!-- File save row -->
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div class="text-xs">
-            <div class="text-gray-400">
+            <div class="text-gray-400 light:text-gray-600">
               {{ t('adminView.file') }}
-              <span class="text-gray-300 font-mono ml-1">{{ saveStatus?.file ?? '…' }}</span>
+              <span class="text-gray-300 font-mono ml-1 light:text-gray-700">{{ saveStatus?.file ?? '…' }}</span>
             </div>
             <div class="text-gray-600 mt-0.5">
               {{ t('adminView.lastSaved') }} <span :class="saveStatus?.lastSavedAt ? 'text-green-500' : 'text-gray-500'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
@@ -683,13 +683,13 @@ onUnmounted(() => clearInterval(pollTimer))
         </div>
 
         <!-- Local JSON download -->
-        <div class="border-t border-gray-800 pt-4 flex items-center justify-between">
+        <div class="border-t border-gray-800 light:border-gray-200 pt-4 flex items-center justify-between">
           <div>
-            <div class="text-gray-400 text-xs">{{ t('adminView.exportJson') }}</div>
+            <div class="text-gray-400 text-xs light:text-gray-600">{{ t('adminView.exportJson') }}</div>
             <div class="text-gray-700 text-xs mt-0.5">{{ t('adminView.exportJsonDesc', { n: nsScopedLogs.length }) }}</div>
           </div>
           <button
-            class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition shrink-0"
+            class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition shrink-0 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
             @click="downloadLogsLocally"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-blue-400">
@@ -700,17 +700,17 @@ onUnmounted(() => clearInterval(pollTimer))
         </div>
 
         <!-- Vault export row -->
-        <div class="border-t border-gray-800 pt-4">
+        <div class="border-t border-gray-800 light:border-gray-200 pt-4">
           <div class="flex items-center justify-between mb-3">
-            <div class="text-gray-400 text-xs">{{ t('adminView.exportVault') }}</div>
-            <span class="text-purple-400 text-xs font-mono">{{ vault.currentNamespaceLabel }}</span>
+            <div class="text-gray-400 text-xs light:text-gray-600">{{ t('adminView.exportVault') }}</div>
+            <span class="text-purple-400 text-xs font-mono light:text-purple-700">{{ vault.currentNamespaceLabel }}</span>
           </div>
 
           <!-- mount + path + button -->
           <div class="flex gap-2 flex-wrap items-center">
             <select
               v-model="vaultExportMount"
-              class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-gray-500 w-24 shrink-0"
+              class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-gray-500 w-24 shrink-0 light:bg-white light:border-gray-300 light:text-gray-700"
             >
               <option value="secret">secret</option>
               <option value="kv">kv</option>
@@ -720,7 +720,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <input
                 v-model="vaultExportPath"
                 placeholder="admin/audit/session-2025-04"
-                class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded focus:outline-none focus:border-green-700 placeholder-gray-700"
+                class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded focus:outline-none focus:border-green-700 placeholder-gray-700 light:bg-gray-100 light:border-gray-300 light:text-gray-700 light:placeholder-gray-500"
                 :class="exportPresetActive ? 'pr-24' : ''"
                 @input="exportPresetActive = false"
                 @keydown.enter="exportToVault"
@@ -756,9 +756,9 @@ onUnmounted(() => clearInterval(pollTimer))
       </div>
 
       <!-- Logs section -->
-      <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden light:bg-gray-50 light:border-gray-200">
         <!-- Tabs + count -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 light:border-gray-200">
           <div class="flex gap-1">
             <button
               v-for="tab in ([{ id: 'all', label: t('adminView.tabAll') }, { id: 'writes', label: t('adminView.tabWrites') }, { id: 'logins', label: t('adminView.tabLogins') }] as const)"
@@ -773,13 +773,13 @@ onUnmounted(() => clearInterval(pollTimer))
         </div>
 
         <!-- Table -->
-        <div v-if="filteredLogs.length === 0" class="px-4 py-8 text-center text-gray-600 text-sm">
+        <div v-if="filteredLogs.length === 0" class="px-4 py-8 text-center text-gray-600 text-sm light:text-gray-500">
           {{ t('adminView.noEntries') }}
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-xs font-mono">
             <thead>
-              <tr class="border-b border-gray-800 text-gray-600 uppercase tracking-wider">
+              <tr class="border-b border-gray-800 text-gray-600 uppercase tracking-wider light:border-gray-200">
                 <th class="text-left px-4 py-2 w-36">{{ t('adminView.timeHeader') }}</th>
                 <th class="text-left px-3 py-2 w-28">{{ t('adminView.typeHeader') }}</th>
                 <th class="text-left px-3 py-2 w-32">{{ t('adminView.namespaceHeader') }}</th>
@@ -791,39 +791,39 @@ onUnmounted(() => clearInterval(pollTimer))
               <tr
                 v-for="entry in filteredLogs"
                 :key="entry.id"
-                class="group border-b border-gray-800 last:border-0 hover:bg-gray-800/50 cursor-pointer"
+                class="group border-b border-gray-800 last:border-0 hover:bg-gray-800/50 cursor-pointer light:border-gray-200 light:hover:bg-gray-100"
                 @click="selectedLog = entry; restoreError = null; restoreSuccess = false"
               >
-                <td class="px-4 py-2 text-gray-500 whitespace-nowrap">{{ formatTs(entry.ts) }}</td>
+                <td class="px-4 py-2 text-gray-500 whitespace-nowrap light:text-gray-600">{{ formatTs(entry.ts) }}</td>
                 <td class="px-3 py-2">
                   <span class="px-1.5 py-0.5 rounded border text-xs" :class="logTypeBadge(entry.type)">
                     {{ logTypeLabel(entry.type) }}
                   </span>
                 </td>
-                <td class="px-3 py-2 text-gray-400 whitespace-nowrap">{{ nsLabel(entry.namespace) }}</td>
-                <td class="px-3 py-2 text-gray-300">
+                <td class="px-3 py-2 text-gray-400 whitespace-nowrap light:text-gray-600">{{ nsLabel(entry.namespace) }}</td>
+                <td class="px-3 py-2 text-gray-300 light:text-gray-700">
                   <template v-if="entry.type === 'write'">
-                    <span class="text-green-400">{{ entry.path }}</span>
+                    <span class="text-green-400 light:text-green-700">{{ entry.path }}</span>
                     <template v-if="entry.before || entry.after">
-                      <span v-if="diffSummary(entry).added" class="ml-2 px-1 py-0.5 rounded bg-green-950 text-green-400 text-xs">+{{ diffSummary(entry).added }}</span>
-                      <span v-if="diffSummary(entry).modified" class="ml-1 px-1 py-0.5 rounded bg-yellow-950 text-yellow-300 text-xs">~{{ diffSummary(entry).modified }}</span>
-                      <span v-if="diffSummary(entry).removed" class="ml-1 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs">-{{ diffSummary(entry).removed }}</span>
+                      <span v-if="diffSummary(entry).added" class="ml-2 px-1 py-0.5 rounded bg-green-950 text-green-400 text-xs light:bg-green-100 light:text-green-700">+{{ diffSummary(entry).added }}</span>
+                      <span v-if="diffSummary(entry).modified" class="ml-1 px-1 py-0.5 rounded bg-yellow-950 text-yellow-300 text-xs light:bg-yellow-100 light:text-amber-700">~{{ diffSummary(entry).modified }}</span>
+                      <span v-if="diffSummary(entry).removed" class="ml-1 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs light:bg-red-100 light:text-red-700">-{{ diffSummary(entry).removed }}</span>
                     </template>
                     <span v-else class="text-gray-600 ml-1">{{ t('adminView.keysCount', { n: entry.keysCount ?? 0 }) }}</span>
                   </template>
                   <template v-else-if="entry.type === 'login_ok'">
-                    <span class="text-gray-300">{{ entry.display_name || '—' }}</span>
+                    <span class="text-gray-300 light:text-gray-700">{{ entry.display_name || '—' }}</span>
                   </template>
                   <template v-else-if="entry.type === 'login_fail'">
-                    <span class="text-red-400">{{ entry.error }}</span>
+                    <span class="text-red-400 light:text-red-700">{{ entry.error }}</span>
                   </template>
                   <template v-else-if="entry.type === 'delete'">
-                    <span class="text-red-400">{{ entry.path }}</span>
-                    <span v-if="diffSummary(entry).removed" class="ml-2 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs">-{{ diffSummary(entry).removed }}</span>
+                    <span class="text-red-400 light:text-red-700">{{ entry.path }}</span>
+                    <span v-if="diffSummary(entry).removed" class="ml-2 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs light:bg-red-100 light:text-red-700">-{{ diffSummary(entry).removed }}</span>
                   </template>
                   <template v-else-if="entry.type === 'delete_folder'">
-                    <span class="text-red-400">{{ entry.path }}/</span>
-                    <span class="ml-2 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs">-{{ entry.deletedCount ?? 0 }} secrets</span>
+                    <span class="text-red-400 light:text-red-700">{{ entry.path }}/</span>
+                    <span class="ml-2 px-1 py-0.5 rounded bg-red-950 text-red-400 text-xs light:bg-red-100 light:text-red-700">-{{ entry.deletedCount ?? 0 }} secrets</span>
                   </template>
                 </td>
                 <td class="px-3 py-2">
@@ -854,21 +854,21 @@ onUnmounted(() => clearInterval(pollTimer))
   <!-- Log detail modal -->
   <div
     v-if="selectedLog"
-    class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 light:bg-black/40"
     @click.self="selectedLog = null"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl light:bg-gray-50 light:border-gray-300">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-300">
         <div class="flex items-center gap-3">
           <span class="px-1.5 py-0.5 rounded border text-xs" :class="logTypeBadge(selectedLog.type)">
             {{ logTypeLabel(selectedLog.type) }}
           </span>
-          <span class="text-gray-400 text-xs">{{ formatTs(selectedLog.ts) }}</span>
+          <span class="text-gray-400 text-xs light:text-gray-600">{{ formatTs(selectedLog.ts) }}</span>
           <span class="text-gray-600 text-xs">{{ nsLabel(selectedLog.namespace) }}</span>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 text-sm" @click="selectedLog = null">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 light:hover:text-gray-700 text-sm" @click="selectedLog = null">✕</button>
       </div>
 
       <div class="overflow-auto flex-1 px-5 py-4 space-y-4">
@@ -878,7 +878,7 @@ onUnmounted(() => clearInterval(pollTimer))
           <div class="flex items-center gap-2 flex-wrap">
             <span class="font-mono text-sm" :class="selectedLog.type === 'delete' ? 'text-red-400' : 'text-green-400'">{{ selectedLog.path }}</span>
             <span class="text-gray-600 text-xs">mount: {{ selectedLog.mount }}</span>
-            <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded">
+            <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded light:bg-red-100 light:border-red-300 light:text-red-700">
               ✗ {{ t('adminView.failure') }} — {{ selectedLog.error }}
             </span>
           </div>
@@ -886,17 +886,17 @@ onUnmounted(() => clearInterval(pollTimer))
           <!-- Diff summary chips -->
           <div class="flex gap-2 flex-wrap">
             <template v-if="diffSummary(selectedLog).added">
-              <span class="px-2 py-0.5 rounded bg-green-950 border border-green-800 text-green-400 text-xs">
+              <span class="px-2 py-0.5 rounded bg-green-950 border border-green-800 text-green-400 text-xs light:bg-green-100 light:border-green-300 light:text-green-700">
                 {{ t('adminView.added', { n: diffSummary(selectedLog).added }) }}
               </span>
             </template>
             <template v-if="diffSummary(selectedLog).modified">
-              <span class="px-2 py-0.5 rounded bg-yellow-950 border border-yellow-800 text-yellow-300 text-xs">
+              <span class="px-2 py-0.5 rounded bg-yellow-950 border border-yellow-800 text-yellow-300 text-xs light:bg-yellow-100 light:border-yellow-300 light:text-amber-700">
                 {{ t('adminView.modified', { n: diffSummary(selectedLog).modified }) }}
               </span>
             </template>
             <template v-if="diffSummary(selectedLog).removed">
-              <span class="px-2 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 text-xs">
+              <span class="px-2 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 text-xs light:bg-red-100 light:border-red-300 light:text-red-700">
                 {{ t('adminView.removed', { n: diffSummary(selectedLog).removed }) }}
               </span>
             </template>
@@ -906,10 +906,10 @@ onUnmounted(() => clearInterval(pollTimer))
           </div>
 
           <!-- Diff table -->
-          <div v-if="diffKeys(selectedLog).length" class="border border-gray-700 rounded overflow-hidden">
+          <div v-if="diffKeys(selectedLog).length" class="border border-gray-700 rounded overflow-hidden light:border-gray-300">
             <table class="w-full text-xs font-mono">
               <thead>
-                <tr class="bg-gray-800 border-b border-gray-700 text-gray-500 uppercase tracking-wider">
+                <tr class="bg-gray-800 border-b border-gray-700 text-gray-500 uppercase tracking-wider light:bg-gray-100 light:border-gray-300">
                   <th class="text-left px-4 py-2 w-1/3">{{ t('adminView.modalKeyHeader') }}</th>
                   <th class="text-left px-3 py-2 w-1/3">{{ t('adminView.modalBeforeHeader') }}</th>
                   <th class="text-left px-3 py-2 w-1/3">{{ t('adminView.modalAfterHeader') }}</th>
@@ -919,7 +919,7 @@ onUnmounted(() => clearInterval(pollTimer))
                 <tr
                   v-for="key in diffKeys(selectedLog)"
                   :key="key"
-                  class="border-b border-gray-800 last:border-0"
+                  class="border-b border-gray-800 last:border-0 light:border-gray-200"
                   :class="diffRowClass(diffStatus(selectedLog, key))"
                 >
                   <td class="px-4 py-2 font-medium">{{ key }}</td>
@@ -941,17 +941,17 @@ onUnmounted(() => clearInterval(pollTimer))
         <!-- Delete folder detail -->
         <template v-else-if="selectedLog.type === 'delete_folder'">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-red-400 font-mono text-sm">{{ selectedLog.path }}/</span>
+            <span class="text-red-400 font-mono text-sm light:text-red-700">{{ selectedLog.path }}/</span>
             <span class="text-gray-600 text-xs">mount: {{ selectedLog.mount }}</span>
-            <span class="px-2 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 text-xs">
+            <span class="px-2 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 text-xs light:bg-red-100 light:border-red-300 light:text-red-700">
               -{{ selectedLog.deletedCount ?? 0 }} secret(s)
             </span>
-            <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded">
+            <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded light:bg-red-100 light:border-red-300 light:text-red-700">
               ✗ {{ t('adminView.failure') }} — {{ selectedLog.error }}
             </span>
           </div>
-          <div v-if="selectedLog.deletedPaths?.length" class="border border-gray-700 rounded overflow-hidden">
-            <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 text-gray-500 text-xs uppercase tracking-wider">{{ t('adminView.deletedPaths') }}</div>
+          <div v-if="selectedLog.deletedPaths?.length" class="border border-gray-700 rounded overflow-hidden light:border-gray-300">
+            <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 text-gray-500 text-xs uppercase tracking-wider light:bg-gray-100 light:border-gray-300">{{ t('adminView.deletedPaths') }}</div>
             <div
               v-for="p in selectedLog.deletedPaths"
               :key="p"

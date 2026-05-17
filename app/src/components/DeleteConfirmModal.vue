@@ -115,17 +115,17 @@ async function confirm() {
     class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
     @click.self="emit('cancel')"
   >
-    <div class="bg-gray-900 border border-red-900 rounded-lg w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh]">
+    <div class="bg-gray-900 border border-red-900 rounded-lg w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh] light:bg-gray-50 light:border-red-200">
 
       <!-- Header -->
-      <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-800 shrink-0">
-        <div class="w-8 h-8 rounded-full bg-red-950 flex items-center justify-center shrink-0">
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-800 shrink-0 light:border-gray-200">
+        <div class="w-8 h-8 rounded-full bg-red-950 flex items-center justify-center shrink-0 light:bg-red-100">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-red-400">
             <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-white font-semibold text-sm">
+          <div class="text-white font-semibold text-sm light:text-gray-900">
             {{ isFolder ? t('deleteConfirmModal.deleteFolder') : t('deleteConfirmModal.deleteSecret') }}
           </div>
           <div class="text-gray-500 text-xs mt-0.5 font-mono truncate">{{ path }}{{ isFolder ? '/' : '' }}</div>
@@ -149,7 +149,7 @@ async function confirm() {
       <!-- Folder body: tree + checkboxes -->
       <div v-else class="flex flex-col min-h-0 flex-1">
         <!-- Controls bar -->
-        <div class="flex items-center justify-between px-5 py-2 border-b border-gray-800 shrink-0">
+        <div class="flex items-center justify-between px-5 py-2 border-b border-gray-800 shrink-0 light:border-gray-200">
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -170,7 +170,7 @@ async function confirm() {
           <div v-for="group in tree" :key="group.folder">
             <!-- Folder header -->
             <div
-              class="flex items-center gap-2 px-3 py-1 rounded cursor-pointer hover:bg-gray-800 select-none group"
+              class="flex items-center gap-2 px-3 py-1 rounded cursor-pointer hover:bg-gray-800 select-none group light:hover:bg-gray-100"
               @click="toggleFolder(group)"
             >
               <input
@@ -182,14 +182,14 @@ async function confirm() {
                 @click.stop
               />
               <span class="text-yellow-400 text-xs">📁</span>
-              <span class="text-yellow-300/80 text-xs font-mono">{{ group.folder || '(root)' }}/</span>
+              <span class="text-yellow-300/80 text-xs font-mono light:text-amber-700">{{ group.folder || '(root)' }}/</span>
               <span class="text-gray-600 text-[10px] ml-auto">{{ group.secrets.length }}</span>
             </div>
             <!-- Secrets -->
             <div
               v-for="secret in group.secrets"
               :key="`${group.folder}/${secret}`"
-              class="flex items-center gap-2 pl-8 pr-3 py-1 rounded cursor-pointer hover:bg-gray-800/60 select-none"
+              class="flex items-center gap-2 pl-8 pr-3 py-1 rounded cursor-pointer hover:bg-gray-800/60 select-none light:hover:bg-gray-100"
               @click="togglePath(group.folder ? `${group.folder}/${secret}` : secret)"
             >
               <input
@@ -202,7 +202,7 @@ async function confirm() {
               <span class="text-gray-500 text-xs">🔑</span>
               <span
                 class="text-xs font-mono"
-                :class="selectedPaths.has(group.folder ? `${group.folder}/${secret}` : secret) ? 'text-red-300' : 'text-gray-500'"
+                :class="selectedPaths.has(group.folder ? `${group.folder}/${secret}` : secret) ? 'text-red-300 light:text-red-700' : 'text-gray-500'"
               >{{ secret }}</span>
             </div>
           </div>
@@ -215,7 +215,7 @@ async function confirm() {
       </div>
 
       <!-- Actions -->
-      <div class="flex gap-2 px-5 py-4 border-t border-gray-800 shrink-0">
+      <div class="flex gap-2 px-5 py-4 border-t border-gray-800 shrink-0 light:border-gray-200">
         <button
           class="flex-1 py-2 text-sm bg-red-800 hover:bg-red-700 text-white rounded transition font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           :disabled="deleting || (isFolder && !someSelected)"
@@ -226,7 +226,7 @@ async function confirm() {
           <template v-else>{{ t('deleteConfirmModal.deleteSelectedBtn', { n: selectedCount }) }}</template>
         </button>
         <button
-          class="flex-1 py-2 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 hover:border-gray-500 rounded transition"
+          class="flex-1 py-2 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 hover:border-gray-500 rounded transition light:text-gray-600 light:hover:text-gray-800 light:border-gray-300"
           :disabled="deleting"
           @click="emit('cancel')"
         >{{ t('deleteConfirmModal.cancel') }}</button>

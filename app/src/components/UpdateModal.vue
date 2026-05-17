@@ -28,19 +28,19 @@ async function copy() {
 
 <template>
   <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4" @click.self="emit('close')">
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-md shadow-2xl flex flex-col">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-md shadow-2xl flex flex-col light:bg-gray-50 light:border-gray-300">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700 light:border-gray-300">
         <div class="flex items-center gap-2">
           <span class="text-green-400 text-base">↑</span>
-          <span class="text-white font-semibold text-sm">{{ t('updateModal.title') }}</span>
+          <span class="text-white font-semibold text-sm light:text-gray-900">{{ t('updateModal.title') }}</span>
         </div>
         <button class="text-gray-500 hover:text-gray-300 text-lg leading-none cursor-pointer" @click="emit('close')">✕</button>
       </div>
 
       <!-- Version info -->
-      <div class="px-5 py-4 flex items-center gap-6 text-sm border-b border-gray-800">
+      <div class="px-5 py-4 flex items-center gap-6 text-sm border-b border-gray-800 light:border-gray-200">
         <div class="flex flex-col gap-0.5">
           <span class="text-gray-600 text-xs">{{ t('updateModal.current') }}</span>
           <span class="text-gray-400 font-mono">v{{ vault.appVersion }}</span>
@@ -56,25 +56,25 @@ async function copy() {
       <div class="px-5 pt-4 pb-2">
         <div class="flex gap-1 mb-3">
           <button
-            :class="['px-3 py-1.5 text-xs rounded transition-colors font-mono cursor-pointer', activeTab === 'unix' ? 'bg-gray-700 text-green-300' : 'text-gray-500 hover:text-gray-300']"
+            :class="['px-3 py-1.5 text-xs rounded transition-colors font-mono cursor-pointer', activeTab === 'unix' ? 'bg-gray-700 text-green-300 light:bg-gray-200 light:text-green-800' : 'text-gray-500 hover:text-gray-300 light:hover:text-gray-700']"
             @click="activeTab = 'unix'"
           ><span class="text-gray-500 mr-1">$</span> macOS / Linux</button>
           <button
-            :class="['px-3 py-1.5 text-xs rounded transition-colors font-mono cursor-pointer', activeTab === 'windows' ? 'bg-gray-700 text-blue-300' : 'text-gray-500 hover:text-gray-300']"
+            :class="['px-3 py-1.5 text-xs rounded transition-colors font-mono cursor-pointer', activeTab === 'windows' ? 'bg-gray-700 text-blue-300 light:bg-gray-200 light:text-blue-800' : 'text-gray-500 hover:text-gray-300 light:hover:text-gray-700']"
             @click="activeTab = 'windows'"
           ><span class="text-gray-500 mr-1">PS&gt;</span> Windows</button>
         </div>
 
         <!-- Command block -->
-        <div class="relative bg-gray-950 border border-gray-700 rounded px-4 py-3 flex items-center gap-3">
+        <div class="relative bg-gray-950 border border-gray-700 rounded px-4 py-3 flex items-center gap-3 light:bg-gray-100 light:border-gray-300">
           <div class="flex-1 overflow-x-auto">
             <template v-if="activeTab === 'unix'">
               <span class="text-gray-600 select-none mr-1">$</span>
-              <span class="text-green-300 font-mono text-sm">{{ command }}</span>
+              <span class="text-green-300 font-mono text-sm light:text-gray-700">{{ command }}</span>
             </template>
             <template v-else>
               <span class="text-blue-400 select-none mr-1">PS&gt;</span>
-              <span class="text-green-300 font-mono text-sm">{{ command }}</span>
+              <span class="text-green-300 font-mono text-sm light:text-gray-700">{{ command }}</span>
             </template>
           </div>
           <button
@@ -106,7 +106,7 @@ async function copy() {
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-between px-5 py-3 border-t border-gray-800 mt-2">
+      <div class="flex items-center justify-between px-5 py-3 border-t border-gray-800 mt-2 light:border-gray-200">
         <a
           :href="NPM_URL"
           target="_blank"

@@ -375,10 +375,10 @@ function handleLeafEdit(path: string[], newValue: string) {
   <div v-if="vault.selectedSecret" class="mt-6 flex flex-col gap-3">
 
     <!-- ── Container 1 : Clés / Valeurs ── -->
-    <div class="bg-gray-900 border border-gray-700 rounded">
+    <div class="bg-gray-900 border border-gray-700 rounded light:bg-gray-50 light:border-gray-300">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 light:border-gray-200">
         <div class="flex items-center gap-2 min-w-0">
           <span class="text-green-400 text-sm font-semibold font-mono truncate">{{ vault.selectedSecret.path }}</span>
           <span v-if="saveSuccess" class="text-green-500 text-xs shrink-0">{{ t('secretPanel.saved') }}</span>
@@ -387,13 +387,13 @@ function handleLeafEdit(path: string[], newValue: string) {
         <div class="flex items-center gap-2 shrink-0 ml-2">
           <button
             v-if="!editMode && editingAllowed"
-            class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
+            class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
             :title="t('secretPanel.jsonEdit')"
             @click="enterEdit"
           >{{ t('secretPanel.jsonEdit') }}</button>
           <button
             v-if="!editMode"
-            class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
+            class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
             :title="t('secretPanel.downloadSecret')"
             @click="downloadSecret"
           >{{ t('secretPanel.downloadSecret') }}</button>
@@ -431,12 +431,12 @@ function handleLeafEdit(path: string[], newValue: string) {
         <!-- Row selection action bar -->
         <div
           v-if="selectedRowKeys.size > 0"
-          class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-950/40 border border-blue-800/50 rounded"
+          class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-950/40 border border-blue-800/50 rounded light:bg-blue-100/40 light:border-blue-300/50"
         >
-          <span class="text-blue-300 text-xs font-medium">{{ t('selectionBar.selected', { n: selectedRowKeys.size }) }}</span>
+          <span class="text-blue-300 text-xs font-medium light:text-blue-700">{{ t('selectionBar.selected', { n: selectedRowKeys.size }) }}</span>
           <div class="flex-1" />
           <button
-            class="text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors cursor-pointer"
+            class="text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors cursor-pointer light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-800"
             @click="clearRowSelection"
           >✕ {{ t('selectionBar.clear') }}</button>
           <div class="relative z-30">
@@ -452,12 +452,12 @@ function handleLeafEdit(path: string[], newValue: string) {
             </button>
             <div
               v-if="showRowFormatPicker"
-              class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden w-28"
+              class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden w-28 light:bg-gray-50 light:border-gray-300"
             >
               <button
                 v-for="fmt in (['json', 'csv', 'yaml'] as const)"
                 :key="fmt"
-                class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white transition-colors font-mono uppercase cursor-pointer"
+                class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white transition-colors font-mono uppercase cursor-pointer light:text-gray-700 light:hover:bg-gray-100 light:hover:text-gray-900"
                 @click="downloadSelectedRows(fmt)"
               >{{ fmt }}</button>
             </div>
@@ -477,7 +477,7 @@ function handleLeafEdit(path: string[], newValue: string) {
 
         <table class="w-full text-sm">
           <thead>
-            <tr class="text-gray-500 text-xs uppercase border-b border-gray-700">
+            <tr class="text-gray-500 text-xs uppercase border-b border-gray-700 light:border-gray-300">
               <th class="text-left py-1 pr-4 w-1/3">
                 <div class="flex items-center gap-2">
                   <input
@@ -513,7 +513,7 @@ function handleLeafEdit(path: string[], newValue: string) {
               <!-- Plain value: inline editable row -->
               <tr
                 v-else
-                class="group border-b border-gray-800 last:border-0"
+                class="group border-b border-gray-800 last:border-0 light:border-gray-200"
                 :class="editingAllowed && editingRow !== String(key) ? 'cursor-pointer' : ''"
                 :title="editingAllowed && editingRow !== String(key) ? t('secretPanel.editTip') : undefined"
                 @dblclick="startEditRow(String(key), String(val))"
@@ -541,14 +541,14 @@ function handleLeafEdit(path: string[], newValue: string) {
                     </button>
                     <span
                       class="font-mono text-xs break-all"
-                      :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-blue-300'"
+                      :class="rowSaveSuccess === String(key) ? 'text-green-400' : 'text-blue-300 light:text-blue-700'"
                     >{{ key }}</span>
                   </div>
                   <input
                     v-else
                     v-focus
                     v-model="editingRowKey"
-                    class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400"
+                    class="w-full bg-gray-800 border border-yellow-500 text-yellow-200 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-yellow-400 light:bg-gray-100 light:text-gray-800"
                     :placeholder="t('secretPanel.keyNamePlaceholder')"
                     @keyup.enter="saveRow(String(key))"
                     @keyup.escape="cancelEditRow"
@@ -611,7 +611,7 @@ function handleLeafEdit(path: string[], newValue: string) {
         <p class="text-gray-500 text-xs mb-2">{{ t('secretPanel.jsonEditHint') }}</p>
         <textarea
           v-model="editJson"
-          class="w-full h-64 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600"
+          class="w-full h-64 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded p-3 resize-y focus:outline-none focus:border-green-600 light:bg-gray-100 light:border-gray-300 light:text-gray-700"
           spellcheck="false"
           autocomplete="off"
         />
@@ -620,7 +620,7 @@ function handleLeafEdit(path: string[], newValue: string) {
           <button class="px-4 py-1.5 text-sm bg-green-700 hover:bg-green-600 text-white rounded" @click="requestSave">
             {{ t('secretPanel.previewChanges') }}
           </button>
-          <button class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded" @click="cancelEdit">
+          <button class="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded light:text-gray-600 light:hover:text-gray-800 light:border-gray-300" @click="cancelEdit">
             {{ t('secretPanel.cancel') }}
           </button>
         </div>
@@ -628,7 +628,7 @@ function handleLeafEdit(path: string[], newValue: string) {
     </div>
 
     <!-- ── Container 2 : Historique des versions ── -->
-    <div class="bg-gray-900 border border-gray-700 rounded">
+    <div class="bg-gray-900 border border-gray-700 rounded light:bg-gray-50 light:border-gray-300">
       <VersionTimeline
         :path="vault.selectedSecret.path"
         :current-data="stringifyData(vault.selectedSecret.data)"
@@ -642,7 +642,7 @@ function handleLeafEdit(path: string[], newValue: string) {
   <Transition name="toast">
     <div
       v-if="toastVisible"
-      class="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-xs text-gray-200"
+      class="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-xs text-gray-200 light:bg-gray-100 light:border-gray-300 light:text-gray-800"
     >
       <span class="text-green-400">✓</span>
       {{ toastMessage }}
