@@ -78,7 +78,7 @@ function handleManualLogin() {
           @click="handleGoHome"
         >
           <span class="text-green-400 text-xl font-bold leading-none group-hover:text-green-300 transition select-none">⬡</span>
-          <span class="text-white font-bold text-sm tracking-wide group-hover:text-green-300 transition whitespace-nowrap">{{ t('app.vaultAdmin') }}</span>
+          <span class="text-white font-bold text-sm tracking-wide group-hover:text-green-300 transition whitespace-nowrap light:text-gray-900">{{ t('app.vaultAdmin') }}</span>
         </button>
 
         <!-- Divider -->
@@ -151,7 +151,7 @@ function handleManualLogin() {
       <footer class="border-t border-gray-800 px-6 py-3 mt-4 light:border-gray-200">
         <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 text-gray-600 text-xs">
           <div class="flex items-center gap-2">
-            <span class="text-green-700 font-bold">⬡ {{ t('app.vaultAdmin') }}</span>
+            <span class="text-green-700 font-bold light:text-green-800">⬡ {{ t('app.vaultAdmin') }}</span>
             <span v-if="vault.appVersion">v{{ vault.appVersion }}</span>
             <button
               v-if="vault.hasUpdate"

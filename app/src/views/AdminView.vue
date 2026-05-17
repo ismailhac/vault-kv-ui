@@ -561,7 +561,7 @@ onUnmounted(() => clearInterval(pollTimer))
       <!-- Stats cards -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
-          <div class="text-gray-500 text-xs mb-1">{{ t('adminView.totalWrites') }}</div>
+          <div class="text-gray-500 text-xs mb-1 light:text-gray-600">{{ t('adminView.totalWrites') }}</div>
           <div class="text-white text-2xl font-bold font-mono">{{ nsStats.totalWrites }}</div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-gray-50 light:border-gray-200">
@@ -584,7 +584,7 @@ onUnmounted(() => clearInterval(pollTimer))
 
       <!-- Settings panel -->
       <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 light:bg-gray-50 light:border-gray-200">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4 light:text-gray-600">{{ t('adminView.settings') }}</h2>
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4 light:text-gray-700">{{ t('adminView.settings') }}</h2>
         <!-- Feedback toast -->
         <transition name="fade">
           <div
@@ -616,7 +616,7 @@ onUnmounted(() => clearInterval(pollTimer))
             </button>
             <div>
               <div class="text-sm text-gray-200 group-hover:text-white transition light:text-gray-800 light:group-hover:text-gray-900">{{ t('adminView.logging') }}</div>
-              <div class="text-xs text-gray-600">{{ t('adminView.loggingDesc') }}</div>
+              <div class="text-xs text-gray-600 light:text-gray-700">{{ t('adminView.loggingDesc') }}</div>
             </div>
           </label>
 
@@ -638,7 +638,7 @@ onUnmounted(() => clearInterval(pollTimer))
             </button>
             <div>
               <div class="text-sm text-gray-200 group-hover:text-white transition light:text-gray-800 light:group-hover:text-gray-900">{{ t('adminView.editingEnabled') }}</div>
-              <div class="text-xs text-gray-600">{{ t('adminView.editingDesc') }}</div>
+              <div class="text-xs text-gray-600 light:text-gray-700">{{ t('adminView.editingDesc') }}</div>
             </div>
           </label>
 
@@ -650,7 +650,7 @@ onUnmounted(() => clearInterval(pollTimer))
 
       <!-- Persistence panel -->
       <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 space-y-4 light:bg-gray-50 light:border-gray-200">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider light:text-gray-600">{{ t('adminView.logPersistence') }}</h2>
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider light:text-gray-700">{{ t('adminView.logPersistence') }}</h2>
 
         <!-- File save row -->
         <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -659,8 +659,8 @@ onUnmounted(() => clearInterval(pollTimer))
               {{ t('adminView.file') }}
               <span class="text-gray-300 font-mono ml-1 light:text-gray-700">{{ saveStatus?.file ?? '…' }}</span>
             </div>
-            <div class="text-gray-600 mt-0.5">
-              {{ t('adminView.lastSaved') }} <span :class="saveStatus?.lastSavedAt ? 'text-green-500' : 'text-gray-500'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
+            <div class="text-gray-600 mt-0.5 light:text-gray-700">
+              {{ t('adminView.lastSaved') }} <span :class="saveStatus?.lastSavedAt ? 'text-green-500 light:text-green-700' : 'text-gray-500 light:text-gray-600'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
               <span v-if="saveStatus?.count != null" class="ml-2 text-gray-700">· {{ t('adminView.entryCount', { n: saveStatus.count }) }}</span>
             </div>
             <div class="text-gray-700 mt-0.5 text-xs">{{ t('adminView.autoSaveNote') }}</div>
@@ -715,7 +715,7 @@ onUnmounted(() => clearInterval(pollTimer))
               <option value="secret">secret</option>
               <option value="kv">kv</option>
             </select>
-            <span class="text-gray-600 text-xs shrink-0">/</span>
+            <span class="text-gray-600 text-xs shrink-0 light:text-gray-700">/</span>
             <div class="flex-1 min-w-40 relative">
               <input
                 v-model="vaultExportPath"
@@ -727,12 +727,12 @@ onUnmounted(() => clearInterval(pollTimer))
               />
               <span
                 v-if="exportPresetActive"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none select-none"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none select-none light:text-gray-700"
               >{{ t('adminView.exportVaultDir') }}</span>
             </div>
             <button
               class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition shrink-0"
-              :class="exporting || !vaultExportPath.trim() ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-green-800 hover:bg-green-700 text-green-100'"
+              :class="exporting || !vaultExportPath.trim() ? 'bg-gray-800 text-gray-600 cursor-not-allowed light:bg-gray-200 light:text-gray-700' : 'bg-green-800 hover:bg-green-700 text-green-100'"
               :disabled="exporting || !vaultExportPath.trim()"
               @click="exportToVault"
             >
@@ -765,11 +765,11 @@ onUnmounted(() => clearInterval(pollTimer))
               :key="tab.id"
               type="button"
               class="px-3 py-1 text-xs rounded transition"
-              :class="activeTab === tab.id ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800'"
+              :class="activeTab === tab.id ? 'bg-gray-700 text-white light:bg-gray-200 light:text-gray-900' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800 light:text-gray-600 light:hover:text-gray-700 light:hover:bg-gray-200'"
               @click="activeTab = tab.id"
             >{{ tab.label }}</button>
           </div>
-          <span class="text-gray-600 text-xs">{{ t('adminView.entryCount', { n: filteredLogs.length }) }}</span>
+          <span class="text-gray-600 text-xs light:text-gray-700">{{ t('adminView.entryCount', { n: filteredLogs.length }) }}</span>
         </div>
 
         <!-- Table -->
@@ -1043,9 +1043,9 @@ onUnmounted(() => clearInterval(pollTimer))
     <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg shadow-2xl">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <h2 class="text-white font-semibold text-sm">{{ t('adminView.editConfigTitle') }}</h2>
-        <button class="text-gray-500 hover:text-gray-300 text-lg" @click="showConfigEdit = false">✕</button>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-300">
+        <h2 class="text-white font-semibold text-sm light:text-gray-900">{{ t('adminView.editConfigTitle') }}</h2>
+        <button class="text-gray-500 hover:text-gray-300 text-lg light:hover:text-gray-700" @click="showConfigEdit = false">✕</button>
       </div>
 
       <!-- Body -->
