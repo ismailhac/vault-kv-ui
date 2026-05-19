@@ -23,7 +23,7 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
 
 <template>
   <div class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-8 max-w-md w-full text-center space-y-6">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl p-8 max-w-md w-full text-center space-y-6 light:bg-white light:border-gray-200">
       <!-- Loading state -->
       <div v-if="status === 'loading'" class="space-y-4">
         <div class="flex justify-center">
@@ -35,8 +35,8 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             ></div>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ message || t('loadingSpinner.verifyingToken') }}</h2>
-        <p class="text-gray-400 text-sm">{{ t('loadingSpinner.pleaseWait') }}</p>
+        <h2 class="text-white font-semibold text-lg light:text-gray-900">{{ message || t('loadingSpinner.verifyingToken') }}</h2>
+        <p class="text-gray-400 text-sm light:text-gray-600">{{ t('loadingSpinner.pleaseWait') }}</p>
       </div>
 
       <!-- Success state -->
@@ -48,7 +48,7 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             <span class="text-green-400 text-3xl">✓</span>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ t('loadingSpinner.authSuccess') }}</h2>
+        <h2 class="text-white font-semibold text-lg light:text-gray-900">{{ t('loadingSpinner.authSuccess') }}</h2>
         <p class="text-green-400 text-sm">{{ t('loadingSpinner.connectionEstablished') }}</p>
         <p class="text-gray-500 text-xs">{{ t('loadingSpinner.redirecting') }}</p>
       </div>
@@ -60,11 +60,11 @@ const showManualBtn = computed(() => props.status === 'error' && props.onManualL
             <span class="text-red-400 text-3xl">⚠</span>
           </div>
         </div>
-        <h2 class="text-white font-semibold text-lg">{{ t('loadingSpinner.authError') }}</h2>
+        <h2 class="text-white font-semibold text-lg light:text-gray-900">{{ t('loadingSpinner.authError') }}</h2>
         <div class="bg-red-950 border border-red-800 rounded p-3 text-left">
           <p class="text-red-300 text-xs font-mono">{{ error || t('loadingSpinner.unknownError') }}</p>
         </div>
-        <p class="text-gray-400 text-sm">
+        <p class="text-gray-400 text-sm light:text-gray-600">
           {{ t('loadingSpinner.tokenExpiredOrInvalid') }}
         </p>
         <div class="flex gap-2 pt-2">

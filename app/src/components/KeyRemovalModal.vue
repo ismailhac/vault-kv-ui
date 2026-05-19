@@ -222,12 +222,12 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-200">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">{{ t('keyRemovalModal.title') }}</span>
+          <span class="text-white font-semibold text-sm light:text-gray-900">{{ t('keyRemovalModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
           <span class="text-gray-500 text-xs">{{ t('keyRemovalModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         </div>
@@ -235,7 +235,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <template v-for="s in [1, 2, 3, 4]" :key="s">
             <div
               class="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition"
-              :class="step === s ? 'bg-red-700 text-white' : s < step ? 'bg-gray-700 text-gray-300' : 'text-gray-600'"
+              :class="step === s ? 'bg-red-700 text-white' : s < step ? 'bg-gray-700 text-gray-300 light:bg-gray-200 light:text-gray-700' : 'text-gray-600 light:text-gray-400'"
             >
               <span>{{ s }}</span>
               <span class="hidden sm:inline">{{ STEP_LABELS[s] }}</span>
@@ -243,7 +243,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <span v-if="s < 4" class="text-gray-700 text-xs">›</span>
           </template>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0" @click="emit('close')">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0 light:hover:text-gray-700" @click="emit('close')">✕</button>
       </div>
 
       <!-- Body -->
@@ -251,17 +251,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
         <!-- ── STEP 1 — Recherche ── -->
         <div v-if="step === 1" class="space-y-5">
-          <p class="text-gray-400 text-sm">
+          <p class="text-gray-400 text-sm light:text-gray-600">
             {{ t('keyRemovalModal.step1Desc') }}
           </p>
 
           <!-- Key input + scan -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-gray-400 text-xs">{{ t('keyRemovalModal.keyLabel') }}</label>
+              <label class="text-gray-400 text-xs light:text-gray-600">{{ t('keyRemovalModal.keyLabel') }}</label>
               <button
                 class="px-2 py-0.5 rounded border text-xs font-mono font-semibold transition pointer"
-                :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'"
+                :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500 light:bg-gray-100 light:border-gray-300 light:text-gray-600'"
                 @click="includeProd = !includeProd"
               >{{ includeProd ? t('keyRemovalModal.prodIncluded') : t('keyRemovalModal.prodExcluded') }}</button>
             </div>
@@ -270,7 +270,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 v-model="keyName"
                 type="text"
                 placeholder="FF_OPEN_MODAL"
-                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-red-300 font-mono rounded text-sm focus:outline-none focus:border-red-600 placeholder-gray-700"
+                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-red-300 font-mono rounded text-sm focus:outline-none focus:border-red-600 placeholder-gray-700 light:bg-white light:border-gray-300 light:text-red-700 light:placeholder-gray-400"
                 spellcheck="false"
                 @keydown.enter="scan"
               />
@@ -286,9 +286,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
           <!-- Scanning spinner -->
           <div v-if="scanning" class="flex flex-col items-center py-8 gap-3">
-            <div class="w-10 h-10 border-2 border-gray-700 border-t-red-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">{{ t('keyRemovalModal.scanningAll') }}</p>
-            <p class="text-gray-600 text-xs">{{ t('keyRemovalModal.mountLabel') }} <span class="text-green-500">{{ vault.currentMount }}</span></p>
+            <div class="w-10 h-10 border-2 border-gray-700 border-t-red-400 rounded-full animate-spin light:border-gray-200 light:border-t-red-500"></div>
+            <p class="text-gray-400 text-sm light:text-gray-600">{{ t('keyRemovalModal.scanningAll') }}</p>
+            <p class="text-gray-600 text-xs light:text-gray-500">{{ t('keyRemovalModal.mountLabel') }} <span class="text-green-500">{{ vault.currentMount }}</span></p>
           </div>
 
           <!-- Scan error -->
@@ -298,9 +298,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
           <!-- Scan result -->
           <template v-if="scanned && !scanning">
-            <div v-if="matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center">
-              <div class="text-gray-300 font-semibold mb-1">{{ t('keyRemovalModal.keyNotFound') }}</div>
-              <div class="text-gray-500 text-xs font-mono">
+            <div v-if="matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center light:bg-gray-100 light:border-gray-200">
+              <div class="text-gray-300 font-semibold mb-1 light:text-gray-800">{{ t('keyRemovalModal.keyNotFound') }}</div>
+              <div class="text-gray-500 text-xs font-mono light:text-gray-600">
                 « {{ keyName }} »{{ t('keyRemovalModal.keyNotFoundDesc') }} <span class="text-green-400">{{ vault.currentMount }}</span>.
               </div>
             </div>
@@ -320,17 +320,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               </div>
 
               <!-- Preview of matching paths (first 10) -->
-              <div class="bg-gray-800 border border-gray-700 rounded divide-y divide-gray-700">
+              <div class="bg-gray-800 border border-gray-700 rounded divide-y divide-gray-700 light:bg-gray-50 light:border-gray-200 light:divide-gray-200">
                 <div
                   v-for="path in matchingPaths.slice(0, 10)"
                   :key="path"
                   class="px-4 py-2 flex items-center gap-3 text-xs font-mono"
                 >
                   <span class="text-red-500 shrink-0">✗</span>
-                  <span class="text-gray-300 flex-1">{{ path }}</span>
+                  <span class="text-gray-300 flex-1 light:text-gray-700">{{ path }}</span>
                   <span class="text-gray-600">{{ keyName }} = <span class="text-amber-400">{{ dumpData[path]?.[keyName] }}</span></span>
                 </div>
-                <div v-if="matchingPaths.length > 10" class="px-4 py-2 text-xs text-gray-500 text-center">
+                <div v-if="matchingPaths.length > 10" class="px-4 py-2 text-xs text-gray-500 text-center light:text-gray-600">
                   {{ t('keyRemovalModal.moreItems', { n: matchingPaths.length - 10 }) }}
                 </div>
               </div>
@@ -340,17 +340,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
         <!-- ── STEP 2 — Sélection ── -->
         <div v-else-if="step === 2" class="space-y-5">
-          <p class="text-gray-400 text-sm">
+          <p class="text-gray-400 text-sm light:text-gray-600">
             {{ t('keyRemovalModal.step2Desc') }} <span class="font-mono text-red-300">{{ keyName }}</span> {{ t('keyRemovalModal.step2DescSuffix') }}
           </p>
 
           <!-- Project filter -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('keyRemovalModal.projectsLabel') }}</label>
+              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold light:text-gray-600">{{ t('keyRemovalModal.projectsLabel') }}</label>
               <div class="flex gap-1.5">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = [...availableProjects]">{{ t('keyRemovalModal.all') }}</button>
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedProjects = []">{{ t('keyRemovalModal.none') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedProjects = [...availableProjects]">{{ t('keyRemovalModal.all') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedProjects = []">{{ t('keyRemovalModal.none') }}</button>
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -375,10 +375,10 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <!-- BU filter -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('keyRemovalModal.busLabel') }}</label>
+              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold light:text-gray-600">{{ t('keyRemovalModal.busLabel') }}</label>
               <div class="flex gap-1.5">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = [...availableBUs]">{{ t('keyRemovalModal.all') }}</button>
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="selectedBUs = []">{{ t('keyRemovalModal.none') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedBUs = [...availableBUs]">{{ t('keyRemovalModal.all') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="selectedBUs = []">{{ t('keyRemovalModal.none') }}</button>
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -403,9 +403,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <!-- Env filter -->
           <div>
             <div class="flex items-center gap-3 mb-2 flex-wrap">
-              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold">{{ t('keyRemovalModal.envsLabel') }}</label>
+              <label class="text-gray-400 text-xs uppercase tracking-wider font-semibold light:text-gray-600">{{ t('keyRemovalModal.envsLabel') }}</label>
               <div class="flex gap-1.5 ml-auto">
-                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded" @click="quickSelectEnvs('all')">{{ t('keyRemovalModal.all') }}</button>
+                <button class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:border-gray-300" @click="quickSelectEnvs('all')">{{ t('keyRemovalModal.all') }}</button>
                 <button class="text-xs px-2 py-0.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-300 border border-emerald-800 rounded" @click="quickSelectEnvs('no-prod')">{{ t('keyRemovalModal.noProd') }}</button>
                 <button class="text-xs px-2 py-0.5 bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded" @click="quickSelectEnvs('prod-only')">{{ t('keyRemovalModal.prodOnly') }}</button>
               </div>
@@ -451,20 +451,20 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           </div>
 
           <!-- Summary -->
-          <div class="p-3 bg-gray-800 border border-gray-700 rounded text-xs space-y-1.5">
-            <div class="text-gray-300 font-semibold mb-1">{{ t('keyRemovalModal.summaryTitle') }}</div>
-            <div class="text-gray-400">{{ t('keyRemovalModal.summaryKey') }} <span class="font-mono text-red-300">{{ keyName }}</span></div>
-            <div class="text-gray-400">{{ t('keyRemovalModal.summaryProjects') }} <span class="text-white font-mono">{{ selectedProjects.join(', ') || '—' }}</span></div>
-            <div class="text-gray-400">{{ t('keyRemovalModal.summaryBUs') }} <span class="text-blue-300 font-mono">{{ selectedBUs.join(', ') || '—' }}</span></div>
-            <div class="text-gray-400">{{ t('keyRemovalModal.summaryEnvs') }} <span class="font-mono">
+          <div class="p-3 bg-gray-800 border border-gray-700 rounded text-xs space-y-1.5 light:bg-gray-100 light:border-gray-200">
+            <div class="text-gray-300 font-semibold mb-1 light:text-gray-800">{{ t('keyRemovalModal.summaryTitle') }}</div>
+            <div class="text-gray-400 light:text-gray-600">{{ t('keyRemovalModal.summaryKey') }} <span class="font-mono text-red-300">{{ keyName }}</span></div>
+            <div class="text-gray-400 light:text-gray-600">{{ t('keyRemovalModal.summaryProjects') }} <span class="text-white font-mono light:text-gray-900">{{ selectedProjects.join(', ') || '—' }}</span></div>
+            <div class="text-gray-400 light:text-gray-600">{{ t('keyRemovalModal.summaryBUs') }} <span class="text-blue-300 font-mono">{{ selectedBUs.join(', ') || '—' }}</span></div>
+            <div class="text-gray-400 light:text-gray-600">{{ t('keyRemovalModal.summaryEnvs') }} <span class="font-mono">
               <span v-for="(e, i) in selectedEnvs" :key="e">
                 <span :class="isProd(e) ? 'text-red-300' : 'text-emerald-300'">{{ e }}</span>
                 <span v-if="i < selectedEnvs.length - 1" class="text-gray-600">, </span>
               </span>
               <span v-if="!selectedEnvs.length" class="text-gray-600">—</span>
             </span></div>
-            <div class="text-gray-400">{{ t('keyRemovalModal.summarySubPaths') }} <span :class="includeSubPaths ? 'text-amber-300' : 'text-gray-300'">{{ includeSubPaths ? t('keyRemovalModal.included') : t('keyRemovalModal.excluded') }}</span></div>
-            <div class="pt-1 border-t border-gray-700">
+            <div class="text-gray-400 light:text-gray-600">{{ t('keyRemovalModal.summarySubPaths') }} <span :class="includeSubPaths ? 'text-amber-300' : 'text-gray-300 light:text-gray-700'">{{ includeSubPaths ? t('keyRemovalModal.included') : t('keyRemovalModal.excluded') }}</span></div>
+            <div class="pt-1 border-t border-gray-700 light:border-gray-300">
               {{ t('keyRemovalModal.targetedPaths') }} <span class="text-red-400 font-bold text-sm">{{ targetPaths.length }}</span>
               {{ t('keyRemovalModal.ofPathsWithKey') }}
             </div>
@@ -474,11 +474,11 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
         <!-- ── STEP 3 — Diff ── -->
         <div v-else-if="step === 3" class="space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
-            <span class="text-gray-400 text-sm">
+            <span class="text-gray-400 text-sm light:text-gray-600">
               {{ t('keyRemovalModal.step3Title', { n: previews.length }) }} <span class="font-mono text-red-300">{{ keyName }}</span> {{ t('keyRemovalModal.willBeDeleted') }}
             </span>
             <div class="flex gap-2">
-              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="step = 2">{{ t('keyRemovalModal.adjust') }}</button>
+              <button class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700" @click="step = 2">{{ t('keyRemovalModal.adjust') }}</button>
               <button
                 class="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded font-semibold disabled:opacity-40"
                 :disabled="previews.length === 0"
@@ -488,8 +488,8 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           </div>
 
           <!-- Diffs grouped by project/BU/env -->
-          <div v-for="([group, entries]) in previewsByGroup" :key="group" class="border border-gray-700 rounded">
-            <div class="px-4 py-2 bg-gray-800 rounded-t flex items-center gap-1.5 text-xs font-mono flex-wrap">
+          <div v-for="([group, entries]) in previewsByGroup" :key="group" class="border border-gray-700 rounded light:border-gray-200">
+            <div class="px-4 py-2 bg-gray-800 rounded-t flex items-center gap-1.5 text-xs font-mono flex-wrap light:bg-gray-100">
               <span class="text-purple-300 font-semibold">{{ group.split('/')[0] }}</span>
               <span class="text-gray-600">/</span>
               <span class="text-blue-300 font-semibold">{{ group.split('/')[1] }}</span>
@@ -502,9 +502,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               <span class="ml-auto text-gray-500">{{ entries.length }} path(s)</span>
             </div>
 
-            <div v-for="entry in entries" :key="entry.path" class="border-t border-gray-800 first:border-0">
+            <div v-for="entry in entries" :key="entry.path" class="border-t border-gray-800 first:border-0 light:border-gray-200">
               <div class="px-4 py-1 flex items-center gap-2">
-                <span class="font-mono text-xs text-gray-400">{{ entry.path }}</span>
+                <span class="font-mono text-xs text-gray-400 light:text-gray-600">{{ entry.path }}</span>
                 <span v-if="pathDepth(entry.path) > 3" class="text-amber-600 text-xs">{{ t('keyRemovalModal.subPath') }}</span>
               </div>
               <table class="w-full text-xs font-mono">
@@ -532,10 +532,10 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               {{ applyErrCount === 0 ? '✓' : '⚠' }}
             </div>
             <div class="text-center">
-              <div class="text-white font-semibold text-base mb-1">
+              <div class="text-white font-semibold text-base mb-1 light:text-gray-900">
                 {{ applyErrCount === 0 ? t('keyRemovalModal.step4Success') : t('keyRemovalModal.step4Errors') }}
               </div>
-              <div class="text-gray-400 text-sm">
+              <div class="text-gray-400 text-sm light:text-gray-600">
                 <span class="font-mono text-red-300">{{ keyName }}</span> {{ t('keyRemovalModal.deletedFrom') }}
                 <span class="text-green-400 font-bold">{{ applyOkCount }}</span> {{ t('keyRemovalModal.secretsLabel') }}
                 <template v-if="applyErrCount > 0"> · <span class="text-red-400 font-bold">{{ applyErrCount }}</span></template>
@@ -552,8 +552,8 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             </div>
           </div>
 
-          <details v-if="applyOkCount > 0" class="text-xs text-gray-600">
-            <summary class="cursor-pointer hover:text-gray-400 transition">{{ t('keyRemovalModal.successDeletions', { n: applyOkCount }) }}</summary>
+          <details v-if="applyOkCount > 0" class="text-xs text-gray-600 light:text-gray-500">
+            <summary class="cursor-pointer hover:text-gray-400 transition light:hover:text-gray-600">{{ t('keyRemovalModal.successDeletions', { n: applyOkCount }) }}</summary>
             <div class="mt-2 space-y-0.5 font-mono">
               <div v-for="r in applyResults.filter(r => r.ok)" :key="r.path" class="text-green-700">✓ {{ r.path }}</div>
             </div>
@@ -563,17 +563,17 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
       </div><!-- end body -->
 
       <!-- Footer -->
-      <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0">
+      <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0 light:border-gray-200">
         <button
           v-if="step > 1 && step < 4"
-          class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded"
+          class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
           :disabled="applying"
           @click="step = (step - 1) as Step"
         >{{ t('keyRemovalModal.back') }}</button>
         <div v-else></div>
 
         <div class="flex gap-2">
-          <button v-if="step === 4" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded" @click="emit('close')">{{ t('keyRemovalModal.close') }}</button>
+          <button v-if="step === 4" class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700" @click="emit('close')">{{ t('keyRemovalModal.close') }}</button>
 
           <button
             v-if="step === 1"

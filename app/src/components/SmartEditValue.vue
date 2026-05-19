@@ -71,8 +71,8 @@ const cronLabel = computed(() => {
         type="button"
         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono border cursor-pointer transition-colors"
         :class="boolVal
-          ? 'bg-green-800 border-green-600 text-green-200 hover:bg-green-700'
-          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'"
+          ? 'bg-green-800 border-green-600 text-green-200 hover:bg-green-700 light:bg-green-100 light:border-green-400 light:text-green-800 light:hover:bg-green-200'
+          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 light:bg-gray-200 light:border-gray-300 light:text-gray-700 light:hover:bg-gray-300'"
         @click.stop="toggleBool"
       >
         <span class="w-2 h-2 rounded-full shrink-0" :class="boolVal ? 'bg-green-400' : 'bg-gray-500'"></span>
@@ -86,17 +86,17 @@ const cronLabel = computed(() => {
   <!-- Integer: ±1 controls + confirm/cancel -->
   <template v-else-if="isInteger">
     <div class="flex items-center gap-1">
-      <button type="button" class="px-1.5 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded shrink-0" @click.stop="decrement">−</button>
+      <button type="button" class="px-1.5 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded shrink-0 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700" @click.stop="decrement">−</button>
       <input
         v-focus
         :value="modelValue"
-        class="w-20 text-center bg-gray-800 border border-blue-500 text-gray-100 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-blue-400"
+        class="w-20 text-center bg-gray-800 border border-blue-500 text-gray-100 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-blue-400 light:bg-white light:text-gray-800 light:border-blue-400"
         @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @keyup.enter="emit('confirm')"
         @keyup.escape="emit('cancel')"
         @click.stop
       />
-      <button type="button" class="px-1.5 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded shrink-0" @click.stop="increment">+</button>
+      <button type="button" class="px-1.5 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded shrink-0 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700" @click.stop="increment">+</button>
       <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0 ml-0.5" :title="t('smartEditValue.saveTip')" @click.stop="emit('confirm')">✓</button>
       <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('smartEditValue.cancelTip')" @click.stop="emit('cancel')">✕</button>
     </div>
@@ -109,7 +109,7 @@ const cronLabel = computed(() => {
         <input
           v-focus
           :value="modelValue"
-          class="flex-1 min-w-0 bg-gray-800 border border-blue-500 text-gray-100 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-blue-400"
+          class="flex-1 min-w-0 bg-gray-800 border border-blue-500 text-gray-100 font-mono text-xs rounded px-2 py-0.5 focus:outline-none focus:border-blue-400 light:bg-white light:text-gray-800 light:border-blue-400"
           @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           @keyup.enter="emit('confirm')"
           @keyup.escape="emit('cancel')"
@@ -118,7 +118,7 @@ const cronLabel = computed(() => {
         <button type="button" class="text-green-400 hover:text-green-300 text-sm shrink-0" :title="t('smartEditValue.saveTip')" @click.stop="emit('confirm')">✓</button>
         <button type="button" class="text-gray-500 hover:text-gray-300 text-xs shrink-0" :title="t('smartEditValue.cancelTip')" @click.stop="emit('cancel')">✕</button>
       </div>
-      <span v-if="cronLabel" class="text-xs text-gray-500 italic">— {{ cronLabel }}</span>
+      <span v-if="cronLabel" class="text-xs text-gray-500 italic light:text-gray-500">— {{ cronLabel }}</span>
     </div>
   </template>
 </template>

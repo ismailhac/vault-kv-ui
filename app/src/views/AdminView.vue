@@ -514,10 +514,10 @@ onUnmounted(() => clearInterval(pollTimer))
 
     <!-- Page header -->
     <div class="flex items-center justify-between gap-4">
-      <h1 class="text-white font-semibold text-sm">{{ t('adminView.dashboard') }}</h1>
+      <h1 class="text-white font-bold text-xl light:text-gray-900">{{ t('adminView.dashboard') }}</h1>
       <div class="flex gap-2">
         <button
-          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition cursor-pointer"
+          class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition cursor-pointer light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
           :disabled="refreshing"
           @click="fetchAll(true)"
         >
@@ -554,37 +554,37 @@ onUnmounted(() => clearInterval(pollTimer))
 
     <!-- Loading skeleton -->
     <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-      <div v-for="i in 5" :key="i" class="h-20 bg-gray-800 rounded-lg animate-pulse" />
+      <div v-for="i in 5" :key="i" class="h-20 bg-gray-800 rounded-lg animate-pulse light:bg-gray-200" />
     </div>
 
     <template v-else>
       <!-- Stats cards -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-white light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.totalWrites') }}</div>
-          <div class="text-white text-2xl font-bold font-mono">{{ nsStats.totalWrites }}</div>
+          <div class="text-white text-2xl font-bold font-mono light:text-gray-900">{{ nsStats.totalWrites }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-white light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.writesToday') }}</div>
-          <div class="text-blue-400 text-2xl font-bold font-mono">{{ nsStats.writesToday }}</div>
+          <div class="text-blue-400 text-2xl font-bold font-mono light:text-blue-700">{{ nsStats.writesToday }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-white light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.successLogins') }}</div>
-          <div class="text-green-400 text-2xl font-bold font-mono">{{ nsStats.totalLogins }}</div>
+          <div class="text-green-400 text-2xl font-bold font-mono light:text-green-700">{{ nsStats.totalLogins }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-white light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.failedLogins') }}</div>
-          <div class="text-red-400 text-2xl font-bold font-mono">{{ nsStats.totalLoginFails }}</div>
+          <div class="text-red-400 text-2xl font-bold font-mono light:text-red-700">{{ nsStats.totalLoginFails }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+        <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 light:bg-white light:border-gray-200">
           <div class="text-gray-500 text-xs mb-1">{{ t('adminView.logEntries') }}</div>
-          <div class="text-gray-300 text-2xl font-bold font-mono">{{ nsStats.logsCount }}</div>
+          <div class="text-gray-300 text-2xl font-bold font-mono light:text-gray-700">{{ nsStats.logsCount }}</div>
         </div>
       </div>
 
       <!-- Settings panel -->
-      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">{{ t('adminView.settings') }}</h2>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 light:bg-white light:border-gray-200">
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4 light:text-gray-600">{{ t('adminView.settings') }}</h2>
         <!-- Feedback toast -->
         <transition name="fade">
           <div
@@ -615,8 +615,8 @@ onUnmounted(() => clearInterval(pollTimer))
               />
             </button>
             <div>
-              <div class="text-sm text-gray-200 group-hover:text-white transition">{{ t('adminView.logging') }}</div>
-              <div class="text-xs text-gray-600">{{ t('adminView.loggingDesc') }}</div>
+              <div class="text-sm text-gray-200 group-hover:text-white transition light:text-gray-800 light:group-hover:text-gray-900">{{ t('adminView.logging') }}</div>
+              <div class="text-xs text-gray-600 light:text-gray-500">{{ t('adminView.loggingDesc') }}</div>
             </div>
           </label>
 
@@ -649,25 +649,25 @@ onUnmounted(() => clearInterval(pollTimer))
       </div>
 
       <!-- Persistence panel -->
-      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 space-y-4">
-        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider">{{ t('adminView.logPersistence') }}</h2>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-5 py-4 space-y-4 light:bg-white light:border-gray-200">
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider light:text-gray-600">{{ t('adminView.logPersistence') }}</h2>
 
         <!-- File save row -->
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div class="text-xs">
-            <div class="text-gray-400">
+            <div class="text-gray-400 light:text-gray-600">
               {{ t('adminView.file') }}
-              <span class="text-gray-300 font-mono ml-1">{{ saveStatus?.file ?? '…' }}</span>
+              <span class="text-gray-300 font-mono ml-1 light:text-gray-700">{{ saveStatus?.file ?? '…' }}</span>
             </div>
-            <div class="text-gray-600 mt-0.5">
-              {{ t('adminView.lastSaved') }} <span :class="saveStatus?.lastSavedAt ? 'text-green-500' : 'text-gray-500'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
-              <span v-if="saveStatus?.count != null" class="ml-2 text-gray-700">· {{ t('adminView.entryCount', { n: saveStatus.count }) }}</span>
+            <div class="text-gray-600 mt-0.5 light:text-gray-500">
+              {{ t('adminView.lastSaved') }} <span :class="saveStatus?.lastSavedAt ? 'text-green-500 light:text-green-700' : 'text-gray-500'">{{ formatSavedAt(saveStatus?.lastSavedAt ?? null) }}</span>
+              <span v-if="saveStatus?.count != null" class="ml-2 text-gray-700 light:text-gray-500">· {{ t('adminView.entryCount', { n: saveStatus.count }) }}</span>
             </div>
-            <div class="text-gray-700 mt-0.5 text-xs">{{ t('adminView.autoSaveNote') }}</div>
+            <div class="text-gray-700 mt-0.5 text-xs light:text-gray-500">{{ t('adminView.autoSaveNote') }}</div>
           </div>
           <button
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition shrink-0"
-            :class="saving ? 'bg-gray-700 text-gray-400' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'"
+            :class="saving ? 'bg-gray-700 text-gray-400 light:bg-gray-100 light:text-gray-400' : 'bg-gray-700 hover:bg-gray-600 text-gray-200 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700'"
             :disabled="saving"
             @click="saveNow"
           >
@@ -683,13 +683,13 @@ onUnmounted(() => clearInterval(pollTimer))
         </div>
 
         <!-- Local JSON download -->
-        <div class="border-t border-gray-800 pt-4 flex items-center justify-between">
+        <div class="border-t border-gray-800 pt-4 flex items-center justify-between light:border-gray-200">
           <div>
-            <div class="text-gray-400 text-xs">{{ t('adminView.exportJson') }}</div>
-            <div class="text-gray-700 text-xs mt-0.5">{{ t('adminView.exportJsonDesc', { n: nsScopedLogs.length }) }}</div>
+            <div class="text-gray-400 text-xs light:text-gray-600">{{ t('adminView.exportJson') }}</div>
+            <div class="text-gray-700 text-xs mt-0.5 light:text-gray-500">{{ t('adminView.exportJsonDesc', { n: nsScopedLogs.length }) }}</div>
           </div>
           <button
-            class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition shrink-0"
+            class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition shrink-0 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
             @click="downloadLogsLocally"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-blue-400">
@@ -700,27 +700,27 @@ onUnmounted(() => clearInterval(pollTimer))
         </div>
 
         <!-- Vault export row -->
-        <div class="border-t border-gray-800 pt-4">
+        <div class="border-t border-gray-800 pt-4 light:border-gray-200">
           <div class="flex items-center justify-between mb-3">
-            <div class="text-gray-400 text-xs">{{ t('adminView.exportVault') }}</div>
-            <span class="text-purple-400 text-xs font-mono">{{ vault.currentNamespaceLabel }}</span>
+            <div class="text-gray-400 text-xs light:text-gray-600">{{ t('adminView.exportVault') }}</div>
+            <span class="text-purple-400 text-xs font-mono light:text-purple-700">{{ vault.currentNamespaceLabel }}</span>
           </div>
 
           <!-- mount + path + button -->
           <div class="flex gap-2 flex-wrap items-center">
             <select
               v-model="vaultExportMount"
-              class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-gray-500 w-24 shrink-0"
+              class="px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-gray-500 w-24 shrink-0 light:bg-gray-50 light:border-gray-300 light:text-gray-700"
             >
               <option value="secret">secret</option>
               <option value="kv">kv</option>
             </select>
-            <span class="text-gray-600 text-xs shrink-0">/</span>
+            <span class="text-gray-600 text-xs shrink-0 light:text-gray-400">/</span>
             <div class="flex-1 min-w-40 relative">
               <input
                 v-model="vaultExportPath"
                 placeholder="admin/audit/session-2025-04"
-                class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded focus:outline-none focus:border-green-700 placeholder-gray-700"
+                class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 font-mono text-xs rounded focus:outline-none focus:border-green-700 placeholder-gray-700 light:bg-gray-50 light:border-gray-300 light:text-green-800 light:placeholder-gray-400"
                 :class="exportPresetActive ? 'pr-24' : ''"
                 @input="exportPresetActive = false"
                 @keydown.enter="exportToVault"
@@ -756,20 +756,20 @@ onUnmounted(() => clearInterval(pollTimer))
       </div>
 
       <!-- Logs section -->
-      <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden light:bg-white light:border-gray-200">
         <!-- Tabs + count -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 light:border-gray-200">
           <div class="flex gap-1">
             <button
               v-for="tab in ([{ id: 'all', label: t('adminView.tabAll') }, { id: 'writes', label: t('adminView.tabWrites') }, { id: 'logins', label: t('adminView.tabLogins') }] as const)"
               :key="tab.id"
               type="button"
               class="px-3 py-1 text-xs rounded transition"
-              :class="activeTab === tab.id ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800'"
+              :class="activeTab === tab.id ? 'bg-gray-700 text-white light:bg-gray-200 light:text-gray-900' : 'text-gray-500 hover:text-gray-200 hover:bg-gray-800 light:hover:text-gray-700 light:hover:bg-gray-100'"
               @click="activeTab = tab.id"
             >{{ tab.label }}</button>
           </div>
-          <span class="text-gray-600 text-xs">{{ t('adminView.entryCount', { n: filteredLogs.length }) }}</span>
+          <span class="text-gray-600 text-xs light:text-gray-500">{{ t('adminView.entryCount', { n: filteredLogs.length }) }}</span>
         </div>
 
         <!-- Table -->
@@ -779,7 +779,7 @@ onUnmounted(() => clearInterval(pollTimer))
         <div v-else class="overflow-x-auto">
           <table class="w-full text-xs font-mono">
             <thead>
-              <tr class="border-b border-gray-800 text-gray-600 uppercase tracking-wider">
+              <tr class="border-b border-gray-800 text-gray-600 uppercase tracking-wider light:border-gray-200 light:text-gray-500">
                 <th class="text-left px-4 py-2 w-36">{{ t('adminView.timeHeader') }}</th>
                 <th class="text-left px-3 py-2 w-28">{{ t('adminView.typeHeader') }}</th>
                 <th class="text-left px-3 py-2 w-32">{{ t('adminView.namespaceHeader') }}</th>
@@ -791,19 +791,19 @@ onUnmounted(() => clearInterval(pollTimer))
               <tr
                 v-for="entry in filteredLogs"
                 :key="entry.id"
-                class="group border-b border-gray-800 last:border-0 hover:bg-gray-800/50 cursor-pointer"
+                class="group border-b border-gray-800 last:border-0 hover:bg-gray-800/50 cursor-pointer light:border-gray-200 light:hover:bg-gray-50"
                 @click="selectedLog = entry; restoreError = null; restoreSuccess = false"
               >
-                <td class="px-4 py-2 text-gray-500 whitespace-nowrap">{{ formatTs(entry.ts) }}</td>
+                <td class="px-4 py-2 text-gray-500 whitespace-nowrap light:text-gray-500">{{ formatTs(entry.ts) }}</td>
                 <td class="px-3 py-2">
                   <span class="px-1.5 py-0.5 rounded border text-xs" :class="logTypeBadge(entry.type)">
                     {{ logTypeLabel(entry.type) }}
                   </span>
                 </td>
-                <td class="px-3 py-2 text-gray-400 whitespace-nowrap">{{ nsLabel(entry.namespace) }}</td>
-                <td class="px-3 py-2 text-gray-300">
+                <td class="px-3 py-2 text-gray-400 whitespace-nowrap light:text-gray-600">{{ nsLabel(entry.namespace) }}</td>
+                <td class="px-3 py-2 text-gray-300 light:text-gray-700">
                   <template v-if="entry.type === 'write'">
-                    <span class="text-green-400">{{ entry.path }}</span>
+                    <span class="text-green-400 light:text-green-700">{{ entry.path }}</span>
                     <template v-if="entry.before || entry.after">
                       <span v-if="diffSummary(entry).added" class="ml-2 px-1 py-0.5 rounded bg-green-950 text-green-400 text-xs">+{{ diffSummary(entry).added }}</span>
                       <span v-if="diffSummary(entry).modified" class="ml-1 px-1 py-0.5 rounded bg-yellow-950 text-yellow-300 text-xs">~{{ diffSummary(entry).modified }}</span>
@@ -857,18 +857,18 @@ onUnmounted(() => clearInterval(pollTimer))
     class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
     @click.self="selectedLog = null"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-200">
         <div class="flex items-center gap-3">
           <span class="px-1.5 py-0.5 rounded border text-xs" :class="logTypeBadge(selectedLog.type)">
             {{ logTypeLabel(selectedLog.type) }}
           </span>
-          <span class="text-gray-400 text-xs">{{ formatTs(selectedLog.ts) }}</span>
-          <span class="text-gray-600 text-xs">{{ nsLabel(selectedLog.namespace) }}</span>
+          <span class="text-gray-400 text-xs light:text-gray-600">{{ formatTs(selectedLog.ts) }}</span>
+          <span class="text-gray-600 text-xs light:text-gray-500">{{ nsLabel(selectedLog.namespace) }}</span>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 text-sm" @click="selectedLog = null">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 text-sm light:hover:text-gray-700" @click="selectedLog = null">✕</button>
       </div>
 
       <div class="overflow-auto flex-1 px-5 py-4 space-y-4">
@@ -876,8 +876,8 @@ onUnmounted(() => clearInterval(pollTimer))
         <!-- Write / delete detail -->
         <template v-if="selectedLog.type === 'write' || selectedLog.type === 'delete'">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-mono text-sm" :class="selectedLog.type === 'delete' ? 'text-red-400' : 'text-green-400'">{{ selectedLog.path }}</span>
-            <span class="text-gray-600 text-xs">mount: {{ selectedLog.mount }}</span>
+            <span class="font-mono text-sm" :class="selectedLog.type === 'delete' ? 'text-red-400 light:text-red-700' : 'text-green-400 light:text-green-700'">{{ selectedLog.path }}</span>
+            <span class="text-gray-600 text-xs light:text-gray-500">mount: {{ selectedLog.mount }}</span>
             <span v-if="!selectedLog.success" class="px-2 py-0.5 bg-red-900/50 border border-red-700 text-red-300 text-xs rounded">
               ✗ {{ t('adminView.failure') }} — {{ selectedLog.error }}
             </span>
@@ -906,10 +906,10 @@ onUnmounted(() => clearInterval(pollTimer))
           </div>
 
           <!-- Diff table -->
-          <div v-if="diffKeys(selectedLog).length" class="border border-gray-700 rounded overflow-hidden">
+          <div v-if="diffKeys(selectedLog).length" class="border border-gray-700 rounded overflow-hidden light:border-gray-200">
             <table class="w-full text-xs font-mono">
               <thead>
-                <tr class="bg-gray-800 border-b border-gray-700 text-gray-500 uppercase tracking-wider">
+                <tr class="bg-gray-800 border-b border-gray-700 text-gray-500 uppercase tracking-wider light:bg-gray-100 light:border-gray-200 light:text-gray-600">
                   <th class="text-left px-4 py-2 w-1/3">{{ t('adminView.modalKeyHeader') }}</th>
                   <th class="text-left px-3 py-2 w-1/3">{{ t('adminView.modalBeforeHeader') }}</th>
                   <th class="text-left px-3 py-2 w-1/3">{{ t('adminView.modalAfterHeader') }}</th>
@@ -919,7 +919,7 @@ onUnmounted(() => clearInterval(pollTimer))
                 <tr
                   v-for="key in diffKeys(selectedLog)"
                   :key="key"
-                  class="border-b border-gray-800 last:border-0"
+                  class="border-b border-gray-800 last:border-0 light:border-gray-200"
                   :class="diffRowClass(diffStatus(selectedLog, key))"
                 >
                   <td class="px-4 py-2 font-medium">{{ key }}</td>
@@ -965,19 +965,19 @@ onUnmounted(() => clearInterval(pollTimer))
         <template v-else>
           <div class="space-y-2 text-sm">
             <div class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.namespaceField') }}</span>
-              <span class="text-gray-300 font-mono text-xs break-all">{{ selectedLog.namespace || '—' }}</span>
+              <span class="text-gray-600 w-32 shrink-0 light:text-gray-500">{{ t('adminView.namespaceField') }}</span>
+              <span class="text-gray-300 font-mono text-xs break-all light:text-gray-700">{{ selectedLog.namespace || '—' }}</span>
             </div>
             <div v-if="selectedLog.display_name" class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.userField') }}</span>
-              <span class="text-gray-300">{{ selectedLog.display_name }}</span>
+              <span class="text-gray-600 w-32 shrink-0 light:text-gray-500">{{ t('adminView.userField') }}</span>
+              <span class="text-gray-300 light:text-gray-700">{{ selectedLog.display_name }}</span>
             </div>
             <div v-if="selectedLog.error" class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.errorField') }}</span>
+              <span class="text-gray-600 w-32 shrink-0 light:text-gray-500">{{ t('adminView.errorField') }}</span>
               <span class="text-red-400 text-xs font-mono break-all">{{ selectedLog.error }}</span>
             </div>
             <div class="flex gap-3">
-              <span class="text-gray-600 w-32 shrink-0">{{ t('adminView.statusField') }}</span>
+              <span class="text-gray-600 w-32 shrink-0 light:text-gray-500">{{ t('adminView.statusField') }}</span>
               <span :class="selectedLog.success ? 'text-green-400' : 'text-red-400'">
                 {{ selectedLog.success ? t('adminView.success') : t('adminView.failure') }}
               </span>
@@ -988,7 +988,7 @@ onUnmounted(() => clearInterval(pollTimer))
       </div>
 
       <!-- Modal footer: restore + delete log -->
-      <div class="flex items-center justify-between gap-2 px-5 py-3 border-t border-gray-800 shrink-0">
+      <div class="flex items-center justify-between gap-2 px-5 py-3 border-t border-gray-800 shrink-0 light:border-gray-200">
         <div class="flex items-center gap-2">
           <!-- Restore button: only for write/delete/delete_folder with a before state -->
           <button
@@ -1040,38 +1040,38 @@ onUnmounted(() => clearInterval(pollTimer))
     class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
     @click.self="showConfigEdit = false"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
-        <h2 class="text-white font-semibold text-sm">{{ t('adminView.editConfigTitle') }}</h2>
-        <button class="text-gray-500 hover:text-gray-300 text-lg" @click="showConfigEdit = false">✕</button>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 light:border-gray-200">
+        <h2 class="text-white font-semibold text-sm light:text-black">{{ t('adminView.editConfigTitle') }}</h2>
+        <button class="text-gray-500 hover:text-gray-300 text-lg light:hover:text-gray-700" @click="showConfigEdit = false">✕</button>
       </div>
 
       <!-- Body -->
       <div class="px-5 py-4 space-y-4">
 
         <!-- Error banner -->
-        <div v-if="configError" class="bg-red-950 border border-red-800 rounded px-3 py-2 text-red-300 text-xs">
+        <div v-if="configError" class="bg-red-950 border border-red-800 rounded px-3 py-2 text-red-300 text-xs light:bg-red-50 light:border-red-300 light:text-red-700">
           ⚠ {{ configError }}
         </div>
 
         <!-- Vault URL -->
         <div class="space-y-2">
-          <label class="block text-gray-400 text-xs font-semibold">{{ t('adminView.orgLabel') }}</label>
+          <label class="block text-gray-400 text-xs font-semibold light:text-gray-700">{{ t('adminView.orgLabel') }}</label>
 
           <!-- Mode toggle -->
           <div class="flex gap-1">
             <button
               type="button"
               class="px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer"
-              :class="editMode === 'quick' ? 'bg-green-800 text-green-200' : 'bg-gray-800 text-gray-400 hover:text-gray-200'"
+              :class="editMode === 'quick' ? 'bg-green-800 text-green-200 light:bg-green-100 light:text-green-800' : 'bg-gray-800 text-gray-400 hover:text-gray-200 light:bg-gray-100 light:text-gray-600 light:hover:text-gray-800'"
               @click="switchEditMode('quick')"
             >{{ t('adminView.modeQuick') }}</button>
             <button
               type="button"
               class="px-2 py-0.5 rounded text-xs font-semibold transition cursor-pointer"
-              :class="editMode === 'custom' ? 'bg-green-800 text-green-200' : 'bg-gray-800 text-gray-400 hover:text-gray-200'"
+              :class="editMode === 'custom' ? 'bg-green-800 text-green-200 light:bg-green-100 light:text-green-800' : 'bg-gray-800 text-gray-400 hover:text-gray-200 light:bg-gray-100 light:text-gray-600 light:hover:text-gray-800'"
               @click="switchEditMode('custom')"
             >{{ t('adminView.modeCustom') }}</button>
           </div>
@@ -1079,17 +1079,17 @@ onUnmounted(() => clearInterval(pollTimer))
           <!-- Quick mode -->
           <div v-if="editMode === 'quick'" class="space-y-1">
             <div class="flex gap-1 items-center">
-              <span class="px-2 py-1.5 bg-gray-900 border border-gray-700 text-gray-500 text-xs rounded-l select-none whitespace-nowrap">https://vault.factory.</span>
+              <span class="px-2 py-1.5 bg-gray-900 border border-gray-700 text-gray-500 text-xs rounded-l select-none whitespace-nowrap light:bg-gray-100 light:border-gray-300 light:text-gray-600">https://vault.factory.</span>
               <input
                 v-model="editOrg"
                 type="text"
                 :placeholder="t('adminView.orgPlaceholder')"
-                class="w-28 px-2 py-1.5 bg-gray-950 border-y border-gray-700 text-green-300 text-xs font-mono focus:outline-none focus:border-y-green-600"
+                class="w-28 px-2 py-1.5 bg-gray-950 border-y border-gray-700 text-green-300 text-xs font-mono focus:outline-none focus:border-y-green-600 light:bg-white light:border-y-gray-300 light:text-gray-800"
                 @input="onEditOrgInput"
               />
-              <span class="px-2 py-1.5 bg-gray-900 border border-gray-700 text-gray-500 text-xs rounded-r select-none whitespace-nowrap">.cloud</span>
+              <span class="px-2 py-1.5 bg-gray-900 border border-gray-700 text-gray-500 text-xs rounded-r select-none whitespace-nowrap light:bg-gray-100 light:border-gray-300 light:text-gray-600">.cloud</span>
             </div>
-            <p v-if="editVaultAddr" class="text-green-800 font-mono text-xs truncate">{{ editVaultAddr }}</p>
+            <p v-if="editVaultAddr" class="text-green-800 font-mono text-xs truncate light:text-green-700">{{ editVaultAddr }}</p>
           </div>
 
           <!-- Custom mode -->
@@ -1098,28 +1098,28 @@ onUnmounted(() => clearInterval(pollTimer))
             v-model="editVaultAddr"
             type="url"
             :placeholder="t('adminView.vaultUrlPlaceholder')"
-            class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 text-xs font-mono rounded focus:outline-none focus:border-green-600"
+            class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-green-300 text-xs font-mono rounded focus:outline-none focus:border-green-600 light:bg-white light:border-gray-300 light:text-gray-800"
           />
         </div>
 
         <!-- Mount -->
         <div class="space-y-1.5">
-          <label class="block text-gray-400 text-xs font-semibold">{{ t('adminView.kvMountLabel') }}</label>
+          <label class="block text-gray-400 text-xs font-semibold light:text-gray-700">{{ t('adminView.kvMountLabel') }}</label>
           <input
             v-model="editMount"
             type="text"
             placeholder="secret"
-            class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600"
+            class="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 light:bg-white light:border-gray-300 light:text-gray-800"
           />
         </div>
 
         <!-- Namespaces -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <label class="text-gray-400 text-xs font-semibold">{{ t('adminView.namespacesLabel') }} <span class="text-red-400">*</span></label>
+            <label class="text-gray-400 text-xs font-semibold light:text-gray-700">{{ t('adminView.namespacesLabel') }} <span class="text-red-400">*</span></label>
             <button
               type="button"
-              class="text-green-400 hover:text-green-300 text-xs font-semibold"
+              class="text-green-400 hover:text-green-300 text-xs font-semibold light:text-green-700 light:hover:text-green-600"
               @click="addNamespaceRow"
             >{{ t('adminView.addNamespace') }}</button>
           </div>
@@ -1130,14 +1130,14 @@ onUnmounted(() => clearInterval(pollTimer))
                 type="text"
                 :placeholder="t('adminView.labelPlaceholder')"
                 :disabled="ns.namespace === vault.currentNamespace"
-                class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed"
+                class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed light:bg-white light:border-gray-300 light:text-gray-800 light:disabled:text-gray-400"
               />
               <input
                 v-model="ns.namespace"
                 type="text"
                 :placeholder="t('adminView.nsPathPlaceholder')"
                 :disabled="ns.namespace === vault.currentNamespace"
-                class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed font-mono"
+                class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-300 text-xs rounded focus:outline-none focus:border-green-600 disabled:text-gray-500 disabled:cursor-not-allowed font-mono light:bg-white light:border-gray-300 light:text-gray-800 light:disabled:text-gray-400"
               />
               <!-- Logout button (for connected namespace) -->
               <button
@@ -1193,9 +1193,9 @@ onUnmounted(() => clearInterval(pollTimer))
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center gap-2 px-5 py-3 border-t border-gray-700">
+      <div class="flex items-center gap-2 px-5 py-3 border-t border-gray-700 light:border-gray-200">
         <button
-          class="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition cursor-pointer"
+          class="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition cursor-pointer light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700"
           @click="showConfigEdit = false"
         >
           {{ t('adminView.cancelButton') }}
@@ -1218,34 +1218,34 @@ onUnmounted(() => clearInterval(pollTimer))
     class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
     @click.self="showConfirmDialog = false"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-sm shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-sm shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- Header -->
-      <div class="px-5 py-4 border-b border-gray-700">
-        <h3 class="text-white font-semibold text-sm">
+      <div class="px-5 py-4 border-b border-gray-700 light:border-gray-200">
+        <h3 class="text-white font-semibold text-sm light:text-black">
           {{ confirmAction.type === 'delete' ? t('adminView.confirmDeleteNsTitle') : t('adminView.confirmLogoutTitle') }}
         </h3>
       </div>
 
       <!-- Body -->
       <div class="px-5 py-4 space-y-3">
-        <p class="text-gray-400 text-sm">
+        <p class="text-gray-400 text-sm light:text-gray-700">
           <template v-if="confirmAction.type === 'delete'">
             {{ t('adminView.confirmDeleteNsMsg', { action: t('adminView.confirmDelete').toLowerCase(), label: confirmAction.label || confirmAction.namespace }) }}
-            <span class="block text-xs text-gray-500 mt-2">{{ t('adminView.confirmDeleteNsDetail') }}</span>
+            <span class="block text-xs text-gray-500 mt-2 light:text-gray-500">{{ t('adminView.confirmDeleteNsDetail') }}</span>
             <span v-if="confirmAction.namespace === vault.currentNamespace" class="block text-xs text-orange-400 mt-2">{{ t('adminView.confirmDeleteNsWarning') }}</span>
           </template>
           <template v-else>
             {{ t('adminView.confirmLogoutMsg', { label: confirmAction.label || confirmAction.namespace }) }}
-            <span class="block text-xs text-gray-500 mt-2">{{ t('adminView.confirmLogoutDetail') }}</span>
+            <span class="block text-xs text-gray-500 mt-2 light:text-gray-500">{{ t('adminView.confirmLogoutDetail') }}</span>
           </template>
         </p>
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center gap-2 px-5 py-3 border-t border-gray-700">
+      <div class="flex items-center gap-2 px-5 py-3 border-t border-gray-700 light:border-gray-200">
         <button
-          class="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition cursor-pointer"
+          class="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition cursor-pointer light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700"
           :disabled="confirmLoading"
           @click="showConfirmDialog = false"
         >

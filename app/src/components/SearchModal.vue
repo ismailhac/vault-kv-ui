@@ -165,16 +165,16 @@ function onKeydown(e: KeyboardEvent) {
     class="fixed inset-0 bg-black/70 z-40 flex items-start justify-center pt-16 px-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[75vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[75vh] flex flex-col shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
-        <span class="text-white font-semibold text-sm">{{ t('searchModal.title') }}</span>
-        <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="emit('close')">✕</button>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-200">
+        <span class="text-white font-semibold text-sm light:text-black">{{ t('searchModal.title') }}</span>
+        <button class="text-gray-500 hover:text-gray-300 text-lg leading-none light:hover:text-gray-700" @click="emit('close')">✕</button>
       </div>
 
       <!-- Search controls -->
-      <div class="px-5 py-3 border-b border-gray-700 shrink-0 space-y-2">
+      <div class="px-5 py-3 border-b border-gray-700 shrink-0 space-y-2 light:border-gray-200">
         <!-- Query + search button -->
         <div class="flex gap-2">
           <div class="relative flex-1">
@@ -182,7 +182,7 @@ function onKeydown(e: KeyboardEvent) {
               v-model="query"
               type="text"
               :placeholder="t('searchModal.searchPlaceholder')"
-              class="w-full bg-gray-950 border border-gray-700 text-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-sky-600 placeholder-gray-600"
+              class="w-full bg-gray-950 border border-gray-700 text-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-sky-600 placeholder-gray-600 light:bg-white light:border-gray-300 light:text-gray-800 light:placeholder-gray-400"
               autocomplete="off"
               @keydown="onKeydown"
               @focus="queryFocused = true"
@@ -192,20 +192,20 @@ function onKeydown(e: KeyboardEvent) {
             <!-- Search history dropdown -->
             <div
               v-if="historyVisible"
-              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden"
+              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl overflow-hidden light:bg-white light:border-gray-200"
             >
               <div
                 v-for="h in searchHistory"
                 :key="h"
-                class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group"
+                class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-700 transition-colors cursor-pointer group light:hover:bg-gray-100"
                 @mousedown.prevent="pickHistory(h)"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-600 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-600 shrink-0 light:text-gray-400">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span class="flex-1 text-sm text-gray-300 font-mono truncate">{{ h }}</span>
+                <span class="flex-1 text-sm text-gray-300 font-mono truncate light:text-gray-700">{{ h }}</span>
                 <button
-                  class="text-gray-700 hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  class="text-gray-700 hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 light:text-gray-400 light:hover:text-gray-600"
                   @mousedown.stop.prevent="removeFromHistory(h)"
                 >✕</button>
               </div>
@@ -222,19 +222,19 @@ function onKeydown(e: KeyboardEvent) {
         </div>
 
         <!-- Mode + prod filter row -->
-        <div class="flex items-center gap-4 text-xs text-gray-400">
+        <div class="flex items-center gap-4 text-xs text-gray-400 light:text-gray-600">
           <div class="flex items-center gap-2">
             <span>{{ t('searchModal.searchBy') }}</span>
             <button
-              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'path' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
+              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'path' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700']"
               @click="searchBy = 'path'"
             >{{ t('searchModal.byPath') }}</button>
             <button
-              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'key' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
+              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'key' ? 'bg-sky-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700']"
               @click="searchBy = 'key'"
             >{{ t('searchModal.byKey') }}</button>
             <button
-              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'value' ? 'bg-amber-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300']"
+              :class="['px-2 py-0.5 rounded transition-colors', searchBy === 'value' ? 'bg-amber-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700']"
               @click="searchBy = 'value'"
             >{{ t('searchModal.byValue') }}</button>
           </div>
@@ -246,14 +246,14 @@ function onKeydown(e: KeyboardEvent) {
 
         <!-- Scope combobox -->
         <div class="flex items-center gap-2 text-xs">
-          <span class="text-gray-500 shrink-0">{{ t('searchModal.scopeLabel') }}</span>
+          <span class="text-gray-500 shrink-0 light:text-gray-600">{{ t('searchModal.scopeLabel') }}</span>
           <div class="relative flex-1">
             <input
               id="scope-input"
               v-model="scopePath"
               type="text"
               :placeholder="t('searchModal.scopePlaceholder')"
-              class="w-full bg-gray-950 border border-gray-700 text-gray-400 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-700 placeholder-gray-700 font-mono"
+              class="w-full bg-gray-950 border border-gray-700 text-gray-400 rounded px-2 py-1 text-xs focus:outline-none focus:border-sky-700 placeholder-gray-700 font-mono light:bg-white light:border-gray-300 light:text-gray-700 light:placeholder-gray-400"
               autocomplete="off"
               @focus="scopeFocused = true"
               @blur="scopeFocused = false"
@@ -262,12 +262,12 @@ function onKeydown(e: KeyboardEvent) {
             <!-- Level-1 dropdown -->
             <div
               v-if="scopeFocused && filteredScopeOptions.length > 0"
-              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl max-h-40 overflow-y-auto"
+              class="absolute top-full left-0 right-0 z-50 mt-0.5 bg-gray-900 border border-gray-700 rounded shadow-xl max-h-40 overflow-y-auto light:bg-white light:border-gray-200"
             >
               <button
                 v-for="opt in filteredScopeOptions"
                 :key="opt"
-                class="w-full text-left px-3 py-1.5 text-xs font-mono text-gray-300 hover:bg-gray-700 transition-colors"
+                class="w-full text-left px-3 py-1.5 text-xs font-mono text-gray-300 hover:bg-gray-700 transition-colors light:text-gray-700 light:hover:bg-gray-100"
                 @mousedown.prevent="selectScope(opt)"
               >{{ opt }}/</button>
             </div>
@@ -279,7 +279,7 @@ function onKeydown(e: KeyboardEvent) {
       <div class="overflow-y-auto flex-1 px-5 py-3">
 
         <!-- Loading -->
-        <div v-if="vault.searchLoading" class="text-gray-500 text-sm text-center py-10 animate-pulse">
+        <div v-if="vault.searchLoading" class="text-gray-500 text-sm text-center py-10 animate-pulse light:text-gray-400">
           {{ t('searchModal.scanning') }}
         </div>
 
@@ -289,14 +289,14 @@ function onKeydown(e: KeyboardEvent) {
         </div>
 
         <!-- No results yet (before first search) -->
-        <div v-else-if="!hasSearched" class="text-gray-600 text-xs text-center py-10">
+        <div v-else-if="!hasSearched" class="text-gray-600 text-xs text-center py-10 light:text-gray-500">
           {{ t('searchModal.enterSearch') }}
         </div>
 
         <!-- Empty after prod filter -->
-        <div v-else-if="filteredResults.length === 0" class="text-gray-500 text-sm text-center py-6">
+        <div v-else-if="filteredResults.length === 0" class="text-gray-500 text-sm text-center py-6 light:text-gray-400">
           {{ t('searchModal.noResults') }}
-          <span v-if="excludeProd && vault.searchResults.length > 0" class="block text-xs text-gray-600 mt-1">
+          <span v-if="excludeProd && vault.searchResults.length > 0" class="block text-xs text-gray-600 mt-1 light:text-gray-500">
             ({{ t('searchModal.hiddenByProd', { n: vault.searchResults.length - filteredResults.length }) }})
           </span>
         </div>
@@ -306,7 +306,7 @@ function onKeydown(e: KeyboardEvent) {
           <!-- Show / hide all toggle -->
           <div v-if="allKeyCombos.length > 0" class="flex justify-end mb-2">
             <button
-              class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors light:text-gray-500 light:hover:text-gray-700"
               @click="allRevealed ? hideAll() : revealAll()"
             >
               <!-- Eye open -->
@@ -327,11 +327,11 @@ function onKeydown(e: KeyboardEvent) {
           <div
             v-for="result in filteredResults"
             :key="result.path"
-            class="flex flex-col gap-1 px-3 py-2 bg-gray-800 border border-transparent hover:border-sky-800 rounded transition-colors"
+            class="flex flex-col gap-1 px-3 py-2 bg-gray-800 border border-transparent hover:border-sky-800 rounded transition-colors light:bg-gray-50 light:hover:border-sky-300"
           >
             <!-- Path row — click to navigate -->
             <div class="flex items-center gap-2 cursor-pointer" @click="openSecret(result.path)">
-              <span class="text-green-400 text-sm font-mono truncate" v-html="highlight(result.path, query)" />
+              <span class="text-green-400 text-sm font-mono truncate light:text-green-700" v-html="highlight(result.path, query)" />
               <span
                 v-if="result.matchedIn === 'value'"
                 class="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-amber-900/60 text-amber-300 font-medium"
@@ -343,12 +343,12 @@ function onKeydown(e: KeyboardEvent) {
               :key="key"
               class="flex items-center gap-2 text-xs pl-1"
             >
-              <span class="text-gray-400 font-mono" v-html="highlight(key, query)" />
-              <span class="text-gray-600">·</span>
-              <span v-if="isRevealed(result.path, key)" class="font-mono text-gray-400 break-all max-h-20 overflow-y-auto block" v-html="highlight(result.matchedValues?.[key] ?? '—', query)" />
-              <span v-else class="font-mono text-gray-500">••••••••</span>
+              <span class="text-gray-400 font-mono light:text-gray-600" v-html="highlight(key, query)" />
+              <span class="text-gray-600 light:text-gray-400">·</span>
+              <span v-if="isRevealed(result.path, key)" class="font-mono text-gray-400 break-all max-h-20 overflow-y-auto block light:text-gray-700" v-html="highlight(result.matchedValues?.[key] ?? '—', query)" />
+              <span v-else class="font-mono text-gray-500 light:text-gray-400">••••••••</span>
               <button
-                class="shrink-0 text-gray-600 hover:text-gray-300 transition-colors"
+                class="shrink-0 text-gray-600 hover:text-gray-300 transition-colors light:text-gray-500 light:hover:text-gray-700"
                 :title="isRevealed(result.path, key) ? t('searchModal.hideValue') : t('searchModal.showValue')"
                 @click.stop="toggleReveal(result.path, key)"
               >
@@ -370,18 +370,18 @@ function onKeydown(e: KeyboardEvent) {
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-between px-5 py-2.5 border-t border-gray-700 shrink-0 text-xs text-gray-600">
+      <div class="flex items-center justify-between px-5 py-2.5 border-t border-gray-700 shrink-0 text-xs text-gray-600 light:border-gray-200 light:text-gray-500">
         <span v-if="hasSearched && !vault.searchLoading">
           {{ t('searchModal.resultCount', { n: filteredResults.length }) }}
           <span v-if="excludeProd && vault.searchResults.length !== filteredResults.length">
             {{ t('searchModal.hiddenProd', { n: vault.searchResults.length - filteredResults.length }) }}
           </span>
-          <span v-if="vault.searchScannedCount > 0" class="ml-2 text-gray-700">
+          <span v-if="vault.searchScannedCount > 0" class="ml-2 text-gray-700 light:text-gray-500">
             · {{ t('searchModal.scannedInfo', { n: vault.searchScannedCount, s: elapsedSeconds }) }}
           </span>
         </span>
         <span v-else />
-        <button class="text-gray-500 hover:text-gray-300 transition-colors" @click="emit('close')">{{ t('searchModal.close') }}</button>
+        <button class="text-gray-500 hover:text-gray-300 transition-colors light:text-gray-600 light:hover:text-gray-800" @click="emit('close')">{{ t('searchModal.close') }}</button>
       </div>
 
     </div>

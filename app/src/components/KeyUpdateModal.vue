@@ -153,14 +153,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
     @click.self="emit('close')"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-200">
         <div class="flex items-center gap-3">
-          <span class="text-white font-semibold text-sm">{{ t('keyUpdateModal.title') }}</span>
+          <span class="text-white font-semibold text-sm light:text-black">{{ t('keyUpdateModal.title') }}</span>
           <span class="text-gray-600 text-xs">·</span>
-          <span class="text-gray-500 text-xs">{{ t('keyUpdateModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
+          <span class="text-gray-500 text-xs light:text-gray-600">{{ t('keyUpdateModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         </div>
         <div class="flex items-center gap-1">
           <template v-for="s in [1, 2, 3]" :key="s">
@@ -174,7 +174,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <span v-if="s < 3" class="text-gray-700 text-xs">›</span>
           </template>
         </div>
-        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0" @click="emit('close')">✕</button>
+        <button class="text-gray-500 hover:text-gray-300 ml-3 shrink-0 light:hover:text-gray-700" @click="emit('close')">✕</button>
       </div>
 
       <!-- Body -->
@@ -186,7 +186,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <!-- Search bar -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-gray-400 text-xs">{{ t('keyUpdateModal.keyLabel') }}</label>
+              <label class="text-gray-400 text-xs light:text-gray-600">{{ t('keyUpdateModal.keyLabel') }}</label>
               <button
                 class="px-2 py-0.5 rounded border text-xs font-mono font-semibold transition pointer"
                 :class="includeProd ? 'bg-red-900 border-red-700 text-red-200' : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'"
@@ -199,7 +199,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 v-model="keyName"
                 type="text"
                 placeholder="API_KOBI_REGISTRY_V2_API_KEY"
-                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-blue-300 font-mono rounded text-sm focus:outline-none focus:border-blue-600 placeholder-gray-700"
+                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-blue-300 font-mono rounded text-sm focus:outline-none focus:border-blue-600 placeholder-gray-700 light:bg-white light:border-gray-300 light:text-blue-700"
                 spellcheck="false"
                 @keydown.enter="scan"
               />
@@ -214,7 +214,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           <!-- Scanning -->
           <div v-if="scanning" class="flex flex-col items-center py-8 gap-3">
             <div class="w-10 h-10 border-2 border-gray-700 border-t-blue-400 rounded-full animate-spin"></div>
-            <p class="text-gray-400 text-sm">{{ t('keyUpdateModal.scanningMount') }}</p>
+            <p class="text-gray-400 text-sm light:text-gray-600">{{ t('keyUpdateModal.scanningMount') }}</p>
           </div>
 
           <!-- Scan error -->
@@ -223,7 +223,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
           </div>
 
           <!-- No results -->
-          <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center">
+          <div v-if="scanned && !scanning && matchingPaths.length === 0" class="p-4 bg-gray-800 border border-gray-700 rounded text-center light:bg-gray-100 light:border-gray-200">
             <div class="text-gray-300 font-semibold mb-1">{{ t('keyUpdateModal.keyNotFound') }}</div>
             <div class="text-gray-500 text-xs font-mono">
               « {{ keyName }} »{{ t('keyUpdateModal.keyNotFoundDesc') }} <span class="text-green-400">{{ vault.currentMount }}</span>.

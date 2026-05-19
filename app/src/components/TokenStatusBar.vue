@@ -28,7 +28,7 @@ function onNamespaceChange(e: Event) {
       <select
         :value="vault.currentNamespace"
         :disabled="vault.tokenLoading"
-        class="bg-gray-800 border border-gray-700 text-purple-300 text-xs rounded px-2 py-0.5 cursor-pointer disabled:opacity-50 shrink-0 max-w-[120px]"
+        class="bg-gray-800 border border-gray-700 text-purple-300 text-xs rounded px-2 py-0.5 cursor-pointer disabled:opacity-50 shrink-0 max-w-[120px] light:bg-gray-100 light:border-gray-300 light:text-purple-700"
         :title="t('tokenStatusBar.changeNamespace')"
         @change="onNamespaceChange"
       >
@@ -36,13 +36,13 @@ function onNamespaceChange(e: Event) {
           {{ ns.label }}
         </option>
       </select>
-      <span class="text-gray-700 shrink-0">·</span>
+      <span class="text-gray-700 shrink-0 light:text-gray-400">·</span>
     </template>
     <template v-else-if="vault.namespaces.length === 1">
-      <span class="text-purple-300 font-mono text-xs shrink-0 max-w-[120px] truncate" :title="vault.namespaces[0].label">
+      <span class="text-purple-300 font-mono text-xs shrink-0 max-w-[120px] truncate light:text-purple-700" :title="vault.namespaces[0].label">
         {{ vault.namespaces[0].label }}
       </span>
-      <span class="text-gray-700 shrink-0">·</span>
+      <span class="text-gray-700 shrink-0 light:text-gray-400">·</span>
     </template>
 
     <!-- Checking -->
@@ -53,20 +53,20 @@ function onNamespaceChange(e: Event) {
     <!-- Valid token -->
     <template v-else-if="tokenValid">
       <span
-        class="inline-flex items-center gap-1.5 text-green-400 text-xs min-w-0"
+        class="inline-flex items-center gap-1.5 text-green-400 text-xs min-w-0 light:text-green-700"
         :title="vault.tokenStatus!.display_name"
       >
         <span class="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0"></span>
         <span class="truncate">{{ vault.tokenStatus!.display_name }}</span>
       </span>
-      <span class="shrink-0 font-mono text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded leading-none">
+      <span class="shrink-0 font-mono text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded leading-none light:bg-gray-100 light:text-gray-600">
         {{ ttlDisplay }}
       </span>
     </template>
 
     <!-- Expired token -->
     <template v-else-if="tokenExpired">
-      <span class="text-amber-400 text-xs font-semibold shrink-0">{{ t('tokenStatusBar.tokenExpired') }}</span>
+      <span class="text-amber-400 text-xs font-semibold shrink-0 light:text-amber-700">{{ t('tokenStatusBar.tokenExpired') }}</span>
       <button
         class="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold border border-red-400 animate-pulse transition shrink-0"
         @click="vault.showLoginModal = true"

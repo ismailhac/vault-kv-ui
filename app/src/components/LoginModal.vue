@@ -244,15 +244,15 @@ onUnmounted(stopPolling)
     class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
     @click.self="close"
   >
-    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg shadow-2xl">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg shadow-2xl light:bg-white light:border-gray-200">
 
       <!-- ── SETUP STEP ─────────────────────────────────────────────────────── -->
       <template v-if="step === 'setup'">
 
         <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700 light:border-gray-200">
           <div>
-            <h2 class="text-white font-semibold text-sm">⚙ {{ t('loginModal.setupTitle') }}</h2>
+            <h2 class="text-white font-semibold text-sm light:text-black">⚙ {{ t('loginModal.setupTitle') }}</h2>
             <!-- Progress breadcrumb -->
             <div class="flex items-center gap-1.5 mt-1">
               <span
@@ -271,27 +271,27 @@ onUnmounted(stopPolling)
               >{{ t('loginModal.stepNamespaces') }}</span>
             </div>
           </div>
-          <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="close">✕</button>
+          <button class="text-gray-500 hover:text-gray-300 text-lg leading-none light:hover:text-gray-700" @click="close">✕</button>
         </div>
 
         <!-- ── Sub-step 1: Organisation ── -->
         <div v-if="setupSub === 'org'" class="px-5 py-5 space-y-4">
 
           <div class="space-y-3">
-            <label class="block text-gray-300 text-xs font-semibold">{{ t('loginModal.orgLabel') }}</label>
+            <label class="block text-gray-300 text-xs font-semibold light:text-gray-700">{{ t('loginModal.orgLabel') }}</label>
 
             <!-- Mode toggle -->
             <div class="flex gap-1">
               <button
                 type="button"
                 class="px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer"
-                :class="setupMode === 'quick' ? 'bg-green-800 text-green-200' : 'bg-gray-800 text-gray-400 hover:text-gray-200'"
+                :class="setupMode === 'quick' ? 'bg-green-800 text-green-200 light:bg-green-100 light:text-green-800' : 'bg-gray-800 text-gray-400 hover:text-gray-200 light:bg-gray-100 light:text-gray-600 light:hover:text-gray-800'"
                 @click="switchMode('quick')"
               >{{ t('loginModal.modeQuick') }}</button>
               <button
                 type="button"
                 class="px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer"
-                :class="setupMode === 'custom' ? 'bg-green-800 text-green-200' : 'bg-gray-800 text-gray-400 hover:text-gray-200'"
+                :class="setupMode === 'custom' ? 'bg-green-800 text-green-200 light:bg-green-100 light:text-green-800' : 'bg-gray-800 text-gray-400 hover:text-gray-200 light:bg-gray-100 light:text-gray-600 light:hover:text-gray-800'"
                 @click="switchMode('custom')"
               >{{ t('loginModal.modeCustom') }}</button>
             </div>
@@ -299,17 +299,17 @@ onUnmounted(stopPolling)
             <!-- Quick mode: org-name builder -->
             <div v-if="setupMode === 'quick'" class="space-y-1.5">
               <div class="flex items-center">
-                <span class="px-3 py-2 bg-gray-800 border border-r-0 border-gray-700 text-gray-500 text-xs rounded-l select-none whitespace-nowrap">https://vault.factory.</span>
+                <span class="px-3 py-2 bg-gray-800 border border-r-0 border-gray-700 text-gray-500 text-xs rounded-l select-none whitespace-nowrap light:bg-gray-100 light:border-gray-300 light:text-gray-600">https://vault.factory.</span>
                 <input
                   v-model="setupOrg"
                   type="text"
                   :placeholder="t('loginModal.orgPlaceholder')"
-                  class="w-32 px-3 py-2 bg-gray-950 border-y border-gray-700 text-green-300 text-sm font-mono focus:outline-none focus:border-y-green-600 placeholder-gray-600"
+                  class="w-32 px-3 py-2 bg-gray-950 border-y border-gray-700 text-green-300 text-sm font-mono focus:outline-none focus:border-y-green-600 placeholder-gray-600 light:bg-white light:border-y-gray-300 light:text-gray-800 light:placeholder-gray-400"
                   @input="onOrgInput"
                   @keydown.enter="confirmOrg"
                   autofocus
                 />
-                <span class="px-3 py-2 bg-gray-800 border border-l-0 border-gray-700 text-gray-500 text-xs rounded-r select-none whitespace-nowrap">.cloud</span>
+                <span class="px-3 py-2 bg-gray-800 border border-l-0 border-gray-700 text-gray-500 text-xs rounded-r select-none whitespace-nowrap light:bg-gray-100 light:border-gray-300 light:text-gray-600">.cloud</span>
               </div>
               <p v-if="setupVaultAddr" class="text-green-700 font-mono text-xs truncate">{{ setupVaultAddr }}</p>
             </div>
@@ -320,7 +320,7 @@ onUnmounted(stopPolling)
                 v-model="setupVaultAddr"
                 type="url"
                 :placeholder="t('loginModal.vaultUrlPlaceholder')"
-                class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 text-sm font-mono focus:outline-none focus:border-green-600 placeholder-gray-600 rounded"
+                class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 text-sm font-mono focus:outline-none focus:border-green-600 placeholder-gray-600 rounded light:bg-white light:border-gray-300 light:text-gray-800 light:placeholder-gray-400"
                 @keydown.enter="confirmOrg"
                 autofocus
               />
@@ -345,18 +345,18 @@ onUnmounted(stopPolling)
         <div v-else-if="setupSub === 'mount'" class="px-5 py-5 space-y-4">
 
           <!-- Confirmed URL badge -->
-          <div class="flex items-center gap-2 bg-gray-800 rounded px-3 py-2 text-xs">
-            <span class="text-gray-500">Vault</span>
-            <span class="text-green-400 font-mono truncate">{{ setupVaultAddr }}</span>
+          <div class="flex items-center gap-2 bg-gray-800 rounded px-3 py-2 text-xs light:bg-gray-100">
+            <span class="text-gray-500 light:text-gray-500">Vault</span>
+            <span class="text-green-400 font-mono truncate light:text-green-700">{{ setupVaultAddr }}</span>
           </div>
 
           <div class="space-y-1.5">
-            <label class="block text-gray-300 text-xs font-semibold">{{ t('loginModal.kvMountLabel') }}</label>
+            <label class="block text-gray-300 text-xs font-semibold light:text-gray-700">{{ t('loginModal.kvMountLabel') }}</label>
             <input
               v-model="setupMount"
               type="text"
               placeholder="secret"
-              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-gray-100 text-sm rounded focus:outline-none focus:border-green-600 placeholder-gray-600"
+              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-gray-100 text-sm rounded focus:outline-none focus:border-green-600 placeholder-gray-600 light:bg-white light:border-gray-300 light:text-gray-800 light:placeholder-gray-400"
               @keydown.enter="setupSub = 'namespaces'"
             />
             <p class="text-gray-600 text-xs">{{ t('loginModal.kvMountHint') }}<code class="text-gray-500">secret</code></p>
@@ -364,7 +364,7 @@ onUnmounted(stopPolling)
 
           <div class="flex gap-2">
             <button
-              class="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm transition"
+              class="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm transition light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700"
               @click="setupSub = 'org'"
             >{{ t('loginModal.back') }}</button>
             <button
@@ -379,13 +379,13 @@ onUnmounted(stopPolling)
 
           <!-- Summary badges -->
           <div class="flex flex-wrap items-center gap-2 text-xs">
-            <span class="bg-gray-800 rounded px-2 py-1 text-green-400 font-mono truncate max-w-[220px]">{{ setupVaultAddr }}</span>
-            <span class="bg-gray-800 rounded px-2 py-1 text-gray-400">mount: <span class="text-purple-300">{{ setupMount || 'secret' }}</span></span>
+            <span class="bg-gray-800 rounded px-2 py-1 text-green-400 font-mono truncate max-w-[220px] light:bg-gray-100 light:text-green-700">{{ setupVaultAddr }}</span>
+            <span class="bg-gray-800 rounded px-2 py-1 text-gray-400 light:bg-gray-100 light:text-gray-600">mount: <span class="text-purple-300 light:text-purple-700">{{ setupMount || 'secret' }}</span></span>
           </div>
 
           <div class="space-y-2">
             <div class="flex items-center justify-between">
-              <label class="block text-gray-300 text-xs font-semibold">
+              <label class="block text-gray-300 text-xs font-semibold light:text-gray-700">
                 {{ t('loginModal.namespacesLabel') }} <span class="text-red-400">*</span>
               </label>
               <button
@@ -405,13 +405,13 @@ onUnmounted(stopPolling)
                   v-model="ns.label"
                   type="text"
                   :placeholder="t('loginModal.nsLabelPlaceholder')"
-                  class="w-1/3 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-100 text-xs rounded focus:outline-none focus:border-green-600 placeholder-gray-600"
+                  class="w-1/3 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-100 text-xs rounded focus:outline-none focus:border-green-600 placeholder-gray-600 light:bg-white light:border-gray-300 light:text-gray-800 light:placeholder-gray-400"
                 />
                 <input
                   v-model="ns.namespace"
                   type="text"
                   :placeholder="t('loginModal.nsPathPlaceholder')"
-                  class="flex-1 min-w-0 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-100 text-xs font-mono rounded focus:outline-none focus:border-green-600 placeholder-gray-600"
+                  class="flex-1 min-w-0 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-100 text-xs font-mono rounded focus:outline-none focus:border-green-600 placeholder-gray-600 light:bg-white light:border-gray-300 light:text-gray-800 light:placeholder-gray-400"
                 />
                 <button
                   type="button"
@@ -429,7 +429,7 @@ onUnmounted(stopPolling)
 
           <div class="flex gap-2">
             <button
-              class="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm transition"
+              class="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm transition light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700"
               :disabled="setupSaving"
               @click="setupSub = 'mount'"
             >{{ t('loginModal.back') }}</button>
@@ -453,16 +453,16 @@ onUnmounted(stopPolling)
       <template v-else>
 
         <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700 light:border-gray-200">
           <div>
-            <h2 class="text-white font-semibold text-sm">🔑 {{ t('loginModal.loginTitle') }}</h2>
-            <p class="text-gray-500 text-xs mt-0.5 flex items-center gap-1.5 flex-wrap">
+            <h2 class="text-white font-semibold text-sm light:text-black">🔑 {{ t('loginModal.loginTitle') }}</h2>
+            <p class="text-gray-500 text-xs mt-0.5 flex items-center gap-1.5 flex-wrap light:text-gray-600">
               {{ t('loginModal.namespaceLabel') }}
-              <span class="text-purple-300 font-mono">{{ namespaceLabel }}</span>
-              <span v-if="loginNs && loginNs !== namespaceLabel" class="text-gray-600 font-mono">· {{ loginNs }}</span>
+              <span class="text-purple-300 font-mono light:text-purple-700">{{ namespaceLabel }}</span>
+              <span v-if="loginNs && loginNs !== namespaceLabel" class="text-gray-600 font-mono light:text-gray-500">· {{ loginNs }}</span>
             </p>
           </div>
-          <button class="text-gray-500 hover:text-gray-300 text-lg leading-none" @click="close">✕</button>
+          <button class="text-gray-500 hover:text-gray-300 text-lg leading-none light:hover:text-gray-700" @click="close">✕</button>
         </div>
 
         <!-- Body -->
@@ -470,18 +470,18 @@ onUnmounted(stopPolling)
 
           <!-- idle -->
           <div v-if="loginState === 'idle'" class="space-y-4 text-center">
-            <p class="text-gray-400 text-sm" style="white-space: pre-line">{{ t('loginModal.oidcHint') }}</p>
+            <p class="text-gray-400 text-sm light:text-gray-600" style="white-space: pre-line">{{ t('loginModal.oidcHint') }}</p>
             <!-- Namespace selector -->
             <div v-if="vault.namespaces.length > 1" class="space-y-2">
-              <p class="text-gray-500 text-xs">{{ t('loginModal.selectNamespace') }}</p>
+              <p class="text-gray-500 text-xs light:text-gray-600">{{ t('loginModal.selectNamespace') }}</p>
               <div class="flex flex-wrap gap-2 justify-center">
                 <button
                   v-for="ns in vault.namespaces"
                   :key="ns.namespace"
                   class="text-xs px-3 py-1.5 rounded font-semibold border transition"
                   :class="ns.namespace === loginNs
-                    ? 'bg-green-900 text-green-200 border-green-600'
-                    : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:bg-gray-700 hover:border-gray-500 cursor-pointer'"
+                    ? 'bg-green-900 text-green-200 border-green-600 light:bg-green-100 light:text-green-800 light:border-green-400'
+                    : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:bg-gray-700 hover:border-gray-500 cursor-pointer light:bg-gray-100 light:text-gray-600 light:border-gray-300 light:hover:bg-gray-200 light:hover:text-gray-800 light:hover:border-gray-400'"
                   @click="loginNs = ns.namespace"
                 >{{ ns.label || ns.namespace }}</button>
               </div>
@@ -497,9 +497,9 @@ onUnmounted(stopPolling)
           <!-- connecting -->
           <div v-else-if="loginState === 'connecting'" class="text-center space-y-3">
             <div class="flex justify-center">
-              <div class="w-8 h-8 border-2 border-gray-600 border-t-green-400 rounded-full animate-spin"></div>
+              <div class="w-8 h-8 border-2 border-gray-600 border-t-green-400 rounded-full animate-spin light:border-gray-300 light:border-t-green-500"></div>
             </div>
-            <p class="text-gray-400 text-sm">{{ t('loginModal.startingVault') }}</p>
+            <p class="text-gray-400 text-sm light:text-gray-600">{{ t('loginModal.startingVault') }}</p>
           </div>
 
           <!-- waiting for browser auth -->
@@ -509,15 +509,15 @@ onUnmounted(stopPolling)
               <span>{{ t('loginModal.authPageOpened') }}</span>
             </div>
             <div class="space-y-1">
-              <p class="text-gray-500 text-xs">{{ t('loginModal.tabNotOpened') }}</p>
+              <p class="text-gray-500 text-xs light:text-gray-600">{{ t('loginModal.tabNotOpened') }}</p>
               <div class="flex gap-2">
                 <input
                   :value="authUrl"
                   readonly
-                  class="flex-1 min-w-0 px-2 py-1.5 bg-gray-950 border border-gray-700 text-blue-300 text-xs font-mono rounded truncate focus:outline-none"
+                  class="flex-1 min-w-0 px-2 py-1.5 bg-gray-950 border border-gray-700 text-blue-300 text-xs font-mono rounded truncate focus:outline-none light:bg-gray-50 light:border-gray-300 light:text-blue-700"
                 />
                 <button
-                  class="shrink-0 px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded border border-gray-600"
+                  class="shrink-0 px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded border border-gray-600 light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700 light:border-gray-300"
                   @click="copyUrl"
                 >{{ copied ? t('loginModal.copied') : t('loginModal.copy') }}</button>
                 <a
@@ -529,11 +529,11 @@ onUnmounted(stopPolling)
               </div>
             </div>
             <div class="flex flex-col items-center gap-3 py-2">
-              <div class="w-8 h-8 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
-              <p class="text-gray-400 text-sm">{{ t('loginModal.waitingAuth') }}</p>
+              <div class="w-8 h-8 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin light:border-gray-300 light:border-t-green-500"></div>
+              <p class="text-gray-400 text-sm light:text-gray-600">{{ t('loginModal.waitingAuth') }}</p>
             </div>
             <button
-              class="w-full px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded border border-gray-700 font-semibold transition cursor-pointer"
+              class="w-full px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded border border-gray-700 font-semibold transition cursor-pointer light:bg-gray-100 light:hover:bg-gray-200 light:text-gray-700 light:hover:text-gray-900 light:border-gray-300"
               @click="close"
             >{{ t('loginModal.cancel') }}</button>
           </div>
@@ -547,23 +547,23 @@ onUnmounted(stopPolling)
 
             <!-- Namespace picker — try another namespace -->
             <div v-if="vault.namespaces.length > 1" class="space-y-2">
-              <p class="text-gray-500 text-xs">{{ t('loginModal.tryOtherNamespace') }}</p>
+              <p class="text-gray-500 text-xs light:text-gray-600">{{ t('loginModal.tryOtherNamespace') }}</p>
               <div class="flex flex-wrap gap-2">
                 <button
                   v-for="ns in vault.namespaces"
                   :key="ns.namespace"
                   class="text-xs px-3 py-1.5 rounded font-semibold border transition cursor-pointer"
                   :class="ns.namespace === loginNs
-                    ? 'bg-purple-900 text-purple-200 border-purple-600'
-                    : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:bg-gray-700 hover:border-gray-500'"
+                    ? 'bg-purple-900 text-purple-200 border-purple-600 light:bg-purple-100 light:text-purple-800 light:border-purple-400'
+                    : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:bg-gray-700 hover:border-gray-500 light:bg-gray-100 light:text-gray-600 light:border-gray-300 light:hover:bg-gray-200 light:hover:text-gray-800 light:hover:border-gray-400'"
                   @click="switchLoginNs(ns.namespace)"
                 >{{ ns.label || ns.namespace }}</button>
               </div>
             </div>
 
             <!-- Vault UI fallback — open web UI, authenticate, paste token -->
-            <div class="border border-gray-700 rounded-lg p-3 space-y-3 bg-gray-800/40">
-              <p class="text-gray-400 text-xs leading-relaxed">
+            <div class="border border-gray-700 rounded-lg p-3 space-y-3 bg-gray-800/40 light:border-gray-200 light:bg-gray-50">
+              <p class="text-gray-400 text-xs leading-relaxed light:text-gray-600">
                 {{ t('loginModal.vaultUiFallback') }}
               </p>
               <a
@@ -578,13 +578,13 @@ onUnmounted(stopPolling)
                 {{ t('loginModal.openVaultUi') }}
               </a>
               <template v-if="showTokenInput">
-                <p class="text-gray-500 text-xs">{{ t('loginModal.afterLoginPasteToken') }}</p>
+                <p class="text-gray-500 text-xs light:text-gray-600">{{ t('loginModal.afterLoginPasteToken') }}</p>
                 <div class="flex gap-2">
                   <input
                     v-model="manualToken"
                     type="password"
                     :placeholder="t('loginModal.tokenPlaceholder')"
-                    class="flex-1 min-w-0 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 text-xs font-mono rounded focus:outline-none focus:border-green-600"
+                    class="flex-1 min-w-0 px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 text-xs font-mono rounded focus:outline-none focus:border-green-600 light:bg-white light:border-gray-300 light:text-gray-800"
                     @keydown.enter="submitToken"
                     autofocus
                   />
@@ -598,14 +598,14 @@ onUnmounted(stopPolling)
               </template>
               <button
                 v-else
-                class="text-xs text-gray-600 hover:text-gray-400 transition underline"
+                class="text-xs text-gray-600 hover:text-gray-400 transition underline light:text-gray-500 light:hover:text-gray-700"
                 @click="showTokenInput = true"
               >{{ t('loginModal.alreadyHaveToken') }}</button>
             </div>
 
             <!-- Retry button -->
             <button
-              class="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm"
+              class="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
               @click="startLogin"
             >
               {{ t('loginModal.retry', { namespace: namespaceLabel }) }}
@@ -613,9 +613,9 @@ onUnmounted(stopPolling)
           </div>
 
           <!-- Footer link to setup -->
-          <div class="pt-1 border-t border-gray-800 text-center">
+          <div class="pt-1 border-t border-gray-800 text-center light:border-gray-200">
             <button
-              class="text-xs text-gray-500 hover:text-gray-300 transition"
+              class="text-xs text-gray-500 hover:text-gray-300 transition light:text-gray-600 light:hover:text-gray-800"
               @click="goToSetup"
             >
               {{ t('loginModal.editConfig') }}
