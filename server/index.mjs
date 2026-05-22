@@ -180,7 +180,31 @@ app.get('/api/status', async (req, res) => {
       loggedEnvSessions.add(namespace)
       pushLog({ type: 'login_ok', namespace, display_name: data.display_name, success: true })
     }
-    res.json({ display_name: data.display_name, expire_time: data.expire_time, ttl: data.ttl, policies: data.policies })
+    const creationTtl = data.creation_ttl || (data.expire_time && data.creation_time
+      ? Math.round((new Date(data.expire_time).getTime() / 1000) - data.creation_time)
+      : null)
+    res.json({ display_name: data.display_name, expire_time: data.expire_time, ttl: data.ttl, policies: data.policies, accessor: data.accessor, creation_time: data.creation_time ?? null, creation_ttl: creationTtl, renewable: data.renewable ?? false, entity_id: data.entity_id ?? '' })
+  } catch (e) {
+    res.status(502).json({ error: `Vault injoignable: ${e.message}` })
+  }
+})
+
+// POST /api/token/renew
+app.post('/api/token/renew', async (req, res) => {
+  const namespace = req.body?.namespace ?? ''
+  const token = resolveToken(namespace)
+  if (!token) return res.status(401).json({ error: 'No Vault token found' })
+  try {
+    const result = await vaultFetch('auth/token/renew-self', token, namespace, 'PUT', {})
+    if (result.status === 400) return res.status(400).json({ error: result.body.errors?.[0] ?? 'Token non renouvelable' })
+    if (result.status !== 200) return res.status(result.status).json(result.body)
+    const lookup = await vaultFetch('auth/token/lookup-self', token, namespace)
+    if (lookup.status !== 200) return res.status(lookup.status).json(lookup.body)
+    const data = lookup.body.data
+    const creationTtl = data.creation_ttl || (data.expire_time && data.creation_time
+      ? Math.round((new Date(data.expire_time).getTime() / 1000) - data.creation_time)
+      : null)
+    res.json({ display_name: data.display_name, expire_time: data.expire_time, ttl: data.ttl, policies: data.policies, accessor: data.accessor, creation_time: data.creation_time ?? null, creation_ttl: creationTtl, renewable: data.renewable ?? false, entity_id: data.entity_id ?? '' })
   } catch (e) {
     res.status(502).json({ error: `Vault injoignable: ${e.message}` })
   }

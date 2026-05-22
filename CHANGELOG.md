@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.8.0] — 2026-05-21
+
+### Features
+- token-inspector: expandable panel triggered by clicking the TTL chip in the header; shows full token metadata (display name, accessor, policies, TTL, creation time, issue TTL, renewable, entity ID); Renew button calls POST /api/token/renew and updates TTL display immediately; red animated chip when TTL < 10 min; i18n in en/fr
+
 ## [1.5.9] — 2026-05-16
 
 ### Features

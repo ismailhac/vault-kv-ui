@@ -6,6 +6,11 @@ export interface TokenStatus {
   expire_time: string | null
   ttl: number
   policies: string[]
+  accessor: string
+  creation_time: string | number | null
+  creation_ttl: number | null
+  renewable: boolean
+  entity_id: string
 }
 
 export interface KvEntry {
@@ -486,6 +491,19 @@ export const useVaultStore = defineStore('vault', () => {
     listPath('')
   }
 
+  async function renewToken() {
+    const res = await fetch('/api/token/renew', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ namespace: currentNamespace.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+    }
+    tokenStatus.value = await res.json()
+  }
+
   async function logout() {
     try {
       // Clear token and config on BFF
@@ -529,7 +547,7 @@ export const useVaultStore = defineStore('vault', () => {
     // admin
     editingEnabled, loggingEnabled, loadAdminSettings, lastWriteAt,
     // actions
-    loadTokenStatus, startLogin, pollLogin, setToken, switchNamespace,
+    loadTokenStatus, renewToken, startLogin, pollLogin, setToken, switchNamespace,
     listPath, navigateTo, navigateBack, navigateToBreadcrumb,
     readSecret, writeSecret, deleteSecret, deleteFolder,
     initializeApp, retryInitialization, goHome, logout,
