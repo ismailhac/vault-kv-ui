@@ -88,8 +88,8 @@ const selectedKeys = ref<Set<string>>(new Set())
 const selectableKeys = computed(() => {
   if (!diffResult.value) return []
   return [
-    ...diffResult.value.added.map(i => i.key),
-    ...diffResult.value.changed.map(i => i.key),
+    ...(diffResult.value.added ?? []).map(i => i.key),
+    ...(diffResult.value.changed ?? []).map(i => i.key),
   ]
 })
 
@@ -133,8 +133,8 @@ function confirmProdAndProceed() {
 const confirmBefore = computed(() => diffResult.value?.target_data ?? {})
 const confirmAfter = computed(() => {
   if (!diffResult.value) return {}
-  const merged: Record<string, string> = { ...diffResult.value.target_data }
-  for (const item of [...diffResult.value.added, ...diffResult.value.changed]) {
+  const merged: Record<string, string> = { ...(diffResult.value.target_data ?? {}) }
+  for (const item of [...(diffResult.value.added ?? []), ...(diffResult.value.changed ?? [])]) {
     if (selectedKeys.value.has(item.key)) {
       merged[item.key] = item.source_value ?? ''
     }
@@ -172,9 +172,19 @@ async function runCompare() {
       }),
     })
     if (id !== compareSeq) return
-    const json = await res.json().catch(() => ({}))
+    const json = await res.json().catch(() => null)
     if (!res.ok) {
-      compareError.value = (json as { error?: string }).error ?? `HTTP ${res.status}`
+      compareError.value = (json as { error?: string } | null)?.error ?? `HTTP ${res.status}`
+      return
+    }
+    if (
+      !json ||
+      !Array.isArray(json.added) ||
+      !Array.isArray(json.missing) ||
+      !Array.isArray(json.changed) ||
+      !Array.isArray(json.unchanged)
+    ) {
+      compareError.value = t('compareModal.compareError')
       return
     }
     diffResult.value = json as typeof diffResult.value
