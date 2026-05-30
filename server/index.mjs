@@ -494,7 +494,10 @@ function flattenSecretData(obj, prefix = '') {
   const result = {}
   for (const [k, v] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${k}` : k
-    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+    if (Array.isArray(v)) {
+      // Serialize arrays to JSON — avoids "[object Object],[object Object]" from Array.toString()
+      result[fullKey] = JSON.stringify(v)
+    } else if (v !== null && typeof v === 'object') {
       Object.assign(result, flattenSecretData(v, fullKey))
     } else if (typeof v === 'string') {
       const trimmed = v.trim()
