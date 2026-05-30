@@ -13,6 +13,7 @@ import DownloadOverlay from '../components/DownloadOverlay.vue'
 import CreateSecretModal from '../components/CreateSecretModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 import SearchModal from '../components/SearchModal.vue'
+import CompareModal from '../components/CompareModal.vue'
 
 const { t } = useI18n()
 const vault = useVaultStore()
@@ -63,6 +64,7 @@ const showKeyUpdate = ref(false)
 const showKeyAdjust = ref(false)
 const showKeyRename = ref(false)
 const showCreate = ref(false)
+const showCompare = ref(false)
 const downloadLoading = ref(false)
 
 const pendingDelete = ref<{ path: string; isFolder: boolean } | null>(null)
@@ -387,6 +389,19 @@ onBeforeUnmount(() => {
         </svg>
         {{ t('browserView.download') }}
       </button>
+
+      <div class="w-px h-5 bg-gray-600 mx-0.5 light:bg-gray-300" />
+
+      <button
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded pointer transition-colors light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
+        @click="showCompare = true"
+        :title="t('browserView.compareTooltip')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-sky-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+        </svg>
+        {{ t('browserView.compare') }}
+      </button>
   </div>
 
   <!-- Read-only banner -->
@@ -507,6 +522,7 @@ onBeforeUnmount(() => {
   <KeyAdjustModal v-if="showKeyAdjust" @close="showKeyAdjust = false" />
   <KeyRenameModal v-if="showKeyRename" @close="showKeyRename = false" />
   <SearchModal v-if="showSearch" :initial-query="searchQuery" :initial-scope="vault.currentPath" @close="onSearchModalClose" />
+  <CompareModal v-if="showCompare" @close="showCompare = false" />
 
   <!-- Download overlay (blocks all interaction) -->
   <DownloadOverlay v-if="downloadLoading" />

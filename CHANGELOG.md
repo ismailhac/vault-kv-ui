@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.9.0] — 2026-05-30
+
+### Features
+- env-diff: CompareModal for side-by-side diff of two KV secret paths; color-coded added/missing/changed/unchanged rows; per-key checkbox selection; copy selected keys to target with ConfirmDiffModal confirmation; protected-path warning for prod segments; POST /api/kv/compare BFF endpoint; i18n in en/fr
+
 ## [1.8.0] — 2026-05-21
 
 ### Features

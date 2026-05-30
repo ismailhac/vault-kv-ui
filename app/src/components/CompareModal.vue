@@ -1,0 +1,589 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useVaultStore } from '../stores/vault'
+import ConfirmDiffModal from './ConfirmDiffModal.vue'
+
+const { t } = useI18n()
+const emit = defineEmits<{ close: [] }>()
+const vault = useVaultStore()
+
+// ── Step tracking ──
+type Step = 1 | 2 | 3 | 4
+const step = ref<Step>(1)
+
+// ── Prod-path detection (same PROD_NAMES as other modals) ──
+const PROD_NAMES = new Set(['prod', 'production', 'prd'])
+function pathIsProd(path: string): boolean {
+  return path.split('/').slice(1).some(s => PROD_NAMES.has(s.toLowerCase()))
+}
+
+// ── Available paths (loaded from namespace dump) ──
+const availablePaths = ref<string[]>([])
+const loadingPaths = ref(true)
+const pathsError = ref<string | null>(null)
+
+async function loadAvailablePaths() {
+  loadingPaths.value = true
+  pathsError.value = null
+  try {
+    const params = new URLSearchParams({ mount: vault.currentMount, namespace: vault.currentNamespace })
+    const res = await fetch(`/api/kv/dump?${params}`)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      availablePaths.value = []
+      pathsError.value = (err as { error?: string }).error ?? `HTTP ${res.status}`
+      return
+    }
+    const payload = await res.json()
+    const rawMap =
+      payload && typeof payload === 'object' && payload.data && typeof payload.data === 'object'
+        ? payload.data
+        : payload
+    availablePaths.value = rawMap && typeof rawMap === 'object'
+      ? Object.keys(rawMap as Record<string, unknown>).sort()
+      : []
+  } catch (e: unknown) {
+    availablePaths.value = []
+    pathsError.value = e instanceof Error ? e.message : t('compareModal.loadPathsError')
+  }
+  loadingPaths.value = false
+}
+
+onMounted(loadAvailablePaths)
+
+// ── Prod filter (shared for both selects) ──
+const includeProd = ref(false)
+
+const filteredPaths = computed(() =>
+  includeProd.value ? availablePaths.value : availablePaths.value.filter(p => !pathIsProd(p))
+)
+
+// ── Step 1 — Path inputs ──
+const sourcePath = ref(vault.currentPath)
+const targetPath = ref('')
+const comparing = ref(false)
+const compareError = ref<string | null>(null)
+
+const targetIsProd = computed(() => targetPath.value.trim() !== '' && pathIsProd(targetPath.value.trim()))
+
+// ── Step 2 — Diff result ──
+type DiffItem = { key: string; source_value?: string; target_value?: string }
+
+const diffResult = ref<{
+  source_path: string
+  target_path: string
+  added: DiffItem[]
+  missing: DiffItem[]
+  changed: DiffItem[]
+  unchanged: DiffItem[]
+  target_data: Record<string, string>
+} | null>(null)
+
+const showUnchanged = ref(false)
+
+// Per-key selection (only added + changed rows are selectable)
+const selectedKeys = ref<Set<string>>(new Set())
+
+const selectableKeys = computed(() => {
+  if (!diffResult.value) return []
+  return [
+    ...diffResult.value.added.map(i => i.key),
+    ...diffResult.value.changed.map(i => i.key),
+  ]
+})
+
+const allSelected = computed(() =>
+  selectableKeys.value.length > 0 &&
+  selectableKeys.value.every(k => selectedKeys.value.has(k))
+)
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selectedKeys.value = new Set()
+  } else {
+    selectedKeys.value = new Set(selectableKeys.value)
+  }
+}
+
+function toggleKey(key: string) {
+  const next = new Set(selectedKeys.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  selectedKeys.value = next
+}
+
+// ── Step 3 — Confirm diff ──
+const showConfirm = ref(false)
+const showProdConfirm = ref(false)
+
+function handleCopyClick() {
+  if (targetIsProd.value) {
+    showProdConfirm.value = true
+  } else {
+    showConfirm.value = true
+  }
+}
+
+function confirmProdAndProceed() {
+  showProdConfirm.value = false
+  showConfirm.value = true
+}
+
+const confirmBefore = computed(() => diffResult.value?.target_data ?? {})
+const confirmAfter = computed(() => {
+  if (!diffResult.value) return {}
+  const merged: Record<string, string> = { ...diffResult.value.target_data }
+  for (const item of [...diffResult.value.added, ...diffResult.value.changed]) {
+    if (selectedKeys.value.has(item.key)) {
+      merged[item.key] = item.source_value ?? ''
+    }
+  }
+  return merged
+})
+
+// ── Step 4 — Success ──
+const writtenCount = ref(0)
+const writeError = ref<string | null>(null)
+
+// ── Stale-request prevention ──
+let compareSeq = 0
+
+async function runCompare() {
+  const src = sourcePath.value.trim()
+  const tgt = targetPath.value.trim()
+  if (!src || !tgt) return
+  comparing.value = true
+  compareError.value = null
+  diffResult.value = null
+  selectedKeys.value = new Set()
+  showUnchanged.value = false
+
+  const id = ++compareSeq
+  try {
+    const res = await fetch('/api/kv/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source_path: src,
+        target_path: tgt,
+        mount: vault.currentMount,
+        namespace: vault.currentNamespace,
+      }),
+    })
+    if (id !== compareSeq) return
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      compareError.value = (json as { error?: string }).error ?? `HTTP ${res.status}`
+      return
+    }
+    diffResult.value = json as typeof diffResult.value
+    // Pre-select all added + changed keys
+    selectedKeys.value = new Set(selectableKeys.value)
+    step.value = 2
+  } catch (e: unknown) {
+    if (id !== compareSeq) return
+    compareError.value = e instanceof Error ? e.message : t('compareModal.compareError')
+  } finally {
+    if (id === compareSeq) comparing.value = false
+  }
+}
+
+async function applyWrite() {
+  showConfirm.value = false
+  writeError.value = null
+  const tgt = diffResult.value?.target_path ?? targetPath.value.trim()
+  const data = confirmAfter.value
+  try {
+    await vault.writeSecret(tgt, data)
+    writtenCount.value = selectedKeys.value.size
+    step.value = 4
+  } catch (e: unknown) {
+    writeError.value = e instanceof Error ? e.message : t('compareModal.writeError')
+  }
+}
+
+function goToTarget() {
+  const tgt = diffResult.value?.target_path ?? targetPath.value.trim()
+  if (!tgt) { emit('close'); return }
+  const segments = tgt.split('/').filter(Boolean)
+  // Navigate to the parent folder, not the secret itself
+  const parentSegments = segments.slice(0, -1)
+  vault.currentPath = ''
+  vault.pathHistory = []
+  for (const seg of parentSegments) {
+    vault.pathHistory.push(vault.currentPath)
+    vault.currentPath = vault.currentPath ? `${vault.currentPath}/${seg}` : seg
+  }
+  vault.listPath(vault.currentPath)
+  vault.readSecret(tgt)
+  emit('close')
+}
+
+const STEP_LABELS = computed<Record<number, string>>(() => ({
+  1: t('compareModal.step1'),
+  2: t('compareModal.step2'),
+  3: t('compareModal.step3'),
+  4: t('compareModal.step4'),
+}))
+
+const step1Valid = computed(() => sourcePath.value.trim().length > 0 && targetPath.value.trim().length > 0)
+const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabled)
+</script>
+
+<template>
+  <div
+    class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
+    @click.self="step < 3 ? emit('close') : undefined"
+  >
+    <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl light:bg-white light:border-gray-200">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-200">
+        <div class="flex items-center gap-3">
+          <span class="text-white font-semibold text-sm light:text-black">{{ t('compareModal.title') }}</span>
+          <span class="text-gray-600 text-xs">·</span>
+          <span class="text-gray-500 text-xs light:text-gray-600">{{ t('compareModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
+        </div>
+        <!-- Step indicators -->
+        <div class="flex items-center gap-1">
+          <template v-for="s in [1, 2, 3, 4]" :key="s">
+            <div
+              class="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition"
+              :class="step === s ? 'bg-blue-700 text-white' : s < step ? 'bg-gray-700 text-gray-300 light:bg-gray-200 light:text-gray-600' : 'text-gray-600'"
+            >
+              <span>{{ s }}</span>
+              <span class="hidden sm:inline">{{ STEP_LABELS[s] }}</span>
+            </div>
+            <span v-if="s < 4" class="text-gray-700 text-xs">›</span>
+          </template>
+        </div>
+        <button
+          class="text-gray-500 hover:text-gray-300 ml-3 shrink-0 light:hover:text-gray-700"
+          @click="emit('close')"
+        >✕</button>
+      </div>
+
+      <!-- Body -->
+      <div class="overflow-auto flex-1 px-5 py-4">
+
+        <!-- ── STEP 1 — Path selector ── -->
+        <div v-if="step === 1" class="space-y-4">
+
+          <!-- Paths loading error -->
+          <div v-if="pathsError" class="text-amber-400 text-xs px-3 py-2 bg-amber-950/40 border border-amber-800/50 rounded light:bg-amber-50 light:border-amber-300 light:text-amber-700">
+            ⚠ {{ pathsError }}
+          </div>
+
+          <!-- Prod filter toggle + path count -->
+          <div class="flex items-center justify-between">
+            <button
+              type="button"
+              class="px-2 py-0.5 rounded-full border text-xs font-medium transition cursor-pointer"
+              :class="includeProd ? 'bg-red-900/60 text-red-300 border-red-700 hover:bg-red-900' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:text-gray-200 light:bg-gray-100 light:border-gray-300 light:text-gray-600 light:hover:bg-gray-200'"
+              @click="includeProd = !includeProd"
+            >{{ includeProd ? t('compareModal.prodIncluded') : t('compareModal.prodExcluded') }}</button>
+            <span v-if="!loadingPaths && availablePaths.length > 0" class="text-gray-600 text-xs light:text-gray-500">
+              {{ t('compareModal.pathCount', { filtered: filteredPaths.length, total: availablePaths.length }) }}
+            </span>
+            <span v-else-if="!loadingPaths && !pathsError" class="text-gray-600 text-xs light:text-gray-500">
+              {{ t('compareModal.noPathsAvailable') }}
+            </span>
+          </div>
+
+          <!-- Source path -->
+          <div>
+            <label class="text-gray-400 text-xs mb-1.5 block light:text-gray-600">{{ t('compareModal.sourcePath') }}</label>
+            <div class="flex gap-2">
+              <select
+                v-model="sourcePath"
+                :disabled="loadingPaths || filteredPaths.length === 0"
+                class="flex-1 px-3 py-2 bg-gray-950 border border-gray-700 text-blue-300 font-mono rounded text-sm focus:outline-none focus:border-blue-600 disabled:opacity-50 light:bg-white light:border-gray-300 light:text-blue-700"
+              >
+                <option value="" disabled>{{ loadingPaths ? t('compareModal.loadingPaths') : t('compareModal.selectPath') }}</option>
+                <option v-for="path in filteredPaths" :key="path" :value="path">{{ path }}</option>
+              </select>
+              <button
+                type="button"
+                class="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
+                :disabled="loadingPaths"
+                :title="t('compareModal.refreshPaths')"
+                @click="loadAvailablePaths"
+              >🔄</button>
+            </div>
+          </div>
+
+          <!-- Target path -->
+          <div>
+            <label class="text-gray-400 text-xs mb-1.5 block light:text-gray-600">{{ t('compareModal.targetPath') }}</label>
+            <select
+              v-model="targetPath"
+              :disabled="loadingPaths || filteredPaths.length === 0"
+              class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 disabled:opacity-50 light:bg-white light:border-gray-300 light:text-green-700"
+            >
+              <option value="" disabled>{{ loadingPaths ? t('compareModal.loadingPaths') : t('compareModal.selectPath') }}</option>
+              <option v-for="path in filteredPaths" :key="path" :value="path">{{ path }}</option>
+            </select>
+            <!-- Protected path warning (shown when prod paths are included and target is prod) -->
+            <div
+              v-if="targetIsProd"
+              class="mt-1.5 flex items-center gap-1.5 text-xs text-amber-400 light:text-amber-600"
+            >
+              <span>⚠</span>
+              <span>{{ t('compareModal.protectedWarning') }}</span>
+            </div>
+          </div>
+
+          <!-- Compare error -->
+          <div v-if="compareError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded light:bg-red-50 light:border-red-300">
+            ⚠ {{ compareError }}
+          </div>
+
+        </div>
+
+        <!-- ── STEP 2 — Diff table ── -->
+        <div v-else-if="step === 2 && diffResult" class="space-y-4">
+
+          <!-- Summary header -->
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="text-xs text-gray-400 light:text-gray-600 font-mono">
+              <span class="text-blue-300">{{ diffResult.source_path }}</span>
+              <span class="text-gray-600 mx-1.5">→</span>
+              <span class="text-green-300">{{ diffResult.target_path }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <span v-if="diffResult.added.length" class="px-1.5 py-0.5 bg-green-950 text-green-400 rounded font-mono light:bg-green-50 light:text-green-700">+{{ diffResult.added.length }}</span>
+              <span v-if="diffResult.changed.length" class="px-1.5 py-0.5 bg-yellow-950 text-yellow-400 rounded font-mono light:bg-yellow-50 light:text-yellow-700">~{{ diffResult.changed.length }}</span>
+              <span v-if="diffResult.missing.length" class="px-1.5 py-0.5 bg-red-950 text-red-400 rounded font-mono light:bg-red-50 light:text-red-700">-{{ diffResult.missing.length }}</span>
+              <span v-if="diffResult.unchanged.length" class="px-1.5 py-0.5 bg-gray-800 text-gray-500 rounded font-mono light:bg-gray-100 light:text-gray-500">={{ diffResult.unchanged.length }}</span>
+            </div>
+          </div>
+
+          <!-- Select-all + unchanged toggle -->
+          <div class="flex items-center justify-between">
+            <label
+              v-if="selectableKeys.length > 0"
+              class="flex items-center gap-2 cursor-pointer select-none"
+              @click="toggleSelectAll"
+            >
+              <span
+                class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
+                :class="allSelected ? 'bg-blue-500 border-blue-400' : 'border-gray-600 bg-gray-800 light:bg-white light:border-gray-300'"
+              >
+                <span v-if="allSelected">✓</span>
+              </span>
+              <span class="text-xs text-gray-400 light:text-gray-600">{{ t('compareModal.selectAll') }} ({{ selectedKeys.size }}/{{ selectableKeys.length }})</span>
+            </label>
+            <div v-else></div>
+            <button
+              v-if="diffResult.unchanged.length > 0"
+              class="text-xs px-2 py-0.5 rounded border transition"
+              :class="showUnchanged ? 'bg-gray-700 border-gray-600 text-gray-300 light:bg-gray-200 light:border-gray-300 light:text-gray-700' : 'border-gray-700 text-gray-600 hover:border-gray-500 hover:text-gray-400 light:border-gray-300 light:hover:text-gray-700'"
+              @click="showUnchanged = !showUnchanged"
+            >{{ t('compareModal.unchangedToggle') }}</button>
+          </div>
+
+          <!-- Diff table -->
+          <div class="border border-gray-700 rounded overflow-hidden light:border-gray-200">
+            <table class="w-full text-xs font-mono">
+              <thead>
+                <tr class="text-gray-500 text-left border-b border-gray-700 uppercase light:border-gray-200 light:text-gray-400">
+                  <th class="px-3 py-2 w-8"></th>
+                  <th class="px-3 py-2 w-1/4">Key</th>
+                  <th class="px-3 py-2 w-1/3">Source</th>
+                  <th class="px-3 py-2 w-1/3">Target</th>
+                  <th class="px-3 py-2 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <!-- Added rows (green, selectable) -->
+                <tr
+                  v-for="item in diffResult.added"
+                  :key="'added-' + item.key"
+                  class="border-b border-gray-800 last:border-0 bg-green-950 text-green-300 cursor-pointer hover:bg-green-900 transition-colors light:bg-green-50 light:text-green-800 light:hover:bg-green-100 light:border-gray-200"
+                  @click="toggleKey(item.key)"
+                >
+                  <td class="px-3 py-1.5">
+                    <span
+                      class="w-4 h-4 rounded border flex items-center justify-center text-white text-xs transition"
+                      :class="selectedKeys.has(item.key) ? 'bg-green-600 border-green-500' : 'border-green-800 bg-green-950 light:bg-green-50 light:border-green-300'"
+                    >
+                      <span v-if="selectedKeys.has(item.key)">✓</span>
+                    </span>
+                  </td>
+                  <td class="px-3 py-1.5 font-semibold">{{ item.key }}</td>
+                  <td class="px-3 py-1.5 break-all opacity-90">{{ item.source_value }}</td>
+                  <td class="px-3 py-1.5 opacity-40 italic">—</td>
+                  <td class="px-3 py-1.5 text-right opacity-60">+</td>
+                </tr>
+
+                <!-- Changed rows (amber, selectable) -->
+                <tr
+                  v-for="item in diffResult.changed"
+                  :key="'changed-' + item.key"
+                  class="border-b border-gray-800 last:border-0 bg-yellow-950 text-yellow-200 cursor-pointer hover:bg-yellow-900 transition-colors light:bg-yellow-50 light:text-yellow-800 light:hover:bg-yellow-100 light:border-gray-200"
+                  @click="toggleKey(item.key)"
+                >
+                  <td class="px-3 py-1.5">
+                    <span
+                      class="w-4 h-4 rounded border flex items-center justify-center text-white text-xs transition"
+                      :class="selectedKeys.has(item.key) ? 'bg-yellow-600 border-yellow-500' : 'border-yellow-800 bg-yellow-950 light:bg-yellow-50 light:border-yellow-300'"
+                    >
+                      <span v-if="selectedKeys.has(item.key)">✓</span>
+                    </span>
+                  </td>
+                  <td class="px-3 py-1.5 font-semibold">{{ item.key }}</td>
+                  <td class="px-3 py-1.5 break-all opacity-90">{{ item.source_value }}</td>
+                  <td class="px-3 py-1.5 break-all opacity-60 line-through">{{ item.target_value }}</td>
+                  <td class="px-3 py-1.5 text-right opacity-60">~</td>
+                </tr>
+
+                <!-- Missing rows (red, disabled) -->
+                <tr
+                  v-for="item in diffResult.missing"
+                  :key="'missing-' + item.key"
+                  class="border-b border-gray-800 last:border-0 bg-red-950 text-red-300 opacity-70 light:bg-red-50 light:text-red-800 light:border-gray-200"
+                >
+                  <td class="px-3 py-1.5">
+                    <span class="w-4 h-4 rounded border flex items-center justify-center border-red-800 bg-red-950 light:bg-red-50 light:border-red-200"></span>
+                  </td>
+                  <td class="px-3 py-1.5 font-semibold">{{ item.key }}</td>
+                  <td class="px-3 py-1.5 opacity-40 italic">—</td>
+                  <td class="px-3 py-1.5 break-all">{{ item.target_value }}</td>
+                  <td class="px-3 py-1.5 text-right opacity-60">−</td>
+                </tr>
+
+                <!-- Unchanged rows (gray, disabled, collapsible) -->
+                <template v-if="showUnchanged">
+                  <tr
+                    v-for="item in diffResult.unchanged"
+                    :key="'unchanged-' + item.key"
+                    class="border-b border-gray-800 last:border-0 text-gray-500 light:text-gray-400 light:border-gray-200"
+                  >
+                    <td class="px-3 py-1.5">
+                      <span class="w-4 h-4 rounded border flex items-center justify-center border-gray-700 light:border-gray-200"></span>
+                    </td>
+                    <td class="px-3 py-1.5">{{ item.key }}</td>
+                    <td class="px-3 py-1.5 break-all">{{ item.source_value }}</td>
+                    <td class="px-3 py-1.5 break-all">{{ item.target_value }}</td>
+                    <td class="px-3 py-1.5 text-right opacity-60">=</td>
+                  </tr>
+                </template>
+
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Write error -->
+          <div v-if="writeError" class="text-red-400 text-sm px-3 py-2 bg-red-950 border border-red-800 rounded light:bg-red-50 light:border-red-300">
+            ⚠ {{ writeError }}
+          </div>
+
+          <!-- Editing disabled notice -->
+          <div v-if="!vault.editingEnabled" class="text-amber-400 text-xs px-3 py-2 bg-amber-950 border border-amber-800 rounded light:bg-amber-50 light:border-amber-300 light:text-amber-700">
+            {{ t('compareModal.editingDisabled') }}
+          </div>
+
+          <!-- Prod copy confirmation panel -->
+          <div
+            v-if="showProdConfirm"
+            class="border border-red-700 bg-red-950/60 rounded-lg p-4 space-y-3 light:bg-red-50 light:border-red-400"
+          >
+            <div class="flex items-start gap-2">
+              <span class="text-red-400 text-lg leading-none mt-0.5">⚠</span>
+              <div>
+                <p class="text-red-300 text-sm font-semibold light:text-red-700">{{ t('compareModal.prodConfirmTitle') }}</p>
+                <p class="text-red-400/80 text-xs mt-1 font-mono break-all light:text-red-600">{{ diffResult?.target_path ?? targetPath }}</p>
+                <p class="text-red-400/70 text-xs mt-1.5 light:text-red-500">{{ t('compareModal.prodConfirmBody', { n: selectedKeys.size }) }}</p>
+              </div>
+            </div>
+            <div class="flex gap-2 justify-end">
+              <button
+                type="button"
+                class="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
+                @click="showProdConfirm = false"
+              >{{ t('compareModal.prodConfirmCancel') }}</button>
+              <button
+                type="button"
+                class="text-xs px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded font-semibold"
+                @click="confirmProdAndProceed"
+              >{{ t('compareModal.prodConfirmOk') }}</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── STEP 4 — Success ── -->
+        <div v-else-if="step === 4" class="flex flex-col items-center py-10 gap-4">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-2xl border-2 border-green-500 bg-green-950 text-green-400 light:bg-green-50">
+            ✓
+          </div>
+          <div class="text-center">
+            <div class="text-white font-semibold text-base mb-1 light:text-gray-900">
+              {{ writtenCount }} {{ t('compareModal.success') }}
+            </div>
+            <div class="text-gray-400 text-sm font-mono light:text-gray-600">
+              {{ diffResult?.target_path ?? targetPath }}
+            </div>
+          </div>
+          <button
+            class="mt-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded text-sm font-semibold transition"
+            @click="goToTarget"
+          >{{ t('compareModal.goToTarget') }} →</button>
+        </div>
+
+      </div><!-- end body -->
+
+      <!-- Footer -->
+      <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0 light:border-gray-200">
+        <!-- Back button -->
+        <button
+          v-if="step === 2"
+          class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
+          @click="step = 1; compareError = null"
+        >{{ t('compareModal.back') }}</button>
+        <div v-else></div>
+
+        <!-- Right actions -->
+        <div class="flex gap-2">
+          <!-- Step 1 — Compare button -->
+          <button
+            v-if="step === 1"
+            class="text-sm px-4 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded font-semibold disabled:opacity-40 transition"
+            :disabled="!step1Valid || comparing"
+            @click="runCompare"
+          >{{ comparing ? t('compareModal.comparing') : t('compareModal.compare') }}</button>
+
+          <!-- Step 2 — Copy selected -->
+          <button
+            v-if="step === 2"
+            class="text-sm px-4 py-1.5 text-white rounded font-semibold disabled:opacity-40 transition"
+            :class="targetIsProd ? 'bg-red-700 hover:bg-red-600' : 'bg-green-700 hover:bg-green-600'"
+            :disabled="!canCopy || showProdConfirm"
+            :title="!vault.editingEnabled ? t('compareModal.editingDisabled') : selectedKeys.size === 0 ? t('compareModal.nothingSelected') : ''"
+            @click="handleCopyClick"
+          >{{ selectedKeys.size > 0 ? t('compareModal.copySelected') : t('compareModal.nothingSelected') }}</button>
+
+          <!-- Step 4 — Close -->
+          <button
+            v-if="step === 4"
+            class="text-sm px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
+            @click="emit('close')"
+          >{{ t('compareModal.close') }}</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ConfirmDiffModal — rendered outside the modal div so z-index stacking is clean -->
+  <ConfirmDiffModal
+    v-if="showConfirm && diffResult"
+    :path="diffResult.target_path"
+    :before="confirmBefore"
+    :after="confirmAfter"
+    @confirm="applyWrite"
+    @cancel="showConfirm = false"
+  />
+</template>

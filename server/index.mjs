@@ -436,6 +436,59 @@ app.get('/api/kv/dump', async (req, res) => {
   }
 })
 
+// POST /api/kv/compare  body: { source_path, target_path, mount, namespace }
+// Read-only diff — does not write anything.
+// Returns { added, missing, changed, unchanged, target_data } where each bucket
+// is an array of { key, source_value?, target_value? } and target_data is the
+// full Record<string,string> of the target path (for ConfirmDiffModal before-state).
+app.post('/api/kv/compare', async (req, res) => {
+  const namespace = getNamespace(req)
+  const token = resolveToken(namespace)
+  if (!token) return res.status(401).json({ error: 'No Vault token found' })
+  const { source_path, target_path, mount = 'secret' } = req.body
+  if (!source_path || !target_path) return res.status(400).json({ error: 'source_path and target_path are required' })
+  try {
+    const [srcResult, tgtResult] = await Promise.all([
+      vaultFetch(`${mount}/data/${source_path}`, token, namespace),
+      vaultFetch(`${mount}/data/${target_path}`, token, namespace),
+    ])
+    if (srcResult.status === 404) return res.status(404).json({ error: 'Source path not found' })
+    if (srcResult.status === 403) return res.status(403).json({ error: 'Access denied to source path' })
+    if (srcResult.status !== 200) return res.status(502).json({ error: `Vault returned ${srcResult.status} for source path` })
+
+    const sourceData = srcResult.body.data?.data ?? {}
+    // 404 on target is OK — means all source keys are "added"
+    const targetData = (tgtResult.status === 200) ? (tgtResult.body.data?.data ?? {}) : {}
+    if (tgtResult.status !== 200 && tgtResult.status !== 404) {
+      return res.status(502).json({ error: `Vault returned ${tgtResult.status} for target path` })
+    }
+
+    const allKeys = new Set([...Object.keys(sourceData), ...Object.keys(targetData)])
+    const added = []
+    const missing = []
+    const changed = []
+    const unchanged = []
+
+    for (const key of [...allKeys].sort()) {
+      const inSource = Object.prototype.hasOwnProperty.call(sourceData, key)
+      const inTarget = Object.prototype.hasOwnProperty.call(targetData, key)
+      if (inSource && !inTarget) {
+        added.push({ key, source_value: sourceData[key] })
+      } else if (!inSource && inTarget) {
+        missing.push({ key, target_value: targetData[key] })
+      } else if (sourceData[key] !== targetData[key]) {
+        changed.push({ key, source_value: sourceData[key], target_value: targetData[key] })
+      } else {
+        unchanged.push({ key, source_value: sourceData[key], target_value: targetData[key] })
+      }
+    }
+
+    res.json({ source_path, target_path, added, missing, changed, unchanged, target_data: targetData })
+  } catch (e) {
+    res.status(502).json({ error: `Vault injoignable: ${e.message}` })
+  }
+})
+
 // Mirrors SecretPanel's parseJsonValue: detects nested objects AND JSON strings
 function flattenSecretData(obj, prefix = '') {
   const result = {}
