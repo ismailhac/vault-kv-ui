@@ -444,14 +444,14 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
 
           <!-- Diff table -->
           <div class="border border-gray-700 rounded overflow-hidden light:border-gray-200">
-            <table class="w-full text-xs font-mono">
+            <table class="w-full text-xs font-mono table-fixed">
               <thead>
                 <tr class="text-gray-500 text-left border-b border-gray-700 uppercase light:border-gray-200 light:text-gray-400">
-                  <th class="px-3 py-2 w-8"></th>
-                  <th class="px-3 py-2 w-1/4">Key</th>
-                  <th class="px-3 py-2 w-1/3">Source</th>
-                  <th class="px-3 py-2 w-1/3">Target</th>
-                  <th class="px-3 py-2 text-right">Status</th>
+                  <th class="px-3 py-2 w-8 shrink-0"></th>
+                  <th class="px-3 py-2 w-[32%]">Key</th>
+                  <th class="px-3 py-2 w-[30%]">Source</th>
+                  <th class="px-3 py-2 w-[30%]">Target</th>
+                  <th class="px-3 py-2 w-6 text-right"></th>
                 </tr>
               </thead>
               <tbody>
@@ -471,7 +471,7 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
                       <span v-if="selectedKeys.has(item.key)">✓</span>
                     </span>
                   </td>
-                  <td class="px-3 py-1.5 font-semibold">{{ item.key }}</td>
+                  <td class="px-3 py-1.5 font-semibold max-w-0 truncate" :title="item.key">{{ item.key }}</td>
                   <td class="px-3 py-1.5 break-all opacity-90">{{ item.source_value }}</td>
                   <td class="px-3 py-1.5 opacity-40 italic">—</td>
                   <td class="px-3 py-1.5 text-right opacity-60">+</td>
@@ -492,7 +492,7 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
                       <span v-if="selectedKeys.has(item.key)">✓</span>
                     </span>
                   </td>
-                  <td class="px-3 py-1.5 font-semibold">{{ item.key }}</td>
+                  <td class="px-3 py-1.5 font-semibold max-w-0 truncate" :title="item.key">{{ item.key }}</td>
                   <td class="px-3 py-1.5 break-all opacity-90">{{ item.source_value }}</td>
                   <td class="px-3 py-1.5 break-all opacity-60 line-through">{{ item.target_value }}</td>
                   <td class="px-3 py-1.5 text-right opacity-60">~</td>
@@ -507,7 +507,7 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
                   <td class="px-3 py-1.5">
                     <span class="w-4 h-4 rounded border flex items-center justify-center border-red-800 bg-red-950 light:bg-red-50 light:border-red-200"></span>
                   </td>
-                  <td class="px-3 py-1.5 font-semibold">{{ item.key }}</td>
+                  <td class="px-3 py-1.5 font-semibold max-w-0 truncate" :title="item.key">{{ item.key }}</td>
                   <td class="px-3 py-1.5 opacity-40 italic">—</td>
                   <td class="px-3 py-1.5 break-all">{{ item.target_value }}</td>
                   <td class="px-3 py-1.5 text-right opacity-60">−</td>
@@ -523,7 +523,7 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
                     <td class="px-3 py-1.5">
                       <span class="w-4 h-4 rounded border flex items-center justify-center border-gray-700 light:border-gray-200"></span>
                     </td>
-                    <td class="px-3 py-1.5">{{ item.key }}</td>
+                    <td class="px-3 py-1.5 max-w-0 truncate" :title="item.key">{{ item.key }}</td>
                     <td class="px-3 py-1.5 break-all">{{ item.source_value }}</td>
                     <td class="px-3 py-1.5 break-all">{{ item.target_value }}</td>
                     <td class="px-3 py-1.5 text-right opacity-60">=</td>
