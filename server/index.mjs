@@ -456,9 +456,9 @@ app.post('/api/kv/compare', async (req, res) => {
     if (srcResult.status === 403) return res.status(403).json({ error: 'Access denied to source path' })
     if (srcResult.status !== 200) return res.status(502).json({ error: `Vault returned ${srcResult.status} for source path` })
 
-    const sourceData = srcResult.body.data?.data ?? {}
+    const sourceData = flattenSecretData(srcResult.body.data?.data ?? {})
     // 404 on target is OK — means all source keys are "added"
-    const targetData = (tgtResult.status === 200) ? (tgtResult.body.data?.data ?? {}) : {}
+    const targetData = flattenSecretData((tgtResult.status === 200) ? (tgtResult.body.data?.data ?? {}) : {})
     if (tgtResult.status !== 200 && tgtResult.status !== 404) {
       return res.status(502).json({ error: `Vault returned ${tgtResult.status} for target path` })
     }
