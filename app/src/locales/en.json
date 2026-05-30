@@ -729,5 +729,9 @@
   "compareModal.prodConfirmTitle": "You are writing to a production path",
   "compareModal.prodConfirmBody": "{n} key(s) will be written. This action cannot be undone.",
   "compareModal.prodConfirmCancel": "Cancel",
-  "compareModal.prodConfirmOk": "Yes, write to production"
+  "compareModal.prodConfirmOk": "Yes, write to production",
+  "compareModal.filterAdded": "Select added keys only",
+  "compareModal.filterChanged": "Select changed keys only",
+  "compareModal.filterMissing": "Clear selection (view missing keys)",
+  "compareModal.filterUnchanged": "Toggle identical keys"
 }

@@ -113,6 +113,28 @@ function toggleKey(key: string) {
   selectedKeys.value = next
 }
 
+// ── Badge filter shortcuts ──
+function selectOnlyAdded() {
+  selectedKeys.value = new Set((diffResult.value?.added ?? []).map(i => i.key))
+}
+function selectOnlyChanged() {
+  selectedKeys.value = new Set((diffResult.value?.changed ?? []).map(i => i.key))
+}
+function selectNone() {
+  selectedKeys.value = new Set()
+}
+
+const onlyAddedSelected = computed(() => {
+  const added = (diffResult.value?.added ?? []).map(i => i.key)
+  return added.length > 0 && added.every(k => selectedKeys.value.has(k)) &&
+    !(diffResult.value?.changed ?? []).some(i => selectedKeys.value.has(i.key))
+})
+const onlyChangedSelected = computed(() => {
+  const changed = (diffResult.value?.changed ?? []).map(i => i.key)
+  return changed.length > 0 && changed.every(k => selectedKeys.value.has(k)) &&
+    !(diffResult.value?.added ?? []).some(i => selectedKeys.value.has(i.key))
+})
+
 // ── Step 3 — Confirm diff ──
 const showConfirm = ref(false)
 const showProdConfirm = ref(false)
@@ -362,10 +384,37 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
               <span class="text-green-300">{{ diffResult.target_path }}</span>
             </div>
             <div class="flex items-center gap-2 text-xs">
-              <span v-if="diffResult.added.length" class="px-1.5 py-0.5 bg-green-950 text-green-400 rounded font-mono light:bg-green-50 light:text-green-700">+{{ diffResult.added.length }}</span>
-              <span v-if="diffResult.changed.length" class="px-1.5 py-0.5 bg-yellow-950 text-yellow-400 rounded font-mono light:bg-yellow-50 light:text-yellow-700">~{{ diffResult.changed.length }}</span>
-              <span v-if="diffResult.missing.length" class="px-1.5 py-0.5 bg-red-950 text-red-400 rounded font-mono light:bg-red-50 light:text-red-700">-{{ diffResult.missing.length }}</span>
-              <span v-if="diffResult.unchanged.length" class="px-1.5 py-0.5 bg-gray-800 text-gray-500 rounded font-mono light:bg-gray-100 light:text-gray-500">={{ diffResult.unchanged.length }}</span>
+              <button
+                v-if="diffResult.added.length"
+                type="button"
+                class="px-1.5 py-0.5 rounded font-mono text-xs transition cursor-pointer"
+                :class="onlyAddedSelected ? 'bg-green-700 text-white ring-1 ring-green-400' : 'bg-green-950 text-green-400 hover:bg-green-900 light:bg-green-50 light:text-green-700 light:hover:bg-green-100'"
+                :title="t('compareModal.filterAdded')"
+                @click="selectOnlyAdded"
+              >+{{ diffResult.added.length }}</button>
+              <button
+                v-if="diffResult.changed.length"
+                type="button"
+                class="px-1.5 py-0.5 rounded font-mono text-xs transition cursor-pointer"
+                :class="onlyChangedSelected ? 'bg-yellow-600 text-white ring-1 ring-yellow-400' : 'bg-yellow-950 text-yellow-400 hover:bg-yellow-900 light:bg-yellow-50 light:text-yellow-700 light:hover:bg-yellow-100'"
+                :title="t('compareModal.filterChanged')"
+                @click="selectOnlyChanged"
+              >~{{ diffResult.changed.length }}</button>
+              <button
+                v-if="diffResult.missing.length"
+                type="button"
+                class="px-1.5 py-0.5 rounded font-mono text-xs transition cursor-pointer bg-red-950 text-red-400 hover:bg-red-900 light:bg-red-50 light:text-red-700 light:hover:bg-red-100"
+                :title="t('compareModal.filterMissing')"
+                @click="selectNone"
+              >-{{ diffResult.missing.length }}</button>
+              <button
+                v-if="diffResult.unchanged.length"
+                type="button"
+                class="px-1.5 py-0.5 rounded font-mono text-xs transition cursor-pointer"
+                :class="showUnchanged ? 'bg-gray-600 text-white ring-1 ring-gray-400' : 'bg-gray-800 text-gray-500 hover:bg-gray-700 hover:text-gray-300 light:bg-gray-100 light:text-gray-500 light:hover:bg-gray-200'"
+                :title="t('compareModal.filterUnchanged')"
+                @click="showUnchanged = !showUnchanged"
+              >={{ diffResult.unchanged.length }}</button>
             </div>
           </div>
 

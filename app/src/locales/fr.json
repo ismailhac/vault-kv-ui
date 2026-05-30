@@ -729,5 +729,9 @@
   "compareModal.prodConfirmTitle": "Vous écrivez vers un chemin de production",
   "compareModal.prodConfirmBody": "{n} clé(s) vont être écrites. Cette action est irréversible.",
   "compareModal.prodConfirmCancel": "Annuler",
-  "compareModal.prodConfirmOk": "Oui, écrire en production"
+  "compareModal.prodConfirmOk": "Oui, écrire en production",
+  "compareModal.filterAdded": "Sélectionner uniquement les ajouts",
+  "compareModal.filterChanged": "Sélectionner uniquement les modifications",
+  "compareModal.filterMissing": "Désélectionner tout (voir les manquants)",
+  "compareModal.filterUnchanged": "Afficher / masquer les identiques"
 }
