@@ -68,7 +68,9 @@ const compareError = ref<string | null>(null)
 const targetIsProd = computed(() => targetPath.value.trim() !== '' && pathIsProd(targetPath.value.trim()))
 
 // ── Step 2 — Diff result ──
-type DiffItem = { key: string; source_value?: string; target_value?: string }
+// path: original key path array from the nested structure (e.g. ["api","key3"]).
+// Needed to reconstruct the nested object on write-back without ambiguity.
+type DiffItem = { key: string; path: string[]; source_value?: string; target_value?: string }
 
 const diffResult = ref<{
   source_path: string
@@ -77,7 +79,8 @@ const diffResult = ref<{
   missing: DiffItem[]
   changed: DiffItem[]
   unchanged: DiffItem[]
-  target_data: Record<string, string>
+  target_data: Record<string, string>   // flat — for ConfirmDiffModal display only
+  target_raw: Record<string, unknown>   // original nested — used for write-back
 } | null>(null)
 
 const showUnchanged = ref(false)
@@ -152,16 +155,39 @@ function confirmProdAndProceed() {
   showConfirm.value = true
 }
 
+// Set a value at a nested path inside a cloned object.
+// Uses the path[] array from the diff item — never splits on '.' — so literal dot
+// keys ("spring.datasource.url" as a top-level key) are handled correctly.
+function setNestedPath(obj: Record<string, unknown>, path: string[], value: string): void {
+  if (path.length === 0) return
+  if (path.length === 1) { obj[path[0]] = value; return }
+  const [head, ...rest] = path
+  if (!obj[head] || typeof obj[head] !== 'object' || Array.isArray(obj[head])) obj[head] = {}
+  setNestedPath(obj[head] as Record<string, unknown>, rest, value)
+}
+
 const confirmBefore = computed(() => diffResult.value?.target_data ?? {})
+
+// Flat version — for ConfirmDiffModal display only (before/after diff table)
 const confirmAfter = computed(() => {
   if (!diffResult.value) return {}
   const merged: Record<string, string> = { ...(diffResult.value.target_data ?? {}) }
   for (const item of [...(diffResult.value.added ?? []), ...(diffResult.value.changed ?? [])]) {
-    if (selectedKeys.value.has(item.key)) {
-      merged[item.key] = item.source_value ?? ''
-    }
+    if (selectedKeys.value.has(item.key)) merged[item.key] = item.source_value ?? ''
   }
   return merged
+})
+
+// Nested version — what actually gets written to Vault, preserving original structure
+const confirmAfterRaw = computed(() => {
+  if (!diffResult.value) return {}
+  const result: Record<string, unknown> = JSON.parse(JSON.stringify(diffResult.value.target_raw ?? {}))
+  for (const item of [...(diffResult.value.added ?? []), ...(diffResult.value.changed ?? [])]) {
+    if (selectedKeys.value.has(item.key)) {
+      setNestedPath(result, item.path?.length ? item.path : [item.key], item.source_value ?? '')
+    }
+  }
+  return result
 })
 
 // ── Step 4 — Success ──
@@ -225,9 +251,8 @@ async function applyWrite() {
   showConfirm.value = false
   writeError.value = null
   const tgt = diffResult.value?.target_path ?? targetPath.value.trim()
-  const data = confirmAfter.value
   try {
-    await vault.writeSecret(tgt, data)
+    await vault.writeSecret(tgt, confirmAfterRaw.value as Record<string, string>)
     writtenCount.value = selectedKeys.value.size
     step.value = 4
   } catch (e: unknown) {

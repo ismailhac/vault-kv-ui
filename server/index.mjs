@@ -436,11 +436,44 @@ app.get('/api/kv/dump', async (req, res) => {
   }
 })
 
+// flattenForCompare — like flattenSecretData but tracks the original key path array.
+// Each entry is { value: string, path: string[] } where path is the array of original
+// property names needed to reconstruct the nested structure (e.g. ["api","key3"]).
+// This prevents the "literal dot key vs nested path" ambiguity when writing back.
+function flattenForCompare(obj, pathArray = []) {
+  const entries = {}
+  for (const [k, v] of Object.entries(obj)) {
+    const path = [...pathArray, k]
+    const flatKey = path.join('.')
+    if (Array.isArray(v)) {
+      entries[flatKey] = { value: JSON.stringify(v), path }
+    } else if (v !== null && typeof v === 'object') {
+      Object.assign(entries, flattenForCompare(v, path))
+    } else if (typeof v === 'string') {
+      const trimmed = v.trim()
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          const parsed = JSON.parse(trimmed)
+          if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            Object.assign(entries, flattenForCompare(parsed, path))
+            continue
+          }
+        } catch {}
+      }
+      entries[flatKey] = { value: v, path }
+    } else {
+      entries[flatKey] = { value: String(v ?? ''), path }
+    }
+  }
+  return entries
+}
+
 // POST /api/kv/compare  body: { source_path, target_path, mount, namespace }
 // Read-only diff — does not write anything.
-// Returns { added, missing, changed, unchanged, target_data } where each bucket
-// is an array of { key, source_value?, target_value? } and target_data is the
-// full Record<string,string> of the target path (for ConfirmDiffModal before-state).
+// Returns:
+//   added/missing/changed/unchanged — flat diff for display; each item has { key, path, source_value?, target_value? }
+//   target_data  — flat Record<string,string> of target (for ConfirmDiffModal before-state display)
+//   target_raw   — original nested target data (used by frontend to reconstruct nested structure on write)
 app.post('/api/kv/compare', async (req, res) => {
   const namespace = getNamespace(req)
   const token = resolveToken(namespace)
@@ -455,35 +488,34 @@ app.post('/api/kv/compare', async (req, res) => {
     if (srcResult.status === 404) return res.status(404).json({ error: 'Source path not found' })
     if (srcResult.status === 403) return res.status(403).json({ error: 'Access denied to source path' })
     if (srcResult.status !== 200) return res.status(502).json({ error: `Vault returned ${srcResult.status} for source path` })
-
-    const sourceData = flattenSecretData(srcResult.body.data?.data ?? {})
-    // 404 on target is OK — means all source keys are "added"
-    const targetData = flattenSecretData((tgtResult.status === 200) ? (tgtResult.body.data?.data ?? {}) : {})
     if (tgtResult.status !== 200 && tgtResult.status !== 404) {
       return res.status(502).json({ error: `Vault returned ${tgtResult.status} for target path` })
     }
 
-    const allKeys = new Set([...Object.keys(sourceData), ...Object.keys(targetData)])
-    const added = []
-    const missing = []
-    const changed = []
-    const unchanged = []
+    const targetRaw = (tgtResult.status === 200) ? (tgtResult.body.data?.data ?? {}) : {}
+    const srcEntries = flattenForCompare(srcResult.body.data?.data ?? {})
+    const tgtEntries = flattenForCompare(targetRaw)
+
+    const allKeys = new Set([...Object.keys(srcEntries), ...Object.keys(tgtEntries)])
+    const added = [], missing = [], changed = [], unchanged = []
 
     for (const key of [...allKeys].sort()) {
-      const inSource = Object.prototype.hasOwnProperty.call(sourceData, key)
-      const inTarget = Object.prototype.hasOwnProperty.call(targetData, key)
-      if (inSource && !inTarget) {
-        added.push({ key, source_value: sourceData[key] })
-      } else if (!inSource && inTarget) {
-        missing.push({ key, target_value: targetData[key] })
-      } else if (sourceData[key] !== targetData[key]) {
-        changed.push({ key, source_value: sourceData[key], target_value: targetData[key] })
+      const src = srcEntries[key]
+      const tgt = tgtEntries[key]
+      const path = src?.path ?? tgt?.path ?? [key]
+      if (src && !tgt) {
+        added.push({ key, path, source_value: src.value })
+      } else if (!src && tgt) {
+        missing.push({ key, path, target_value: tgt.value })
+      } else if (src.value !== tgt.value) {
+        changed.push({ key, path, source_value: src.value, target_value: tgt.value })
       } else {
-        unchanged.push({ key, source_value: sourceData[key], target_value: targetData[key] })
+        unchanged.push({ key, path, source_value: src.value, target_value: tgt.value })
       }
     }
 
-    res.json({ source_path, target_path, added, missing, changed, unchanged, target_data: targetData })
+    const targetFlat = Object.fromEntries(Object.entries(tgtEntries).map(([k, v]) => [k, v.value]))
+    res.json({ source_path, target_path, added, missing, changed, unchanged, target_data: targetFlat, target_raw: targetRaw })
   } catch (e) {
     res.status(502).json({ error: `Vault injoignable: ${e.message}` })
   }
