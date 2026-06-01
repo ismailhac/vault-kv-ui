@@ -258,3 +258,56 @@ export function uninstallService() {
   else if (p === 'win32') uninstallWindows()
   else { console.error(`  Unsupported platform: ${p}`); process.exit(1) }
 }
+
+export function restartService() {
+  console.log('\n[Vault Admin] Restarting background service...\n')
+  const p = platform()
+
+  if (p === 'linux') {
+    if (!existsSync(SYSTEMD_FILE)) {
+      console.error('  ✗ Service is not installed. Run: vault-admin --install-service')
+      process.exit(1)
+    }
+    if (tryRun('systemctl --user restart vault-admin')) {
+      console.log('  ✓ Service restarted')
+      console.log(`  Open: http://localhost:${PORT}\n`)
+    } else {
+      console.error('  ✗ Restart failed — run manually: systemctl --user restart vault-admin')
+      process.exit(1)
+    }
+
+  } else if (p === 'darwin') {
+    if (!existsSync(PLIST_FILE)) {
+      console.error('  ✗ Service is not installed. Run: vault-admin --install-service')
+      process.exit(1)
+    }
+    tryRun(`launchctl unload "${PLIST_FILE}"`)
+    if (tryRun(`launchctl load "${PLIST_FILE}"`)) {
+      console.log('  ✓ Service restarted')
+      console.log(`  Open: http://localhost:${PORT}\n`)
+    } else {
+      console.error(`  ✗ Restart failed — run manually: launchctl unload "${PLIST_FILE}" && launchctl load "${PLIST_FILE}"`)
+      process.exit(1)
+    }
+
+  } else if (p === 'win32') {
+    const taskExists = tryRun(
+      'powershell -NoProfile -Command "Get-ScheduledTask -TaskName VaultAdmin -ErrorAction Stop | Out-Null"'
+    )
+    if (!taskExists) {
+      console.error('  ✗ Service is not installed. Run: vault-admin --install-service')
+      process.exit(1)
+    }
+    if (tryRun('powershell -NoProfile -ExecutionPolicy Bypass -Command "Stop-ScheduledTask -TaskName VaultAdmin -ErrorAction SilentlyContinue; Start-ScheduledTask -TaskName VaultAdmin"')) {
+      console.log('  ✓ Service restarted')
+      console.log(`  Open: http://localhost:${PORT}\n`)
+    } else {
+      console.error('  ✗ Restart failed — run manually: Stop-ScheduledTask -TaskName VaultAdmin; Start-ScheduledTask -TaskName VaultAdmin')
+      process.exit(1)
+    }
+
+  } else {
+    console.error(`  Unsupported platform: ${p}`)
+    process.exit(1)
+  }
+}

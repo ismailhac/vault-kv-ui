@@ -33,6 +33,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     'Options:',
     '  --install-service    Install as a background service (auto-starts at login)',
     '  --uninstall-service  Remove the background service',
+    '  --restart-service    Restart the background service (picks up BFF updates)',
     '  --version, -v        Print version and exit',
     '  --help, -h           Show this help',
     '',
@@ -55,6 +56,12 @@ if (process.argv.includes('--install-service')) {
 if (process.argv.includes('--uninstall-service')) {
   const { uninstallService } = await import(pathToFileURL(join(__dirname, 'service.mjs')).href)
   uninstallService()
+  process.exit(0)
+}
+
+if (process.argv.includes('--restart-service')) {
+  const { restartService } = await import(pathToFileURL(join(__dirname, 'service.mjs')).href)
+  restartService()
   process.exit(0)
 }
 
