@@ -73,15 +73,47 @@ function restore() {
   expandedVersion.value = null
 }
 
+// Flatten nested objects and JSON-string values to dot-notation leaf keys for diff display.
+// Mirrors flattenSecretData on the BFF — handles actual objects, JSON strings, and arrays.
+function flattenForDiff(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
+  const result: Record<string, string> = {}
+  for (const [k, v] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${k}` : k
+    if (Array.isArray(v)) {
+      result[fullKey] = JSON.stringify(v)
+    } else if (v !== null && typeof v === 'object') {
+      Object.assign(result, flattenForDiff(v as Record<string, unknown>, fullKey))
+    } else if (typeof v === 'string') {
+      const trimmed = v.trim()
+      let expanded = false
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed)
+          if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            Object.assign(result, flattenForDiff(parsed as Record<string, unknown>, fullKey))
+            expanded = true
+          }
+        } catch {}
+      }
+      if (!expanded) result[fullKey] = v
+    } else {
+      result[fullKey] = String(v ?? '')
+    }
+  }
+  return result
+}
+
 // Diff between the expanded historical version and current
 type DiffStatus = 'unchanged' | 'modified' | 'added' | 'removed'
 type DiffLine = { key: string; historical: string | undefined; current: string | undefined; status: DiffStatus }
 
 const diffLines = computed<DiffLine[]>(() => {
-  const allKeys = new Set([...Object.keys(expandedVersionData.value), ...Object.keys(props.currentData)])
+  const flatHistorical = flattenForDiff(expandedVersionData.value as Record<string, unknown>)
+  const flatCurrent = flattenForDiff(props.currentData as Record<string, unknown>)
+  const allKeys = new Set([...Object.keys(flatHistorical), ...Object.keys(flatCurrent)])
   return [...allKeys].sort().map(key => {
-    const h = expandedVersionData.value[key]
-    const c = props.currentData[key]
+    const h = flatHistorical[key]
+    const c = flatCurrent[key]
     let status: DiffStatus = 'unchanged'
     if (h === undefined) status = 'added'
     else if (c === undefined) status = 'removed'
@@ -197,13 +229,13 @@ function rowClass(status: DiffStatus) {
 
                 <!-- Historical version: diff table -->
                 <template v-else>
-                  <table class="w-full text-xs font-mono border-collapse">
+                  <table class="w-full text-xs font-mono border-collapse table-fixed">
                     <thead>
                       <tr class="text-gray-600 uppercase text-left border-b border-gray-700 light:border-gray-200 light:text-gray-500">
-                        <th class="pb-1.5 px-3 w-1/4 font-medium">{{ t('versionTimeline.keyHeader') }}</th>
-                        <th class="pb-1.5 pr-3 font-medium">{{ t('versionTimeline.thisVersionHeader') }}</th>
-                        <th class="pb-1.5 pr-3 font-medium">{{ t('versionTimeline.currentVersionHeader') }}</th>
-                        <th class="pb-1.5 px-3 text-right font-medium">Δ</th>
+                        <th class="pb-1.5 px-3 w-[35%] font-medium">{{ t('versionTimeline.keyHeader') }}</th>
+                        <th class="pb-1.5 pr-3 w-[29%] font-medium">{{ t('versionTimeline.thisVersionHeader') }}</th>
+                        <th class="pb-1.5 pr-3 w-[29%] font-medium">{{ t('versionTimeline.currentVersionHeader') }}</th>
+                        <th class="pb-1.5 px-3 w-6 text-right font-medium">Δ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -213,7 +245,7 @@ function rowClass(status: DiffStatus) {
                         class="border-b border-gray-800 last:border-0 light:border-gray-200"
                         :class="rowClass(line.status)"
                       >
-                        <td class="py-1.5 px-3 font-semibold break-all">{{ line.key }}</td>
+                        <td class="py-1.5 px-3 font-semibold max-w-0 truncate" :title="line.key">{{ line.key }}</td>
                         <td class="py-1.5 pr-3 break-all opacity-90">
                           <span v-if="line.historical !== undefined">{{ line.historical }}</span>
                           <span v-else class="italic opacity-40">—</span>
