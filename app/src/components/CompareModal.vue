@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
+import NestedJsonField from './NestedJsonField.vue'
 
 const { t } = useI18n()
+const props = defineProps<{ initialSource?: string; initialTarget?: string }>()
 const emit = defineEmits<{ close: [] }>()
 const vault = useVaultStore()
 
@@ -60,12 +62,62 @@ const filteredPaths = computed(() =>
 )
 
 // ── Step 1 — Path inputs ──
-const sourcePath = ref(vault.currentPath)
-const targetPath = ref('')
+const sourcePath = ref(props.initialSource ?? vault.currentPath)
+const targetPath = ref(props.initialTarget ?? '')
 const comparing = ref(false)
 const compareError = ref<string | null>(null)
 
 const targetIsProd = computed(() => targetPath.value.trim() !== '' && pathIsProd(targetPath.value.trim()))
+
+// ── Nested value detection (same as SecretPanel) ──
+function parseJsonValue(val: unknown): { isNested: boolean; parsed: unknown } {
+  if (val !== null && typeof val === 'object') return { isNested: true, parsed: val }
+  if (typeof val === 'string') {
+    const trimmed = val.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const p = JSON.parse(trimmed)
+        if (typeof p === 'object' && p !== null) return { isNested: true, parsed: p }
+      } catch {}
+    }
+  }
+  return { isNested: false, parsed: val }
+}
+
+// ── Source preview ──
+const sourceExpanded = ref(false)
+const sourceData = ref<Record<string, string> | null>(null)
+const sourceLoading = ref(false)
+const sourceRevealAll = ref(false)
+const sourceCopiedKey = ref<string | null>(null)
+
+watch(sourcePath, () => {
+  sourceExpanded.value = false
+  sourceData.value = null
+  sourceRevealAll.value = false
+})
+
+async function toggleSourceExpand() {
+  if (!sourcePath.value) return
+  if (sourceExpanded.value) { sourceExpanded.value = false; return }
+  if (!sourceData.value) {
+    sourceLoading.value = true
+    try {
+      const params = new URLSearchParams({ path: sourcePath.value, mount: vault.currentMount, namespace: vault.currentNamespace })
+      const res = await fetch(`/api/kv/read?${params}`)
+      const json = await res.json()
+      sourceData.value = res.ok ? (json.data ?? {}) : {}
+    } catch { sourceData.value = {} }
+    finally { sourceLoading.value = false }
+  }
+  sourceExpanded.value = true
+}
+
+async function copySourceKey(key: string, value: string) {
+  await navigator.clipboard.writeText(value)
+  sourceCopiedKey.value = key
+  setTimeout(() => { if (sourceCopiedKey.value === key) sourceCopiedKey.value = null }, 2000)
+}
 
 // ── Step 2 — Diff result ──
 // path: original key path array from the nested structure (e.g. ["api","key3"]).
@@ -277,6 +329,8 @@ function goToTarget() {
   emit('close')
 }
 
+const showHowTo = ref(false)
+
 const STEP_LABELS = computed<Record<number, string>>(() => ({
   1: t('compareModal.step1'),
   2: t('compareModal.step2'),
@@ -299,6 +353,14 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
       <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700 shrink-0 light:border-gray-200">
         <div class="flex items-center gap-3">
           <span class="text-white font-semibold text-sm light:text-black">{{ t('compareModal.title') }}</span>
+          <button
+            v-if="step === 1 && !loadingPaths"
+            type="button"
+            class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold transition"
+            :class="showHowTo ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-300 border border-gray-600 hover:border-gray-400 light:text-gray-400 light:hover:text-gray-600 light:border-gray-300'"
+            :title="t('compareModal.howToTitle')"
+            @click="showHowTo = !showHowTo"
+          >i</button>
           <span class="text-gray-600 text-xs">·</span>
           <span class="text-gray-500 text-xs light:text-gray-600">{{ t('compareModal.mount') }} <span class="text-green-400">{{ vault.currentMount }}</span></span>
         </div>
@@ -327,6 +389,34 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
         <!-- ── STEP 1 — Path selector ── -->
         <div v-if="step === 1" class="space-y-4">
 
+          <!-- Loading state: spinner + how-to -->
+          <div v-if="loadingPaths" class="flex flex-col items-center py-8 gap-6">
+            <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-full space-y-3 text-xs text-gray-500">
+              <div class="border border-gray-700 rounded-lg px-4 py-3 space-y-2.5 light:border-gray-200">
+                <p class="text-gray-400 font-medium light:text-gray-600">{{ t('compareModal.howToTitle') }}</p>
+                <div v-for="(step, i) in [t('compareModal.howToStep1'), t('compareModal.howToStep2'), t('compareModal.howToStep3'), t('compareModal.howToStep4')]" :key="i" class="flex items-start gap-2">
+                  <span class="shrink-0 w-5 h-5 rounded-full bg-gray-800 text-gray-400 text-[10px] flex items-center justify-center font-semibold light:bg-gray-100 light:text-gray-600">{{ i + 1 }}</span>
+                  <span class="light:text-gray-500">{{ step }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <template v-else>
+
+          <!-- How-to card (toggled via ℹ icon) -->
+          <div v-if="showHowTo" class="border border-blue-800/50 bg-blue-950/20 rounded-lg px-4 py-3 space-y-2.5 text-xs text-gray-400 light:border-blue-200 light:bg-blue-50 light:text-gray-500">
+            <div class="flex items-center justify-between">
+              <p class="text-blue-300 font-medium light:text-blue-700">{{ t('compareModal.howToTitle') }}</p>
+              <button type="button" class="text-gray-600 hover:text-gray-400 light:text-gray-400 light:hover:text-gray-600" @click="showHowTo = false">✕</button>
+            </div>
+            <div v-for="(s, i) in [t('compareModal.howToStep1'), t('compareModal.howToStep2'), t('compareModal.howToStep3'), t('compareModal.howToStep4')]" :key="i" class="flex items-start gap-2">
+              <span class="shrink-0 w-5 h-5 rounded-full bg-gray-800 text-gray-400 text-[10px] flex items-center justify-center font-semibold light:bg-gray-100 light:text-gray-600">{{ i + 1 }}</span>
+              <span>{{ s }}</span>
+            </div>
+          </div>
+
           <!-- Paths loading error -->
           <div v-if="pathsError" class="text-amber-400 text-xs px-3 py-2 bg-amber-950/40 border border-amber-800/50 rounded light:bg-amber-50 light:border-amber-300 light:text-amber-700">
             ⚠ {{ pathsError }}
@@ -349,7 +439,7 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
           </div>
 
           <!-- Source path -->
-          <div>
+          <div class="space-y-1">
             <label class="text-gray-400 text-xs mb-1.5 block light:text-gray-600">{{ t('compareModal.sourcePath') }}</label>
             <div class="flex gap-2">
               <select
@@ -367,6 +457,74 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
                 :title="t('compareModal.refreshPaths')"
                 @click="loadAvailablePaths"
               >🔄</button>
+              <!-- Expand source preview -->
+              <button
+                v-if="sourcePath"
+                type="button"
+                class="px-2.5 py-2 text-sm bg-gray-800 border border-gray-700 text-gray-400 rounded hover:bg-gray-700 hover:text-gray-200 transition light:bg-gray-100 light:border-gray-300 light:text-gray-600 light:hover:bg-gray-200"
+                :title="t('compareModal.sourcePreviewToggle')"
+                :disabled="sourceLoading"
+                @click="toggleSourceExpand"
+              >
+                <svg v-if="sourceLoading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 animate-spin"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                <svg v-else-if="sourceExpanded" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+              </button>
+            </div>
+
+            <!-- Source preview panel -->
+            <div v-if="sourceExpanded && sourceData" class="border border-gray-700 rounded overflow-hidden light:border-gray-200">
+              <div class="flex items-center justify-between px-3 py-1.5 bg-gray-800/60 border-b border-gray-700 light:bg-gray-50 light:border-gray-200">
+                <span class="text-xs text-gray-500 font-mono light:text-gray-500">{{ Object.keys(sourceData).length }} {{ t('compareModal.sourcePreviewKeys') }}</span>
+                <button
+                  type="button"
+                  class="text-xs text-gray-500 hover:text-gray-300 transition light:text-gray-600 light:hover:text-gray-800"
+                  @click="sourceRevealAll = !sourceRevealAll"
+                >{{ sourceRevealAll ? t('compareModal.sourceHideAll') : t('compareModal.sourceRevealAll') }}</button>
+              </div>
+              <div v-if="Object.keys(sourceData).length === 0" class="px-3 py-3 text-xs text-gray-600 text-center light:text-gray-400">
+                {{ t('compareModal.sourcePreviewEmpty') }}
+              </div>
+              <table v-else class="w-full text-xs font-mono table-fixed">
+                <tbody>
+                  <template v-for="[key, value] in Object.entries(sourceData)" :key="key">
+
+                    <!-- Nested JSON value: reuse NestedJsonField (read-only) -->
+                    <NestedJsonField
+                      v-if="parseJsonValue(value).isNested"
+                      :value="parseJsonValue(value).parsed"
+                      :key-name="key"
+                      :depth="0"
+                      :editing-allowed="false"
+                    />
+
+                    <!-- Plain scalar value -->
+                    <tr
+                      v-else
+                      class="border-b border-gray-800 last:border-0 hover:bg-gray-800/40 transition light:border-gray-100 light:hover:bg-gray-50"
+                    >
+                      <td class="px-3 py-1.5 w-[40%] text-blue-300 font-semibold truncate light:text-blue-700" :title="key">{{ key }}</td>
+                      <td class="px-3 py-1.5 text-gray-300 break-all light:text-gray-700">
+                        <span v-if="sourceRevealAll">{{ value }}</span>
+                        <span v-else class="text-gray-600 select-none tracking-widest light:text-gray-400">••••••••</span>
+                      </td>
+                      <td class="px-3 py-1.5 w-8 text-right">
+                        <button
+                          type="button"
+                          class="transition"
+                          :class="sourceCopiedKey === key ? 'text-green-400 light:text-green-600' : 'text-gray-600 hover:text-gray-300 light:text-gray-400 light:hover:text-gray-600'"
+                          :title="t('compareModal.copyValue')"
+                          @click="copySourceKey(key, String(value))"
+                        >
+                          <svg v-if="sourceCopiedKey === key" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                        </button>
+                      </td>
+                    </tr>
+
+                  </template>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -396,6 +554,7 @@ const canCopy = computed(() => selectedKeys.value.size > 0 && vault.editingEnabl
             ⚠ {{ compareError }}
           </div>
 
+          </template><!-- end v-else (paths loaded) -->
         </div>
 
         <!-- ── STEP 2 — Diff table ── -->

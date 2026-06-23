@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.0] — 2026-06-23
+
+### Features
+- create-secret-propagation: CreateSecretModal overhaul with dump-based path selection, nested JSON values, and propagation section with conflict detection; CompareModal gains initialSource/initialTarget props, source preview panel, and "How it works" section; BrowserView adds copy-current-path button and onOpenCompare handler; 54 new i18n keys in en/fr
+
 ## [1.9.0] — 2026-05-30
 
 ### Features
