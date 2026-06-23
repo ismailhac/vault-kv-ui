@@ -200,6 +200,53 @@ function removeRow(i: number) {
   else formRows.value[0] = { key: '', value: '', valueMode: 'scalar', jsonError: null }
 }
 
+// ── Nested key helpers ──
+function setDeep(obj: Record<string, unknown>, path: string[], value: unknown): void {
+  const [head, ...rest] = path
+  if (!rest.length) { obj[head] = value; return }
+  if (typeof obj[head] !== 'object' || obj[head] === null) obj[head] = {}
+  setDeep(obj[head] as Record<string, unknown>, rest, value)
+}
+
+function injectDottedKey(result: Record<string, unknown>, dotKey: string, value: unknown): void {
+  const parts = dotKey.split('.')
+  const topKey = parts[0]
+  if (parts.length === 1) { result[topKey] = value; return }
+  let current: unknown = topKey in result ? result[topKey] : {}
+  if (typeof current === 'string') { try { current = JSON.parse(current) } catch { current = {} } }
+  const cloned: Record<string, unknown> = typeof current === 'object' && current !== null
+    ? JSON.parse(JSON.stringify(current)) : {}
+  setDeep(cloned, parts.slice(1), value)
+  result[topKey] = JSON.stringify(cloned)
+}
+
+function mergeRowsIntoExisting(base: Record<string, string>, rows: FormRow[]): Record<string, string> {
+  const result: Record<string, unknown> = { ...base }
+  for (const row of rows.filter(r => r.key.trim())) {
+    const val: unknown = row.valueMode === 'json'
+      ? (() => { try { return JSON.parse(row.value) } catch { return row.value } })()
+      : row.value
+    injectDottedKey(result, row.key.trim(), val)
+  }
+  return Object.fromEntries(
+    Object.entries(result).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+  ) as Record<string, string>
+}
+
+function hasNestedKey(data: Record<string, string>, dotKey: string): boolean {
+  const parts = dotKey.split('.')
+  const topKey = parts[0]
+  if (!(topKey in data)) return false
+  if (parts.length === 1) return true
+  let current: unknown = data[topKey]
+  if (typeof current === 'string') { try { current = JSON.parse(current) } catch { return false } }
+  for (const part of parts.slice(1)) {
+    if (typeof current !== 'object' || current === null || !(part in (current as Record<string, unknown>))) return false
+    current = (current as Record<string, unknown>)[part]
+  }
+  return true
+}
+
 // ── Propagation: sibling list ──
 const propOpen = ref(false)
 const includeProd = ref(false)
@@ -319,7 +366,7 @@ async function runConflictScan() {
     siblingStatuses.value.map(async (s) => {
       const data = await fetchSecretData(s.path)
       s.data = data
-      s.conflictKeys = data ? newKeys.filter(k => k in data) : []
+      s.conflictKeys = data ? newKeys.filter(k => hasNestedKey(data, k)) : []
     })
   )
   propView.value = 'diff'
@@ -333,15 +380,15 @@ function toggleClean(path: string) {
 }
 
 async function applyPropagation() {
-  const newData = parsedData.value ?? {}
+  const rows = formRows.value.filter(r => r.key.trim())
   propView.value = 'results'
   await Promise.all(
     cleanSiblings.value
       .filter(s => selectedClean.value.has(s.path))
       .map(async (s) => {
         try {
-          const merged = { ...(s.data ?? {}), ...newData }
-          await vault.writeSecret(s.path, merged as Record<string, string>)
+          const merged = mergeRowsIntoExisting(s.data ?? {}, rows)
+          await vault.writeSecret(s.path, merged)
           s.writeResult = 'ok'
         } catch (e: unknown) {
           s.writeResult = 'error'
@@ -384,7 +431,14 @@ async function confirmCreate() {
   saving.value = true
   saveError.value = null
   try {
-    await vault.writeSecret(fullPath.value, parsedData.value)
+    let writeData: Record<string, string>
+    if (mode.value === 'form' && pathMode.value === 'select' && selectedExistingPath.value) {
+      const existing = await fetchSecretData(selectedExistingPath.value) ?? {}
+      writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim()))
+    } else {
+      writeData = parsedData.value
+    }
+    await vault.writeSecret(fullPath.value, writeData)
     const hasPropagation = propOpen.value && activePropCount.value > 0
     await vault.listPath(vault.currentPath)
     if (hasPropagation) {
