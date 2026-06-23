@@ -75,7 +75,7 @@ function parseJsonValue(val: unknown): { isNested: boolean; parsed: unknown } {
 
 // ── Form state ──
 type Mode = 'form' | 'json'
-type FormRow = { key: string; value: string; valueMode: 'scalar' | 'json'; jsonError: string | null }
+type FormRow = { key: string; value: string; valueMode: 'scalar' | 'number' | 'boolean' | 'json'; jsonError: string | null }
 const mode = ref<Mode>('form')
 type PathMode = 'select' | 'new'
 const pathMode = ref<PathMode>('select')
@@ -146,6 +146,13 @@ const parsedData = computed((): Record<string, string> | null => {
   return Object.fromEntries(rows.map(r => [r.key.trim(), r.value]))
 })
 
+function coerceRowValue(row: FormRow): unknown {
+  if (row.valueMode === 'json') { try { return JSON.parse(row.value) } catch { return row.value } }
+  if (row.valueMode === 'number') { const n = Number(row.value); return isNaN(n) ? row.value : n }
+  if (row.valueMode === 'boolean') return row.value === 'true'
+  return row.value
+}
+
 function validateJsonRow(row: FormRow) {
   if (row.valueMode !== 'json') { row.jsonError = null; return }
   try { JSON.parse(row.value || '{}'); row.jsonError = null }
@@ -153,8 +160,12 @@ function validateJsonRow(row: FormRow) {
 }
 
 function toggleRowMode(row: FormRow) {
-  row.valueMode = row.valueMode === 'scalar' ? 'json' : 'scalar'
-  if (row.valueMode === 'json' && !row.value.trim()) row.value = '{}'
+  const order: FormRow['valueMode'][] = ['scalar', 'number', 'boolean', 'json']
+  const next = order[(order.indexOf(row.valueMode) + 1) % order.length]
+  row.valueMode = next
+  if (next === 'json' && !row.value.trim()) row.value = '{}'
+  if (next === 'boolean') row.value = 'true'
+  if (next === 'number' && (row.value.trim() === '' || isNaN(Number(row.value)))) row.value = '0'
   validateJsonRow(row)
 }
 
@@ -165,23 +176,16 @@ function switchMode(m: Mode) {
     const rows = formRows.value.filter(r => r.key.trim())
     if (rows.length === 0) { jsonInput.value = '{\n  "KEY": "value"\n}'; mode.value = m; return }
     const obj: Record<string, unknown> = {}
-    for (const r of rows) {
-      if (r.valueMode === 'json') {
-        try { obj[r.key.trim()] = JSON.parse(r.value) }
-        catch { obj[r.key.trim()] = r.value }
-      } else {
-        obj[r.key.trim()] = r.value
-      }
-    }
+    for (const r of rows) obj[r.key.trim()] = coerceRowValue(r)
     jsonInput.value = JSON.stringify(obj, null, 2)
   } else {
     try {
       const parsed = JSON.parse(jsonInput.value)
       if (typeof parsed === 'object' && !Array.isArray(parsed) && parsed !== null && Object.keys(parsed).length > 0) {
         formRows.value = Object.entries(parsed).map(([key, value]) => {
-          if (typeof value === 'object' && value !== null) {
-            return { key, value: JSON.stringify(value, null, 2), valueMode: 'json' as const, jsonError: null }
-          }
+          if (typeof value === 'number') return { key, value: String(value), valueMode: 'number' as const, jsonError: null }
+          if (typeof value === 'boolean') return { key, value: String(value), valueMode: 'boolean' as const, jsonError: null }
+          if (typeof value === 'object' && value !== null) return { key, value: JSON.stringify(value, null, 2), valueMode: 'json' as const, jsonError: null }
           return { key, value: String(value), valueMode: 'scalar' as const, jsonError: null }
         })
       } else {
@@ -225,10 +229,7 @@ function injectDottedKey(result: Record<string, unknown>, dotKey: string, value:
 function mergeRowsIntoExisting(base: Record<string, unknown>, rows: FormRow[]): Record<string, unknown> {
   const result: Record<string, unknown> = { ...base }
   for (const row of rows.filter(r => r.key.trim())) {
-    const val: unknown = row.valueMode === 'json'
-      ? (() => { try { return JSON.parse(row.value) } catch { return row.value } })()
-      : row.value
-    injectDottedKey(result, row.key.trim(), val)
+    injectDottedKey(result, row.key.trim(), coerceRowValue(row))
   }
   return result
 }
@@ -435,6 +436,9 @@ async function confirmCreate() {
     if (mode.value === 'form' && pathMode.value === 'select' && selectedExistingPath.value) {
       const existing = (await fetchSecretData(selectedExistingPath.value) ?? {}) as Record<string, unknown>
       writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim())) as Record<string, string>
+    } else if (mode.value === 'form') {
+      const coerced = Object.fromEntries(formRows.value.filter(r => r.key.trim()).map(r => [r.key.trim(), coerceRowValue(r)]))
+      writeData = coerced as Record<string, string>
     } else {
       writeData = parsedData.value
     }
@@ -824,6 +828,32 @@ async function confirmCreate() {
                     @blur="validateJsonRow(row)"
                   />
                   <input
+                    v-else-if="row.valueMode === 'number'"
+                    v-model="row.value"
+                    type="number"
+                    step="any"
+                    class="flex-1 px-2 py-1.5 bg-gray-950 border border-gray-700 text-yellow-300 font-mono text-xs rounded focus:outline-none focus:border-yellow-600 placeholder-gray-700 light:bg-white light:border-gray-300 light:text-yellow-700"
+                    @keydown.enter="requestPreview"
+                  />
+                  <div v-else-if="row.valueMode === 'boolean'" class="flex-1 flex items-center gap-2 px-2 py-1.5">
+                    <button
+                      type="button"
+                      class="px-3 py-0.5 text-xs rounded font-mono font-bold transition border"
+                      :class="row.value === 'true'
+                        ? 'bg-green-800/60 border-green-600 text-green-300 light:bg-green-50 light:border-green-500 light:text-green-700'
+                        : 'bg-gray-800 border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-300 light:bg-gray-100 light:border-gray-300 light:text-gray-500'"
+                      @click="row.value = 'true'"
+                    >true</button>
+                    <button
+                      type="button"
+                      class="px-3 py-0.5 text-xs rounded font-mono font-bold transition border"
+                      :class="row.value === 'false'
+                        ? 'bg-red-900/60 border-red-700 text-red-300 light:bg-red-50 light:border-red-500 light:text-red-700'
+                        : 'bg-gray-800 border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-300 light:bg-gray-100 light:border-gray-300 light:text-gray-500'"
+                      @click="row.value = 'false'"
+                    >false</button>
+                  </div>
+                  <input
                     v-else
                     v-model="row.value"
                     :placeholder="t('createSecretModal.valuePlaceholder')"
@@ -833,12 +863,15 @@ async function confirmCreate() {
                   <button
                     type="button"
                     class="shrink-0 px-1.5 py-1 text-[10px] rounded border transition font-mono"
-                    :class="row.valueMode === 'json'
-                      ? 'border-blue-600 bg-blue-900/40 text-blue-300 hover:bg-blue-800/60 light:bg-blue-50 light:border-blue-400 light:text-blue-700'
-                      : 'border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-300 light:border-gray-300 light:text-gray-500 light:hover:text-gray-700'"
-                    :title="row.valueMode === 'scalar' ? t('createSecretModal.valueToggleJson') : t('createSecretModal.valueToggleScalar')"
+                    :class="{
+                      'border-blue-600 bg-blue-900/40 text-blue-300 hover:bg-blue-800/60 light:bg-blue-50 light:border-blue-400 light:text-blue-700': row.valueMode === 'json',
+                      'border-yellow-600 bg-yellow-900/30 text-yellow-300 hover:bg-yellow-800/40 light:bg-yellow-50 light:border-yellow-500 light:text-yellow-700': row.valueMode === 'number',
+                      'border-green-700 bg-green-900/30 text-green-300 hover:bg-green-800/40 light:bg-green-50 light:border-green-500 light:text-green-700': row.valueMode === 'boolean',
+                      'border-gray-600 text-gray-500 hover:border-gray-400 hover:text-gray-300 light:border-gray-300 light:text-gray-500 light:hover:text-gray-700': row.valueMode === 'scalar',
+                    }"
+                    :title="{ scalar: t('createSecretModal.valueToggleToNumber'), number: t('createSecretModal.valueToggleToBoolean'), boolean: t('createSecretModal.valueToggleToJson'), json: t('createSecretModal.valueToggleToScalar') }[row.valueMode]"
                     @click="toggleRowMode(row)"
-                  >{{ row.valueMode === 'json' ? 'Aa' : '{ }' }}</button>
+                  >{{ { scalar: 'Aa', number: '123', boolean: '◉', json: '{ }' }[row.valueMode] }}</button>
                 </div>
                 <button
                   type="button"

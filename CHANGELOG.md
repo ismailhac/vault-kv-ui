@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.3] — 2026-06-23
+
+### Features
+- create-secret-propagation: form rows now support 4 value modes (scalar, number, boolean, JSON); button cycles Aa → 123 → ◉ → { }; number and boolean values stored as native types in Vault
+
 ## [1.10.2] — 2026-06-23
 
 ### Fixes
