@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.4] — 2026-06-23
+
+### Features
+- create-secret-propagation: write-preview diff panel (LCS line-by-line JSON diff) shown after confirming a write to an existing path; user can rollback or proceed to propagation
+
 ## [1.10.3] — 2026-06-23
 
 ### Features

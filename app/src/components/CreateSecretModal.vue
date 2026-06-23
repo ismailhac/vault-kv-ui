@@ -338,7 +338,33 @@ type SiblingStatus = {
   writeResult: 'pending' | 'ok' | 'error'
   error?: string
 }
-type PropView = 'scanning' | 'diff' | 'results'
+type PropView = 'write-preview' | 'scanning' | 'diff' | 'results'
+type DiffLine = { text: string; type: 'added' | 'removed' | 'unchanged' }
+const writePreviewBefore = ref<Record<string, unknown> | null>(null)
+const writePreviewAfter = ref<Record<string, unknown> | null>(null)
+const writePreviewDiff = ref<DiffLine[]>([])
+
+function computeLineDiff(before: unknown, after: unknown): DiffLine[] {
+  const bLines = JSON.stringify(before, null, 2).split('\n')
+  const aLines = JSON.stringify(after, null, 2).split('\n')
+  const m = bLines.length, n = aLines.length
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = bLines[i-1] === aLines[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1])
+  const result: DiffLine[] = []
+  let i = m, j = n
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && bLines[i-1] === aLines[j-1]) {
+      result.unshift({ text: bLines[i-1], type: 'unchanged' }); i--; j--
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      result.unshift({ text: aLines[j-1], type: 'added' }); j--
+    } else {
+      result.unshift({ text: bLines[i-1], type: 'removed' }); i--
+    }
+  }
+  return result
+}
 
 const propView = ref<PropView | null>(null)
 const siblingStatuses = ref<SiblingStatus[]>([])
@@ -433,8 +459,10 @@ async function confirmCreate() {
   saveError.value = null
   try {
     let writeData: Record<string, string>
+    let existingBefore: Record<string, unknown> = {}
     if (mode.value === 'form' && pathMode.value === 'select' && selectedExistingPath.value) {
       const existing = (await fetchSecretData(selectedExistingPath.value) ?? {}) as Record<string, unknown>
+      existingBefore = existing
       writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim())) as Record<string, string>
     } else if (mode.value === 'form') {
       const coerced = Object.fromEntries(formRows.value.filter(r => r.key.trim()).map(r => [r.key.trim(), coerceRowValue(r)]))
@@ -443,10 +471,14 @@ async function confirmCreate() {
       writeData = parsedData.value
     }
     await vault.writeSecret(fullPath.value, writeData)
-    const hasPropagation = propOpen.value && activePropCount.value > 0
     await vault.listPath(vault.currentPath)
-    if (hasPropagation) {
-      saving.value = false
+    saving.value = false
+    if (pathMode.value === 'select' && selectedExistingPath.value) {
+      writePreviewBefore.value = existingBefore
+      writePreviewAfter.value = writeData as Record<string, unknown>
+      writePreviewDiff.value = computeLineDiff(existingBefore, writeData)
+      propView.value = 'write-preview'
+    } else if (propOpen.value && activePropCount.value > 0) {
       await runConflictScan()
     } else {
       emit('close')
@@ -456,12 +488,39 @@ async function confirmCreate() {
     saving.value = false
   }
 }
+
+async function rollbackWrite() {
+  if (!writePreviewBefore.value) return
+  saving.value = true
+  try {
+    await vault.writeSecret(fullPath.value, writePreviewBefore.value as Record<string, string>)
+    await vault.listPath(vault.currentPath)
+  } catch {}
+  saving.value = false
+  propView.value = null
+  writePreviewBefore.value = null
+  writePreviewAfter.value = null
+  writePreviewDiff.value = []
+}
+
+async function confirmWritePreview() {
+  const hasPropagation = propOpen.value && activePropCount.value > 0
+  propView.value = null
+  writePreviewBefore.value = null
+  writePreviewAfter.value = null
+  writePreviewDiff.value = []
+  if (hasPropagation) {
+    await runConflictScan()
+  } else {
+    emit('close')
+  }
+}
 </script>
 
 <template>
   <div
     class="fixed inset-0 bg-black/70 z-40 flex items-center justify-center p-4"
-    @click.self="!propView ? emit('close') : undefined"
+    @click.self="!propView || propView === 'results' ? emit('close') : undefined"
   >
     <div class="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl light:bg-white light:border-gray-200">
 
@@ -483,12 +542,37 @@ async function confirmCreate() {
           class="text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
           @click="emit('close')"
         >✕</button>
+        <span v-else-if="propView === 'write-preview'" class="text-xs text-gray-600 light:text-gray-400">{{ fullPath }}</span>
       </div>
 
       <div class="overflow-auto flex-1 px-5 py-4 space-y-4">
 
+        <!-- ── WRITE PREVIEW ── -->
+        <div v-if="propView === 'write-preview'" class="space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-green-400 text-lg">✓</span>
+            <span class="text-gray-200 font-semibold text-sm light:text-gray-800">{{ t('createSecretModal.writePreviewTitle') }}</span>
+          </div>
+          <p class="text-xs text-gray-500 light:text-gray-400">{{ t('createSecretModal.writePreviewSubtitle') }}</p>
+          <div class="border border-gray-700 rounded overflow-auto max-h-[60vh] bg-gray-950 light:bg-gray-50 light:border-gray-200">
+            <div
+              v-for="(line, idx) in writePreviewDiff"
+              :key="idx"
+              class="flex gap-2 px-3 py-0.5 font-mono text-xs leading-5 whitespace-pre"
+              :class="{
+                'bg-green-950/50 text-green-300 light:bg-green-50 light:text-green-800': line.type === 'added',
+                'bg-red-950/50 text-red-300 light:bg-red-50 light:text-red-700': line.type === 'removed',
+                'text-gray-500 light:text-gray-400': line.type === 'unchanged',
+              }"
+            >
+              <span class="shrink-0 w-3 select-none opacity-70">{{ line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' ' }}</span>
+              <span>{{ line.text }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- ── SCANNING ── -->
-        <div v-if="propView === 'scanning'" class="flex flex-col items-center py-10 gap-3">
+        <div v-else-if="propView === 'scanning'" class="flex flex-col items-center py-10 gap-3">
           <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           <span class="text-gray-400 text-sm">{{ t('createSecretModal.propagateScanTitle') }}</span>
         </div>
@@ -1003,9 +1087,25 @@ async function confirmCreate() {
         </template><!-- end form view -->
       </div>
 
+      <!-- Footer for write-preview -->
+      <div
+        v-if="propView === 'write-preview'"
+        class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0 light:border-gray-200"
+      >
+        <button
+          class="text-sm px-3 py-1.5 text-red-400 hover:text-red-300 border border-red-800 hover:border-red-600 rounded transition disabled:opacity-50 light:text-red-600 light:border-red-300 light:hover:border-red-500"
+          :disabled="saving"
+          @click="rollbackWrite"
+        >{{ t('createSecretModal.writePreviewRollback') }}</button>
+        <button
+          class="text-sm px-4 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold transition"
+          @click="confirmWritePreview"
+        >{{ propOpen && activePropCount > 0 ? t('createSecretModal.writePreviewPropagate') : t('createSecretModal.writePreviewClose') }}</button>
+      </div>
+
       <!-- Footer for diff view -->
       <div
-        v-if="propView === 'diff'"
+        v-else-if="propView === 'diff'"
         class="px-5 py-3 border-t border-gray-700 flex items-center justify-between shrink-0 light:border-gray-200"
       >
         <span class="text-xs text-gray-500 light:text-gray-400">
