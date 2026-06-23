@@ -212,15 +212,17 @@ function injectDottedKey(result: Record<string, unknown>, dotKey: string, value:
   const parts = dotKey.split('.')
   const topKey = parts[0]
   if (parts.length === 1) { result[topKey] = value; return }
-  let current: unknown = topKey in result ? result[topKey] : {}
-  if (typeof current === 'string') { try { current = JSON.parse(current) } catch { current = {} } }
+  const raw = topKey in result ? result[topKey] : {}
+  const wasString = typeof raw === 'string'
+  let current: unknown = wasString ? (() => { try { return JSON.parse(raw as string) } catch { return {} } })() : raw
   const cloned: Record<string, unknown> = typeof current === 'object' && current !== null
     ? JSON.parse(JSON.stringify(current)) : {}
   setDeep(cloned, parts.slice(1), value)
-  result[topKey] = JSON.stringify(cloned)
+  // Preserve original storage format: string-encoded JSON stays a string, native object stays an object
+  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
 }
 
-function mergeRowsIntoExisting(base: Record<string, string>, rows: FormRow[]): Record<string, string> {
+function mergeRowsIntoExisting(base: Record<string, unknown>, rows: FormRow[]): Record<string, unknown> {
   const result: Record<string, unknown> = { ...base }
   for (const row of rows.filter(r => r.key.trim())) {
     const val: unknown = row.valueMode === 'json'
@@ -228,9 +230,7 @@ function mergeRowsIntoExisting(base: Record<string, string>, rows: FormRow[]): R
       : row.value
     injectDottedKey(result, row.key.trim(), val)
   }
-  return Object.fromEntries(
-    Object.entries(result).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
-  ) as Record<string, string>
+  return result
 }
 
 function hasNestedKey(data: Record<string, string>, dotKey: string): boolean {
@@ -387,8 +387,8 @@ async function applyPropagation() {
       .filter(s => selectedClean.value.has(s.path))
       .map(async (s) => {
         try {
-          const merged = mergeRowsIntoExisting(s.data ?? {}, rows)
-          await vault.writeSecret(s.path, merged)
+          const merged = mergeRowsIntoExisting((s.data ?? {}) as Record<string, unknown>, rows)
+          await vault.writeSecret(s.path, merged as Record<string, string>)
           s.writeResult = 'ok'
         } catch (e: unknown) {
           s.writeResult = 'error'
@@ -433,8 +433,8 @@ async function confirmCreate() {
   try {
     let writeData: Record<string, string>
     if (mode.value === 'form' && pathMode.value === 'select' && selectedExistingPath.value) {
-      const existing = await fetchSecretData(selectedExistingPath.value) ?? {}
-      writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim()))
+      const existing = (await fetchSecretData(selectedExistingPath.value) ?? {}) as Record<string, unknown>
+      writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim())) as Record<string, string>
     } else {
       writeData = parsedData.value
     }
