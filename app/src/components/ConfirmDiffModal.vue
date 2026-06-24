@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -22,11 +22,32 @@ type DiffLine = {
   status: 'unchanged' | 'modified' | 'added' | 'removed'
 }
 
+const showUnchanged = ref(false)
+
+function flattenToDotPaths(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key
+    let parsed: unknown = value
+    if (typeof value === 'string') {
+      try { parsed = JSON.parse(value) } catch { /* keep as string */ }
+    }
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      Object.assign(result, flattenToDotPaths(parsed as Record<string, unknown>, fullKey))
+    } else {
+      result[fullKey] = String(value ?? '')
+    }
+  }
+  return result
+}
+
 const diffLines = computed<DiffLine[]>(() => {
-  const allKeys = new Set([...Object.keys(props.before), ...Object.keys(props.after)])
+  const flatBefore = flattenToDotPaths(props.before as Record<string, unknown>)
+  const flatAfter = flattenToDotPaths(props.after as Record<string, unknown>)
+  const allKeys = new Set([...Object.keys(flatBefore), ...Object.keys(flatAfter)])
   return [...allKeys].sort().map((key) => {
-    const b = props.before[key]
-    const a = props.after[key]
+    const b = flatBefore[key]
+    const a = flatAfter[key]
     let status: DiffLine['status'] = 'unchanged'
     if (b === undefined) status = 'added'
     else if (a === undefined) status = 'removed'
@@ -36,6 +57,13 @@ const diffLines = computed<DiffLine[]>(() => {
 })
 
 const hasChanges = computed(() => diffLines.value.some((l) => l.status !== 'unchanged'))
+
+const changedCount = computed(() => diffLines.value.filter(l => l.status !== 'unchanged').length)
+const unchangedCount = computed(() => diffLines.value.filter(l => l.status === 'unchanged').length)
+
+const visibleLines = computed(() =>
+  showUnchanged.value ? diffLines.value : diffLines.value.filter(l => l.status !== 'unchanged')
+)
 
 const rowClass = (status: DiffLine['status']) => ({
   'bg-green-950 text-green-300 light:bg-green-50 light:text-green-800': status === 'added',
@@ -66,37 +94,52 @@ const rowClass = (status: DiffLine['status']) => ({
         <div v-if="!hasChanges" class="text-gray-500 text-sm text-center py-8 light:text-gray-400">
           {{ t('confirmDiffModal.noChanges') }}
         </div>
-        <table v-else class="w-full text-xs font-mono border-collapse">
-          <thead>
-            <tr class="text-gray-500 uppercase text-left border-b border-gray-700 light:border-gray-200 light:text-gray-400">
-              <th class="pb-2 pr-4 w-1/4">{{ t('confirmDiffModal.keyHeader') }}</th>
-              <th class="pb-2 pr-4 w-1/3">{{ t('confirmDiffModal.beforeHeader') }}</th>
-              <th class="pb-2 w-1/3">{{ t('confirmDiffModal.afterHeader') }}</th>
-              <th class="pb-2 text-right">{{ t('confirmDiffModal.statusHeader') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="line in diffLines"
-              :key="line.key"
-              class="border-b border-gray-800 last:border-0 light:border-gray-200"
-              :class="rowClass(line.status)"
-            >
-              <td class="py-1.5 pr-4 font-semibold">{{ line.key }}</td>
-              <td class="py-1.5 pr-4 break-all opacity-80">
-                <span v-if="line.before !== undefined">{{ line.before }}</span>
-                <span v-else class="text-gray-600 italic">—</span>
-              </td>
-              <td class="py-1.5 break-all">
-                <span v-if="line.after !== undefined">{{ line.after }}</span>
-                <span v-else class="text-gray-600 italic">{{ t('confirmDiffModal.deleted') }}</span>
-              </td>
-              <td class="py-1.5 text-right text-xs opacity-60">
-                {{ { unchanged: '=', modified: '~', added: '+', removed: '−' }[line.status] }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <template v-else>
+          <!-- Summary + toggle -->
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-gray-500 light:text-gray-400">
+              {{ changedCount }} {{ t('confirmDiffModal.changedRows') }}
+              <span v-if="unchangedCount > 0" class="ml-1 text-gray-700">/ {{ unchangedCount }} {{ t('confirmDiffModal.unchangedRows') }}</span>
+            </span>
+            <button
+              v-if="unchangedCount > 0"
+              type="button"
+              class="text-xs text-gray-600 hover:text-gray-300 underline light:text-gray-400 light:hover:text-gray-700"
+              @click="showUnchanged = !showUnchanged"
+            >{{ showUnchanged ? t('confirmDiffModal.hideUnchanged') : t('confirmDiffModal.showUnchanged', { n: unchangedCount }) }}</button>
+          </div>
+          <table class="w-full text-xs font-mono border-collapse">
+            <thead>
+              <tr class="text-gray-500 uppercase text-left border-b border-gray-700 light:border-gray-200 light:text-gray-400">
+                <th class="pb-2 pr-4 w-1/4">{{ t('confirmDiffModal.keyHeader') }}</th>
+                <th class="pb-2 pr-4 w-1/3">{{ t('confirmDiffModal.beforeHeader') }}</th>
+                <th class="pb-2 w-1/3">{{ t('confirmDiffModal.afterHeader') }}</th>
+                <th class="pb-2 text-right">{{ t('confirmDiffModal.statusHeader') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="line in visibleLines"
+                :key="line.key"
+                class="border-b border-gray-800 last:border-0 light:border-gray-200"
+                :class="rowClass(line.status)"
+              >
+                <td class="py-1.5 pr-4 font-semibold break-all">{{ line.key }}</td>
+                <td class="py-1.5 pr-4 break-all opacity-80">
+                  <span v-if="line.before !== undefined">{{ line.before }}</span>
+                  <span v-else class="text-gray-600 italic">—</span>
+                </td>
+                <td class="py-1.5 break-all">
+                  <span v-if="line.after !== undefined">{{ line.after }}</span>
+                  <span v-else class="text-gray-600 italic">{{ t('confirmDiffModal.deleted') }}</span>
+                </td>
+                <td class="py-1.5 text-right text-xs opacity-60">
+                  {{ { unchanged: '=', modified: '~', added: '+', removed: '−' }[line.status] }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
       </div>
 
       <!-- Actions -->

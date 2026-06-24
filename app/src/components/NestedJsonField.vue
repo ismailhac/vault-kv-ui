@@ -15,7 +15,14 @@ const props = defineProps<{
   keyName: string
   depth: number
   editingAllowed: boolean
+  selected?: boolean
+  toggleHandler?: () => void
+  pathPrefix?: string
+  leafToggleHandler?: (fullPath: string, value: unknown) => void
+  isLeafSelected?: (fullPath: string) => boolean
 }>()
+
+const myFullPath = computed(() => props.pathPrefix ? `${props.pathPrefix}.${props.keyName}` : props.keyName)
 
 const emit = defineEmits<{
   'leaf-edit': [path: string[], newValue: string]
@@ -153,6 +160,14 @@ function onChildKeyRename(path: string[], newKey: string) {
         </div>
         <!-- Read mode -->
         <div v-else class="flex items-center gap-1">
+          <input
+            v-if="toggleHandler !== undefined"
+            type="checkbox"
+            class="accent-blue-500 w-3.5 h-3.5 cursor-pointer shrink-0 mr-0.5"
+            :checked="selected ?? false"
+            @click.stop
+            @change="toggleHandler()"
+          />
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
@@ -187,6 +202,9 @@ function onChildKeyRename(path: string[], newKey: string) {
         :key-name="childKey"
         :depth="depth + 1"
         :editing-allowed="editingAllowed"
+        :path-prefix="myFullPath"
+        :leaf-toggle-handler="leafToggleHandler"
+        :is-leaf-selected="isLeafSelected"
         @leaf-edit="onChildLeafEdit"
         @key-rename="onChildKeyRename"
       />
@@ -218,6 +236,14 @@ function onChildKeyRename(path: string[], newKey: string) {
       </div>
       <!-- Read mode -->
       <div v-else class="flex items-center gap-1">
+        <input
+          v-if="leafToggleHandler !== undefined"
+          type="checkbox"
+          class="accent-blue-500 w-3.5 h-3.5 cursor-pointer shrink-0 mr-0.5"
+          :checked="isLeafSelected?.(myFullPath) ?? false"
+          @click.stop
+          @change="leafToggleHandler(myFullPath, value)"
+        />
         <span class="font-mono text-xs text-blue-300 break-all">{{ keyName }}</span>
         <button
           v-if="editingAllowed"

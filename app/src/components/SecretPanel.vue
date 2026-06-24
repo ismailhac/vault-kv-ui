@@ -156,59 +156,87 @@ function removeKey(key: string) {
 }
 
 // ---- Row selection ----
-const selectedRowKeys = ref<Set<string>>(new Set())
+const selectedPaths = ref<Map<string, unknown>>(new Map())
 const showRowFormatPicker = ref(false)
 const showCloneRows = ref(false)
 
-const flatKeys = computed(() => {
+const allTopLevelKeys = computed(() => {
   if (!vault.selectedSecret) return []
-  return Object.keys(vault.selectedSecret.data).filter(k => !parseJsonValue(vault.selectedSecret!.data[k]).isNested)
+  return Object.keys(vault.selectedSecret.data)
 })
 
 const allRowsSelected = computed(() =>
-  flatKeys.value.length > 0 && flatKeys.value.every(k => selectedRowKeys.value.has(k))
+  allTopLevelKeys.value.length > 0 && allTopLevelKeys.value.every(k => selectedPaths.value.has(k))
 )
 const someRowsSelected = computed(() =>
-  flatKeys.value.some(k => selectedRowKeys.value.has(k))
+  selectedPaths.value.size > 0
 )
-const selectedRowsData = computed<Record<string, string>>(() => {
-  if (!vault.selectedSecret) return {}
-  return Object.fromEntries(
-    [...selectedRowKeys.value]
-      .filter(k => k in vault.selectedSecret!.data)
-      .map(k => [k, String(vault.selectedSecret!.data[k] ?? '')])
-  )
+
+function setDeepPath(obj: Record<string, unknown>, parts: string[], value: unknown): void {
+  const [head, ...rest] = parts
+  if (!rest.length) { obj[head] = value; return }
+  if (typeof obj[head] !== 'object' || obj[head] === null) obj[head] = {}
+  setDeepPath(obj[head] as Record<string, unknown>, rest, value)
+}
+
+const selectedRowsData = computed<Record<string, unknown>>(() => {
+  const result: Record<string, unknown> = {}
+  for (const [path, value] of selectedPaths.value) {
+    setDeepPath(result, path.split('.'), value)
+  }
+  return result
 })
 
-function toggleRowSelect(key: string) {
-  const s = new Set(selectedRowKeys.value)
-  if (s.has(key)) s.delete(key); else s.add(key)
-  selectedRowKeys.value = s
+function togglePath(path: string, value: unknown) {
+  const next = new Map(selectedPaths.value)
+  if (next.has(path)) next.delete(path); else next.set(path, value)
+  selectedPaths.value = next
 }
+
+function toggleRowSelect(key: string) {
+  if (!vault.selectedSecret) return
+  togglePath(key, vault.selectedSecret.data[key])
+}
+
+function toggleLeafPath(fullPath: string, value: unknown) {
+  togglePath(fullPath, value)
+}
+
+function isPathSelected(fullPath: string): boolean {
+  return selectedPaths.value.has(fullPath)
+}
+
+const selectedLeafPathsList = computed(() =>
+  [...selectedPaths.value.entries()].map(([path, value]) => ({ path, value }))
+)
 
 function toggleAllRows() {
   if (allRowsSelected.value) {
-    selectedRowKeys.value = new Set()
+    selectedPaths.value = new Map()
   } else {
-    selectedRowKeys.value = new Set(flatKeys.value)
+    const next = new Map<string, unknown>()
+    if (vault.selectedSecret) {
+      for (const [k, v] of Object.entries(vault.selectedSecret.data)) next.set(k, v)
+    }
+    selectedPaths.value = next
   }
 }
 
 function clearRowSelection() {
-  selectedRowKeys.value = new Set()
+  selectedPaths.value = new Map()
 }
 
-function serializeRowJson(data: Record<string, string>): string {
+function serializeRowJson(data: Record<string, unknown>): string {
   return JSON.stringify(data, null, 2)
 }
 
-function serializeRowCsv(data: Record<string, string>): string {
+function serializeRowCsv(data: Record<string, unknown>): string {
   const rows = ['key,value']
   for (const [k, v] of Object.entries(data)) rows.push(`${k},${JSON.stringify(v)}`)
   return rows.join('\n')
 }
 
-function serializeRowYaml(data: Record<string, string>): string {
+function serializeRowYaml(data: Record<string, unknown>): string {
   return Object.entries(data).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n')
 }
 
@@ -430,10 +458,10 @@ function handleLeafEdit(path: string[], newValue: string) {
 
         <!-- Row selection action bar -->
         <div
-          v-if="selectedRowKeys.size > 0"
+          v-if="selectedPaths.size > 0"
           class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-950/40 border border-blue-800/50 rounded light:bg-blue-50 light:border-blue-200"
         >
-          <span class="text-blue-300 text-xs font-medium">{{ t('selectionBar.selected', { n: selectedRowKeys.size }) }}</span>
+          <span class="text-blue-300 text-xs font-medium">{{ t('selectionBar.selected', { n: selectedPaths.size }) }}</span>
           <div class="flex-1" />
           <button
             class="text-xs px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors cursor-pointer light:bg-gray-200 light:hover:bg-gray-300 light:text-gray-700"
@@ -481,7 +509,7 @@ function handleLeafEdit(path: string[], newValue: string) {
               <th class="text-left py-1 pr-4 w-1/3">
                 <div class="flex items-center gap-2">
                   <input
-                    v-if="flatKeys.length > 0"
+                    v-if="allTopLevelKeys.length > 0"
                     type="checkbox"
                     class="accent-blue-500 w-3.5 h-3.5 cursor-pointer shrink-0"
                     :checked="allRowsSelected"
@@ -506,6 +534,10 @@ function handleLeafEdit(path: string[], newValue: string) {
                 :key-name="String(key)"
                 :depth="0"
                 :editing-allowed="editingAllowed"
+                :selected="selectedPaths.has(String(key))"
+                :toggle-handler="() => toggleRowSelect(String(key))"
+                :leaf-toggle-handler="toggleLeafPath"
+                :is-leaf-selected="isPathSelected"
                 @leaf-edit="handleLeafEdit"
                 @key-rename="handleKeyRename"
               />
@@ -525,9 +557,9 @@ function handleLeafEdit(path: string[], newValue: string) {
                     <input
                       type="checkbox"
                       class="accent-blue-500 w-3.5 h-3.5 cursor-pointer shrink-0 mr-0.5"
-                      :checked="selectedRowKeys.has(String(key))"
+                      :checked="selectedPaths.has(String(key))"
                       @click.stop
-                      @change="toggleRowSelect(String(key))"
+                      @change="togglePath(String(key), val)"
                     />
                     <button
                       class="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-gray-300 rounded transition-colors shrink-0 cursor-pointer light:hover:text-gray-700"
@@ -663,6 +695,7 @@ function handleLeafEdit(path: string[], newValue: string) {
   <CloneModal
     v-if="showCloneRows"
     :selected-data="selectedRowsData"
+    :selected-leaf-paths="selectedLeafPathsList"
     @close="showCloneRows = false"
     @cloned="() => { clearRowSelection(); showCloneRows = false }"
   />

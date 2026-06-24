@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.5] — 2026-06-24
+
+### Features
+- clone-nested-leaf-selection: granular leaf-level selection inside nested objects for clone propagation, with per-leaf-path diff table in CloneModal and flattened dot-path display in ConfirmDiffModal
+
 ## [1.10.4] — 2026-06-23
 
 ### Features
