@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
+import { findKeyPaths, getNestedValue, removeNestedKey, toStringRecord } from '../utils/nestedKeys'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -17,17 +18,21 @@ const scanning = ref(false)
 const scanError = ref<string | null>(null)
 const scanned = ref(false)
 // Full dump: path → secret data
-const dumpData = ref<Record<string, Record<string, string>>>({})
+const dumpData = ref<Record<string, Record<string, unknown>>>({})
 
 const matchingPaths = computed(() =>
   Object.keys(dumpData.value)
     .filter(p => {
-      if (!(keyName.value.trim() in dumpData.value[p])) return false
+      if (!findKeyPaths(dumpData.value[p], keyName.value.trim()).length) return false
       if (!includeProd.value && pathIsProd(p)) return false
       return true
     })
     .sort()
 )
+
+function getFoundPath(secretPath: string): string {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())[0] ?? keyName.value.trim()
+}
 
 // ── Step 2 — Selection ──
 const selectedProjects = ref<string[]>([])
@@ -102,14 +107,15 @@ const targetPaths = computed(() =>
 )
 
 // ── Step 3 — Diff (computed from dump, no extra fetch) ──
-type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string> }
+type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string>; dotPath: string; oldVal: string }
 
 const previews = computed<PathDiff[]>(() =>
   targetPaths.value.map(path => {
-    const before = dumpData.value[path] ?? {}
-    const after = { ...before }
-    delete after[keyName.value]
-    return { path, before, after }
+    const dotPath = getFoundPath(path)
+    const before = toStringRecord(dumpData.value[path] ?? {})
+    const after = removeNestedKey(dumpData.value[path] ?? {}, dotPath)
+    const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, dotPath) ?? '')
+    return { path, before, after, dotPath, oldVal }
   })
 )
 
@@ -328,7 +334,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 >
                   <span class="text-red-500 shrink-0">✗</span>
                   <span class="text-gray-300 flex-1 light:text-gray-700">{{ path }}</span>
-                  <span class="text-gray-600">{{ keyName }} = <span class="text-amber-400">{{ dumpData[path]?.[keyName] }}</span></span>
+                  <span class="text-gray-600">{{ getFoundPath(path) }} = <span class="text-amber-400">{{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}</span></span>
                 </div>
                 <div v-if="matchingPaths.length > 10" class="px-4 py-2 text-xs text-gray-500 text-center light:text-gray-600">
                   {{ t('keyRemovalModal.moreItems', { n: matchingPaths.length - 10 }) }}
@@ -510,8 +516,8 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               <table class="w-full text-xs font-mono">
                 <tbody>
                   <tr class="border-t border-gray-800 bg-red-950 text-red-300">
-                    <td class="px-4 py-1 w-1/3 line-through opacity-70">{{ keyName }}</td>
-                    <td class="px-2 py-1 w-1/3 line-through opacity-70">{{ entry.before[keyName] ?? '' }}</td>
+                    <td class="px-4 py-1 w-1/3 line-through opacity-70">{{ entry.dotPath }}</td>
+                    <td class="px-2 py-1 w-1/3 line-through opacity-70">{{ entry.oldVal }}</td>
                     <td class="px-2 py-1 w-1/3 italic text-red-500">{{ t('keyRemovalModal.deletedLabel') }}</td>
                   </tr>
                 </tbody>

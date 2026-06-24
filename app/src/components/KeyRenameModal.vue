@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
+import { findKeyPaths, getNestedValue, renameNestedKey, toStringRecord } from '../utils/nestedKeys'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -24,17 +25,21 @@ const newKeyName = ref('')
 const scanning = ref(false)
 const scanError = ref<string | null>(null)
 const scanned = ref(false)
-const dumpData = ref<Record<string, Record<string, string>>>({})
+const dumpData = ref<Record<string, Record<string, unknown>>>({})
 
 const matchingPaths = computed(() =>
   Object.keys(dumpData.value)
     .filter(p => {
-      if (!(oldKeyName.value.trim() in dumpData.value[p])) return false
+      if (!findKeyPaths(dumpData.value[p], oldKeyName.value.trim()).length) return false
       if (!includeProd.value && pathIsProd(p)) return false
       return true
     })
     .sort()
 )
+
+function getFoundPath(secretPath: string): string {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, oldKeyName.value.trim())[0] ?? oldKeyName.value.trim()
+}
 
 const selectedPaths = ref<Set<string>>(new Set())
 
@@ -52,11 +57,11 @@ function selectNone() { selectedPaths.value = new Set() }
 
 // Paths where the new key already exists (will be overwritten — warn)
 function newKeyConflicts(path: string): boolean {
-  return newKeyName.value.trim().length > 0 && newKeyName.value.trim() in (dumpData.value[path] ?? {})
+  return newKeyName.value.trim().length > 0 && findKeyPaths(dumpData.value[path] ?? {}, newKeyName.value.trim()).length > 0
 }
 
 // ── Step 2 — Diff ──
-type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string> }
+type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string>; oldDotPath: string; newDotPath: string; val: string }
 
 const previews = computed<PathDiff[]>(() => {
   const ok = oldKeyName.value.trim()
@@ -66,12 +71,13 @@ const previews = computed<PathDiff[]>(() => {
     .filter(p => matchingPaths.value.includes(p))
     .sort()
     .map(path => {
-      const before = dumpData.value[path] ?? {}
-      const after = { ...before }
-      const value = after[ok] ?? ''
-      delete after[ok]
-      after[nk] = value
-      return { path, before, after }
+      const oldDotPath = getFoundPath(path)
+      const parts = oldDotPath.split('.')
+      const newDotPath = [...parts.slice(0, -1), nk].join('.') || nk
+      const before = toStringRecord(dumpData.value[path] ?? {})
+      const after = renameNestedKey(dumpData.value[path] ?? {}, oldDotPath, nk)
+      const val = String(getNestedValue(dumpData.value[path] ?? {}, oldDotPath) ?? '')
+      return { path, before, after, oldDotPath, newDotPath, val }
     })
 })
 
@@ -313,8 +319,8 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                   <div class="flex items-center gap-1.5 flex-1 min-w-0 text-xs font-mono">
                     <span class="text-red-400 line-through truncate max-w-24" :title="oldKeyName">{{ oldKeyName }}</span>
                     <span class="text-gray-600 shrink-0">=</span>
-                    <span class="text-amber-300 truncate max-w-28" :title="dumpData[path]?.[oldKeyName]">
-                      {{ dumpData[path]?.[oldKeyName] ?? '' }}
+                    <span class="text-amber-300 truncate max-w-28" :title="String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '')">
+                      {{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}
                     </span>
                     <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-gray-600 shrink-0">→</span>
                     <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-green-400 truncate max-w-24" :title="newKeyName">
@@ -368,15 +374,15 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <tbody>
                   <!-- Old key removed -->
                   <tr class="bg-red-950 text-red-300">
-                    <td class="py-1 pr-4 w-1/3 line-through opacity-70">{{ oldKeyName }}</td>
-                    <td class="py-1 pr-4 w-1/3 opacity-70">{{ entry.before[oldKeyName] }}</td>
+                    <td class="py-1 pr-4 w-1/3 line-through opacity-70">{{ entry.oldDotPath }}</td>
+                    <td class="py-1 pr-4 w-1/3 opacity-70">{{ entry.val }}</td>
                     <td class="py-1 w-1/3 italic text-red-500">{{ t('keyRenameModal.deletedLabel') }}</td>
                   </tr>
                   <!-- New key added -->
                   <tr class="bg-green-950 text-green-300">
-                    <td class="py-1 pr-4 w-1/3 font-bold">{{ newKeyName }}</td>
+                    <td class="py-1 pr-4 w-1/3 font-bold">{{ entry.newDotPath }}</td>
                     <td class="py-1 pr-4 w-1/3 text-gray-600 italic">—</td>
-                    <td class="py-1 w-1/3 font-bold">{{ entry.after[newKeyName] }}</td>
+                    <td class="py-1 w-1/3 font-bold">{{ entry.val }}</td>
                   </tr>
                 </tbody>
               </table>

@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
+import { findKeyPaths, getNestedValue, setNestedValue, toStringRecord } from '../utils/nestedKeys'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -24,17 +25,21 @@ const newValue = ref('')
 const scanning = ref(false)
 const scanError = ref<string | null>(null)
 const scanned = ref(false)
-const dumpData = ref<Record<string, Record<string, string>>>({})
+const dumpData = ref<Record<string, Record<string, unknown>>>({})
 
 const matchingPaths = computed(() =>
   Object.keys(dumpData.value)
     .filter(p => {
-      if (!(keyName.value.trim() in dumpData.value[p])) return false
+      if (!findKeyPaths(dumpData.value[p], keyName.value.trim()).length) return false
       if (!includeProd.value && pathIsProd(p)) return false
       return true
     })
     .sort()
 )
+
+function getFoundPath(secretPath: string): string {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())[0] ?? keyName.value.trim()
+}
 
 // Individual path selection (all pre-checked after scan)
 const selectedPaths = ref<Set<string>>(new Set())
@@ -45,7 +50,7 @@ watch(matchingPaths, paths => {
 
 // Summary of current values across matching paths
 const uniqueCurrentValues = computed(() =>
-  [...new Set(matchingPaths.value.map(p => dumpData.value[p]?.[keyName.value] ?? ''))],
+  [...new Set(matchingPaths.value.map(p => String(getNestedValue(dumpData.value[p] ?? {}, getFoundPath(p)) ?? '')))],
 )
 const allSameCurrentValue = computed(() =>
   uniqueCurrentValues.value.length === 1 ? uniqueCurrentValues.value[0] : null,
@@ -62,16 +67,18 @@ function selectAll() { selectedPaths.value = new Set(matchingPaths.value) }
 function selectNone() { selectedPaths.value = new Set() }
 
 // ── Step 2 — Diff (instant, from dump) ──
-type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string> }
+type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string>; dotPath: string; oldVal: string; newVal: string }
 
 const previews = computed<PathDiff[]>(() =>
   [...selectedPaths.value]
     .filter(p => matchingPaths.value.includes(p))
     .sort()
     .map(path => {
-      const before = dumpData.value[path] ?? {}
-      const after = { ...before, [keyName.value]: newValue.value }
-      return { path, before, after }
+      const dotPath = getFoundPath(path)
+      const before = toStringRecord(dumpData.value[path] ?? {})
+      const after = setNestedValue(dumpData.value[path] ?? {}, dotPath, newValue.value)
+      const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, dotPath) ?? '')
+      return { path, before, after, dotPath, oldVal, newVal: newValue.value }
     }),
 )
 
@@ -299,8 +306,8 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
 
                   <!-- Current → new value preview -->
                   <div class="flex items-center gap-1.5 shrink-0 text-xs font-mono">
-                    <span class="text-amber-400 max-w-32 truncate" :title="dumpData[path]?.[keyName]">
-                      {{ dumpData[path]?.[keyName] ?? '' }}
+                    <span class="text-amber-400 max-w-32 truncate" :title="String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '')">
+                      {{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}
                     </span>
                     <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-gray-600">→</span>
                     <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-green-400 max-w-32 truncate" :title="newValue">
@@ -335,9 +342,9 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               <table class="w-full text-xs font-mono">
                 <tbody>
                   <tr class="text-yellow-200 bg-yellow-950 rounded">
-                    <td class="py-1 pr-4 w-1/3 font-semibold">{{ keyName }}</td>
-                    <td class="py-1 pr-4 w-1/3 opacity-70 line-through">{{ entry.before[keyName] }}</td>
-                    <td class="py-1 w-1/3 font-bold text-green-300">{{ entry.after[keyName] }}</td>
+                    <td class="py-1 pr-4 w-1/3 font-semibold">{{ entry.dotPath }}</td>
+                    <td class="py-1 pr-4 w-1/3 opacity-70 line-through">{{ entry.oldVal }}</td>
+                    <td class="py-1 w-1/3 font-bold text-green-300">{{ entry.newVal }}</td>
                   </tr>
                 </tbody>
               </table>

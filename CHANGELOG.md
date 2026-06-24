@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.6] — 2026-06-24
+
+### Features
+- nested-key-support: key-action modals (adjust, update, rename, removal) and FeatureFlagModal now find and operate on keys at any nesting depth via shared `nestedKeys.ts` utility; diff tables show full dot-paths; FeatureFlagModal accepts dot-path keys (e.g. `configuration.service.enabled`) with nested breadcrumb hint in step 1
+
 ## [1.10.5] — 2026-06-24
 
 ### Features

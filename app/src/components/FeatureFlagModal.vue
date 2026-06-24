@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
+import { setNestedValue, getNestedValue, toStringRecord } from '../utils/nestedKeys'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -136,7 +137,10 @@ const previewsByGroup = computed(() => {
 })
 
 const totalPathsChanged = computed(() =>
-  previews.value.filter(p => p.before[ffKey.value] !== p.after[ffKey.value]).length
+  previews.value.filter(p => {
+    const key = ffKey.value.trim()
+    return String(getNestedValue(p.before, key) ?? '') !== String(getNestedValue(p.after, key) ?? '')
+  }).length
 )
 
 const confirmAllBefore = computed(() =>
@@ -241,6 +245,7 @@ async function buildPreviews() {
   previewLoading.value = true
   previews.value = []
   const results: PathDiff[] = []
+  const key = ffKey.value.trim()
   for (const path of targetPaths.value) {
     const val = getEffectiveValue(path)
     try {
@@ -248,16 +253,18 @@ async function buildPreviews() {
       const res = await fetch(`/api/kv/read?${params}`)
       if (res.ok) {
         const json = await res.json()
-        const before: Record<string, string> = json.data ?? {}
-        results.push({ path, before, after: { ...before, [ffKey.value]: val } })
+        const rawBefore: Record<string, unknown> = json.data ?? {}
+        const before = toStringRecord(rawBefore)
+        const after = setNestedValue(rawBefore, key, val)
+        results.push({ path, before, after })
       } else if (res.status === 404) {
-        results.push({ path, before: {}, after: { [ffKey.value]: val } })
+        results.push({ path, before: {}, after: setNestedValue({}, key, val) })
       } else {
         const err = await res.json().catch(() => ({}))
-        results.push({ path, before: {}, after: { [ffKey.value]: val }, fetchError: (err as { error?: string }).error ?? `HTTP ${res.status}` })
+        results.push({ path, before: {}, after: setNestedValue({}, key, val), fetchError: (err as { error?: string }).error ?? `HTTP ${res.status}` })
       }
     } catch (e: unknown) {
-      results.push({ path, before: {}, after: { [ffKey.value]: val }, fetchError: e instanceof Error ? e.message : t('featureFlagModal.step5Errors') })
+      results.push({ path, before: {}, after: setNestedValue({}, key, val), fetchError: e instanceof Error ? e.message : t('featureFlagModal.step5Errors') })
     }
   }
   previews.value = results
@@ -330,10 +337,19 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
             <input
               v-model="ffKey"
               type="text"
-              placeholder="FF_OPEN_MODAL"
+              placeholder="FF_OPEN_MODAL or configuration.service.enabled"
               class="w-full px-3 py-2 bg-gray-950 border border-gray-700 text-green-300 font-mono rounded text-sm focus:outline-none focus:border-green-600 placeholder-gray-700 light:bg-white light:border-gray-300 light:text-green-700 light:placeholder-gray-400"
               spellcheck="false"
             />
+            <!-- Nested path hint -->
+            <div v-if="ffKey.trim().includes('.')" class="mt-1.5 flex items-center gap-1 text-xs font-mono text-gray-500 light:text-gray-500">
+              <span class="text-gray-600">↳</span>
+              <template v-for="(part, i) in ffKey.trim().split('.')" :key="i">
+                <span :class="i === ffKey.trim().split('.').length - 1 ? 'text-green-400 font-semibold' : 'text-blue-400'">{{ part }}</span>
+                <span v-if="i < ffKey.trim().split('.').length - 1" class="text-gray-600">.</span>
+              </template>
+              <span class="text-gray-600 ml-1">({{ t('featureFlagModal.nestedPath') }})</span>
+            </div>
           </div>
 
           <div>
@@ -683,14 +699,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                     <tr
                       class="border-t border-gray-800 light:border-gray-200"
                       :class="{
-                        'text-green-300 bg-green-950': !(ffKey in entry.before),
-                        'text-yellow-200 bg-yellow-950': ffKey in entry.before && entry.before[ffKey] !== entry.after[ffKey],
-                        'text-gray-500': ffKey in entry.before && entry.before[ffKey] === entry.after[ffKey],
+                        'text-green-300 bg-green-950': getNestedValue(entry.before, ffKey.trim()) === undefined,
+                        'text-yellow-200 bg-yellow-950': getNestedValue(entry.before, ffKey.trim()) !== undefined && String(getNestedValue(entry.before, ffKey.trim()) ?? '') !== String(getNestedValue(entry.after, ffKey.trim()) ?? ''),
+                        'text-gray-500': getNestedValue(entry.before, ffKey.trim()) !== undefined && String(getNestedValue(entry.before, ffKey.trim()) ?? '') === String(getNestedValue(entry.after, ffKey.trim()) ?? ''),
                       }"
                     >
                       <td class="px-4 py-1 w-1/3">{{ ffKey }}</td>
-                      <td class="px-2 py-1 w-1/3 opacity-60 line-through">{{ entry.before[ffKey] ?? '' }}</td>
-                      <td class="px-2 py-1 w-1/3 font-bold">{{ entry.after[ffKey] }}</td>
+                      <td class="px-2 py-1 w-1/3 opacity-60 line-through">{{ String(getNestedValue(entry.before, ffKey.trim()) ?? '') }}</td>
+                      <td class="px-2 py-1 w-1/3 font-bold">{{ String(getNestedValue(entry.after, ffKey.trim()) ?? '') }}</td>
                     </tr>
                   </tbody>
                 </table>

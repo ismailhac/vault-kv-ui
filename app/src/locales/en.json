@@ -449,6 +449,7 @@
   "featureFlagModal.errors": "{n} error(s)",
   "featureFlagModal.prodValueSuffix": " / prod =",
   "featureFlagModal.subPath": "(sub-path)",
+  "featureFlagModal.nestedPath": "nested",
   "featureFlagModal.back": "← Back",
   "featureFlagModal.close": "Close",
   "featureFlagModal.nextProjects": "Next → Projects",
