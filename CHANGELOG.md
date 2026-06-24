@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.9] — 2026-06-24
+
+### Bug Fixes
+- wasString-removal: always normalize JSON-string-encoded nested objects to native on write; removed wasString preservation from setNestedValue, removeNestedKey, renameNestedKey, handleLeafEdit, handleKeyRename — any nested object previously stored as a JSON string is repaired to a native object whenever a leaf inside it is modified
+
 ## [1.10.8] — 2026-06-24
 
 ### Bug Fixes

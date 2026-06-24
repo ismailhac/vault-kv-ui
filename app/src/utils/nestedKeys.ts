@@ -57,14 +57,12 @@ export function setNestedValue(
     result[topKey] = newValue
     return result
   }
-  const topVal = data[topKey]
-  const wasString = typeof topVal === 'string'
-  let obj: unknown = topVal
+  let obj: unknown = data[topKey]
   if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch { obj = {} } }
   if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) obj = {}
   const cloned = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
   setDeep(cloned, parts.slice(1), newValue)
-  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  result[topKey] = cloned
   return result
 }
 
@@ -83,14 +81,12 @@ export function removeNestedKey(
     delete result[topKey]
     return result
   }
-  const topVal = data[topKey]
-  const wasString = typeof topVal === 'string'
-  let obj: unknown = topVal
+  let obj: unknown = data[topKey]
   if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch { return result } }
   if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return result
   const cloned = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
   removeDeep(cloned, parts.slice(1))
-  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  result[topKey] = cloned
   return result
 }
 
@@ -112,14 +108,12 @@ export function renameNestedKey(
     result[newLeafName] = value
     return result
   }
-  const topVal = data[topKey]
-  const wasString = typeof topVal === 'string'
-  let obj: unknown = topVal
+  let obj: unknown = data[topKey]
   if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch { return result } }
   if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return result
   const cloned = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
   renameDeep(cloned, parts.slice(1), newLeafName)
-  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  result[topKey] = cloned
   return result
 }
 

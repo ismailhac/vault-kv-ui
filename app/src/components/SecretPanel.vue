@@ -369,14 +369,12 @@ function handleKeyRename(path: string[], newKey: string) {
     nativeAfter = {}
     for (const k of Object.keys(data)) nativeAfter[k === topKey ? newKey : k] = data[k]
   } else {
-    const raw = data[topKey]
-    const wasString = typeof raw === 'string'
-    let current: unknown = raw
-    if (typeof raw === 'string') { try { current = JSON.parse(raw) } catch {} }
+    let current: unknown = data[topKey]
+    if (typeof current === 'string') { try { current = JSON.parse(current) } catch {} }
     const cloned = JSON.parse(JSON.stringify(current))
     renameNestedKey(cloned, path.slice(1), newKey)
     nativeAfter = { ...data }
-    nativeAfter[topKey] = wasString ? JSON.stringify(cloned) : cloned
+    nativeAfter[topKey] = cloned
   }
   rawWriteData.value = nativeAfter
   pendingData.value = stringifyData(nativeAfter)
@@ -387,17 +385,15 @@ function handleKeyRename(path: string[], newKey: string) {
 function handleLeafEdit(path: string[], newValue: string) {
   if (!vault.selectedSecret) return
   const topKey = path[0]
-  const raw = vault.selectedSecret.data[topKey]
-  const wasString = typeof raw === 'string'
 
-  let current: unknown = raw
-  if (typeof raw === 'string') { try { current = JSON.parse(raw) } catch {} }
+  let current: unknown = vault.selectedSecret.data[topKey]
+  if (typeof current === 'string') { try { current = JSON.parse(current) } catch {} }
 
   const cloned = JSON.parse(JSON.stringify(current))
   setNestedValue(cloned, path.slice(1), newValue)
 
   const nativeAfter: Record<string, unknown> = { ...vault.selectedSecret.data }
-  nativeAfter[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  nativeAfter[topKey] = cloned
 
   rawWriteData.value = nativeAfter
   pendingData.value = stringifyData(nativeAfter)
