@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.7] — 2026-06-24
+
+### Bug Fixes
+- nested-key-encoding-fix: setNestedValue, removeNestedKey, renameNestedKey now preserve native Vault object encoding instead of converting all values to JSON strings via toStringRecord; toStringRecord is now only called for ConfirmDiffModal display
+
 ## [1.10.6] — 2026-06-24
 
 ### Features

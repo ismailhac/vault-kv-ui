@@ -40,77 +40,87 @@ export function getNestedValue(data: Record<string, unknown>, dotPath: string): 
 }
 
 /**
- * Set a value at a dot-path, returning a normalized Record<string,string>.
- * Nested parent objects are re-serialized as JSON strings.
+ * Set a value at a dot-path.
+ * Returns Record<string,unknown> preserving the original encoding of every key:
+ * a top-level key that was a native object stays a native object;
+ * one that was a JSON-string stays a JSON-string.
  */
 export function setNestedValue(
   data: Record<string, unknown>,
   dotPath: string,
   newValue: string,
-): Record<string, string> {
-  const normalized = toStringRecord(data)
+): Record<string, unknown> {
+  const result = { ...data }
   const parts = dotPath.split('.')
-  if (parts.length === 1) {
-    normalized[parts[0]] = newValue
-    return normalized
-  }
   const topKey = parts[0]
-  let raw: unknown = data[topKey]
-  if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = {} } }
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) raw = {}
-  const cloned = JSON.parse(JSON.stringify(raw)) as Record<string, unknown>
+  if (parts.length === 1) {
+    result[topKey] = newValue
+    return result
+  }
+  const topVal = data[topKey]
+  const wasString = typeof topVal === 'string'
+  let obj: unknown = topVal
+  if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch { obj = {} } }
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) obj = {}
+  const cloned = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
   setDeep(cloned, parts.slice(1), newValue)
-  normalized[topKey] = JSON.stringify(cloned)
-  return normalized
+  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  return result
 }
 
 /**
- * Remove a key at a dot-path, returning a normalized Record<string,string>.
+ * Remove a key at a dot-path.
+ * Preserves the original encoding of the modified top-level key.
  */
 export function removeNestedKey(
   data: Record<string, unknown>,
   dotPath: string,
-): Record<string, string> {
-  const normalized = toStringRecord(data)
+): Record<string, unknown> {
+  const result = { ...data }
   const parts = dotPath.split('.')
-  if (parts.length === 1) {
-    delete normalized[parts[0]]
-    return normalized
-  }
   const topKey = parts[0]
-  let raw: unknown = data[topKey]
-  if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { return normalized } }
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return normalized
-  const cloned = JSON.parse(JSON.stringify(raw)) as Record<string, unknown>
+  if (parts.length === 1) {
+    delete result[topKey]
+    return result
+  }
+  const topVal = data[topKey]
+  const wasString = typeof topVal === 'string'
+  let obj: unknown = topVal
+  if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch { return result } }
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return result
+  const cloned = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
   removeDeep(cloned, parts.slice(1))
-  normalized[topKey] = JSON.stringify(cloned)
-  return normalized
+  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  return result
 }
 
 /**
- * Rename a leaf key at a dot-path, returning a normalized Record<string,string>.
+ * Rename a leaf key at a dot-path.
+ * Preserves the original encoding of the modified top-level key.
  */
 export function renameNestedKey(
   data: Record<string, unknown>,
   dotPath: string,
   newLeafName: string,
-): Record<string, string> {
-  const normalized = toStringRecord(data)
+): Record<string, unknown> {
+  const result = { ...data }
   const parts = dotPath.split('.')
-  if (parts.length === 1) {
-    const value = normalized[parts[0]] ?? ''
-    delete normalized[parts[0]]
-    normalized[newLeafName] = value
-    return normalized
-  }
   const topKey = parts[0]
-  let raw: unknown = data[topKey]
-  if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { return normalized } }
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return normalized
-  const cloned = JSON.parse(JSON.stringify(raw)) as Record<string, unknown>
+  if (parts.length === 1) {
+    const value = data[topKey]
+    delete result[topKey]
+    result[newLeafName] = value
+    return result
+  }
+  const topVal = data[topKey]
+  const wasString = typeof topVal === 'string'
+  let obj: unknown = topVal
+  if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch { return result } }
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return result
+  const cloned = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
   renameDeep(cloned, parts.slice(1), newLeafName)
-  normalized[topKey] = JSON.stringify(cloned)
-  return normalized
+  result[topKey] = wasString ? JSON.stringify(cloned) : cloned
+  return result
 }
 
 /** Normalize any secret data to flat Record<string,string>. */

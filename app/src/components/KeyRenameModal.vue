@@ -61,7 +61,7 @@ function newKeyConflicts(path: string): boolean {
 }
 
 // ── Step 2 — Diff ──
-type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string>; oldDotPath: string; newDotPath: string; val: string }
+type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; oldDotPath: string; newDotPath: string; val: string }
 
 const previews = computed<PathDiff[]>(() => {
   const ok = oldKeyName.value.trim()
@@ -74,7 +74,7 @@ const previews = computed<PathDiff[]>(() => {
       const oldDotPath = getFoundPath(path)
       const parts = oldDotPath.split('.')
       const newDotPath = [...parts.slice(0, -1), nk].join('.') || nk
-      const before = toStringRecord(dumpData.value[path] ?? {})
+      const before = dumpData.value[path] ?? {}
       const after = renameNestedKey(dumpData.value[path] ?? {}, oldDotPath, nk)
       const val = String(getNestedValue(dumpData.value[path] ?? {}, oldDotPath) ?? '')
       return { path, before, after, oldDotPath, newDotPath, val }
@@ -86,13 +86,13 @@ const showConfirmAll = ref(false)
 const confirmAllBefore = computed(() =>
   previews.value.reduce((acc, p) => ({
     ...acc,
-    ...Object.fromEntries(Object.entries(p.before).map(([k, v]) => [`${p.path} / ${k}`, v])),
+    ...Object.fromEntries(Object.entries(toStringRecord(p.before)).map(([k, v]) => [`${p.path} / ${k}`, v])),
   }), {} as Record<string, string>)
 )
 const confirmAllAfter = computed(() =>
   previews.value.reduce((acc, p) => ({
     ...acc,
-    ...Object.fromEntries(Object.entries(p.after).map(([k, v]) => [`${p.path} / ${k}`, v])),
+    ...Object.fromEntries(Object.entries(toStringRecord(p.after)).map(([k, v]) => [`${p.path} / ${k}`, v])),
   }), {} as Record<string, string>)
 )
 
@@ -139,7 +139,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after)
+      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyRenameModal.networkError') })

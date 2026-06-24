@@ -71,7 +71,7 @@ function isModified(path: string): boolean {
 }
 
 // ── Step 2 — Diff: only selected paths where value actually changed ──
-type PathDiff = { path: string; before: Record<string, string>; after: Record<string, string>; dotPath: string; oldVal: string; newVal: string }
+type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; dotPath: string; oldVal: string; newVal: string }
 
 const previews = computed<PathDiff[]>(() =>
   [...selectedPaths.value]
@@ -79,7 +79,7 @@ const previews = computed<PathDiff[]>(() =>
     .sort()
     .map(path => {
       const dotPath = getFoundPath(path)
-      const before = toStringRecord(dumpData.value[path] ?? {})
+      const before = dumpData.value[path] ?? {}
       const after = setNestedValue(dumpData.value[path] ?? {}, dotPath, pathValues.value[path] ?? '')
       const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, dotPath) ?? '')
       const newVal = pathValues.value[path] ?? ''
@@ -92,13 +92,13 @@ const showConfirmAll = ref(false)
 const confirmAllBefore = computed(() =>
   previews.value.reduce((acc, p) => ({
     ...acc,
-    ...Object.fromEntries(Object.entries(p.before).map(([k, v]) => [`${p.path} / ${k}`, v])),
+    ...Object.fromEntries(Object.entries(toStringRecord(p.before)).map(([k, v]) => [`${p.path} / ${k}`, v])),
   }), {} as Record<string, string>)
 )
 const confirmAllAfter = computed(() =>
   previews.value.reduce((acc, p) => ({
     ...acc,
-    ...Object.fromEntries(Object.entries(p.after).map(([k, v]) => [`${p.path} / ${k}`, v])),
+    ...Object.fromEntries(Object.entries(toStringRecord(p.after)).map(([k, v]) => [`${p.path} / ${k}`, v])),
   }), {} as Record<string, string>)
 )
 
@@ -145,7 +145,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after)
+      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyAdjustModal.networkError') })

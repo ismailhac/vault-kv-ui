@@ -36,8 +36,8 @@ const envValueMap = ref<Record<string, string>>({})
 // ── Step 4 — Diff ──
 type PathDiff = {
   path: string
-  before: Record<string, string>
-  after: Record<string, string>
+  before: Record<string, unknown>
+  after: Record<string, unknown>
   fetchError?: string
 }
 const previews = ref<PathDiff[]>([])
@@ -146,13 +146,13 @@ const totalPathsChanged = computed(() =>
 const confirmAllBefore = computed(() =>
   previews.value.reduce((acc, p) => ({
     ...acc,
-    ...Object.fromEntries(Object.entries(p.before).map(([k, v]) => [`${p.path} / ${k}`, v])),
+    ...Object.fromEntries(Object.entries(toStringRecord(p.before)).map(([k, v]) => [`${p.path} / ${k}`, v])),
   }), {} as Record<string, string>)
 )
 const confirmAllAfter = computed(() =>
   previews.value.reduce((acc, p) => ({
     ...acc,
-    ...Object.fromEntries(Object.entries(p.after).map(([k, v]) => [`${p.path} / ${k}`, v])),
+    ...Object.fromEntries(Object.entries(toStringRecord(p.after)).map(([k, v]) => [`${p.path} / ${k}`, v])),
   }), {} as Record<string, string>)
 )
 
@@ -254,9 +254,8 @@ async function buildPreviews() {
       if (res.ok) {
         const json = await res.json()
         const rawBefore: Record<string, unknown> = json.data ?? {}
-        const before = toStringRecord(rawBefore)
         const after = setNestedValue(rawBefore, key, val)
-        results.push({ path, before, after })
+        results.push({ path, before: rawBefore, after })
       } else if (res.status === 404) {
         results.push({ path, before: {}, after: setNestedValue({}, key, val) })
       } else {
@@ -277,7 +276,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after)
+      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('featureFlagModal.step5Errors') })
