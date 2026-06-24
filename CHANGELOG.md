@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.8] — 2026-06-24
+
+### Bug Fixes
+- bug-fix-secret-panel-native-encoding: removeKey, handleLeafEdit, handleKeyRename now store the native-typed write payload in rawWriteData alongside stringified pendingData (display only); confirmSave writes rawWriteData when present, preserving native Vault objects instead of converting them to JSON strings
+
 ## [1.10.7] — 2026-06-24
 
 ### Bug Fixes

@@ -26,6 +26,8 @@ const jsonError = ref<string | null>(null)
 const saveSuccess = ref(false)
 const showDiff = ref(false)
 const pendingData = ref<Record<string, string>>({})
+// Holds the native-typed write payload when pendingData was stringified for display only.
+const rawWriteData = ref<Record<string, unknown> | null>(null)
 const isRestoring = ref(false)
 
 function enterEdit() {
@@ -67,8 +69,10 @@ async function confirmSave() {
   const wasRestoring = isRestoring.value
   isRestoring.value = false
   showDiff.value = false
+  const writeData = (rawWriteData.value ?? pendingData.value) as Record<string, string>
+  rawWriteData.value = null
   try {
-    await vault.writeSecret(path, pendingData.value)
+    await vault.writeSecret(path, writeData)
     await vault.readSecret(path)
     editMode.value = false
     saveSuccess.value = true
@@ -149,9 +153,10 @@ function handleRestore(historicalData: Record<string, string>) {
 // ---- Delete key (via ConfirmDiffModal) ----
 function removeKey(key: string) {
   if (!vault.selectedSecret) return
-  const without = stringifyData(vault.selectedSecret.data)
-  delete without[key]
-  pendingData.value = without
+  const native: Record<string, unknown> = { ...vault.selectedSecret.data }
+  delete native[key]
+  rawWriteData.value = native
+  pendingData.value = stringifyData(native)
   showDiff.value = true
 }
 
@@ -357,22 +362,24 @@ function renameNestedKey(obj: unknown, path: string[], newKey: string): void {
 function handleKeyRename(path: string[], newKey: string) {
   if (!vault.selectedSecret) return
   const topKey = path[0]
+  const data = vault.selectedSecret.data
 
+  let nativeAfter: Record<string, unknown>
   if (path.length === 1) {
-    const before = stringifyData(vault.selectedSecret.data)
-    const after: Record<string, string> = {}
-    for (const k of Object.keys(before)) after[k === topKey ? newKey : k] = before[k]
-    pendingData.value = after
+    nativeAfter = {}
+    for (const k of Object.keys(data)) nativeAfter[k === topKey ? newKey : k] = data[k]
   } else {
-    const raw = vault.selectedSecret.data[topKey]
+    const raw = data[topKey]
+    const wasString = typeof raw === 'string'
     let current: unknown = raw
     if (typeof raw === 'string') { try { current = JSON.parse(raw) } catch {} }
     const cloned = JSON.parse(JSON.stringify(current))
     renameNestedKey(cloned, path.slice(1), newKey)
-    const after = stringifyData(vault.selectedSecret.data)
-    after[topKey] = JSON.stringify(cloned)
-    pendingData.value = after
+    nativeAfter = { ...data }
+    nativeAfter[topKey] = wasString ? JSON.stringify(cloned) : cloned
   }
+  rawWriteData.value = nativeAfter
+  pendingData.value = stringifyData(nativeAfter)
   showDiff.value = true
 }
 
@@ -381,20 +388,19 @@ function handleLeafEdit(path: string[], newValue: string) {
   if (!vault.selectedSecret) return
   const topKey = path[0]
   const raw = vault.selectedSecret.data[topKey]
+  const wasString = typeof raw === 'string'
 
   let current: unknown = raw
-  if (typeof raw === 'string') {
-    try { current = JSON.parse(raw) } catch {}
-  }
+  if (typeof raw === 'string') { try { current = JSON.parse(raw) } catch {} }
 
   const cloned = JSON.parse(JSON.stringify(current))
   setNestedValue(cloned, path.slice(1), newValue)
-  const serialized = JSON.stringify(cloned)
 
-  const after = stringifyData(vault.selectedSecret.data)
-  after[topKey] = serialized
+  const nativeAfter: Record<string, unknown> = { ...vault.selectedSecret.data }
+  nativeAfter[topKey] = wasString ? JSON.stringify(cloned) : cloned
 
-  pendingData.value = after
+  rawWriteData.value = nativeAfter
+  pendingData.value = stringifyData(nativeAfter)
   showDiff.value = true
 }
 </script>
@@ -688,7 +694,7 @@ function handleLeafEdit(path: string[], newValue: string) {
     :before="currentBefore"
     :after="pendingData"
     @confirm="confirmSave"
-    @cancel="showDiff = false"
+    @cancel="showDiff = false; rawWriteData = null"
   />
 
   <!-- Clone selected KV rows -->
