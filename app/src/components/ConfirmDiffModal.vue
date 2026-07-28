@@ -6,8 +6,8 @@ const { t } = useI18n()
 
 const props = defineProps<{
   path: string
-  before: Record<string, string>
-  after: Record<string, string>
+  before: Record<string, unknown>
+  after: Record<string, unknown>
 }>()
 
 const emit = defineEmits<{

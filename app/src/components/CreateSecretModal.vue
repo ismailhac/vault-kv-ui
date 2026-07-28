@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import NestedJsonField from './NestedJsonField.vue'
+import { parseJsonSecretObject } from '../utils/jsonSecret'
+import type { SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{
@@ -133,13 +135,11 @@ const fullPath = computed(() => {
   return newBase.value === '/' ? leaf : `${newBase.value}/${leaf}`
 })
 
-const parsedData = computed((): Record<string, string> | null => {
+const parsedData = computed((): Record<string, unknown> | null => {
   if (mode.value === 'json') {
-    try {
-      const parsed = JSON.parse(jsonInput.value)
-      if (typeof parsed !== 'object' || Array.isArray(parsed)) return null
-      return Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, String(v)]))
-    } catch { return null }
+    // Preserve exactly what the user typed: an object stays an object, a number stays
+    // a number, a string (even one that looks like JSON) stays a string.
+    return parseJsonSecretObject(jsonInput.value)
   }
   const rows = formRows.value.filter(r => r.key.trim())
   if (rows.length === 0) return null
@@ -415,7 +415,7 @@ async function applyPropagation() {
       .map(async (s) => {
         try {
           const merged = mergeRowsIntoExisting((s.data ?? {}) as Record<string, unknown>, rows)
-          await vault.writeSecret(s.path, merged as Record<string, string>)
+          await vault.writeSecret(s.path, merged as SecretData)
           s.writeResult = 'ok'
         } catch (e: unknown) {
           s.writeResult = 'error'
@@ -458,24 +458,23 @@ async function confirmCreate() {
   saving.value = true
   saveError.value = null
   try {
-    let writeData: Record<string, string>
+    let writeData: Record<string, unknown>
     let existingBefore: Record<string, unknown> = {}
     if (mode.value === 'form' && pathMode.value === 'select' && selectedExistingPath.value) {
       const existing = (await fetchSecretData(selectedExistingPath.value) ?? {}) as Record<string, unknown>
       existingBefore = existing
-      writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim())) as Record<string, string>
+      writeData = mergeRowsIntoExisting(existing, formRows.value.filter(r => r.key.trim()))
     } else if (mode.value === 'form') {
-      const coerced = Object.fromEntries(formRows.value.filter(r => r.key.trim()).map(r => [r.key.trim(), coerceRowValue(r)]))
-      writeData = coerced as Record<string, string>
+      writeData = Object.fromEntries(formRows.value.filter(r => r.key.trim()).map(r => [r.key.trim(), coerceRowValue(r)]))
     } else {
-      writeData = parsedData.value
+      writeData = parsedData.value!
     }
-    await vault.writeSecret(fullPath.value, writeData)
+    await vault.writeSecret(fullPath.value, writeData as SecretData)
     await vault.listPath(vault.currentPath)
     saving.value = false
     if (pathMode.value === 'select' && selectedExistingPath.value) {
       writePreviewBefore.value = existingBefore
-      writePreviewAfter.value = writeData as Record<string, unknown>
+      writePreviewAfter.value = writeData
       writePreviewDiff.value = computeLineDiff(existingBefore, writeData)
       propView.value = 'write-preview'
     } else if (propOpen.value && activePropCount.value > 0) {
@@ -493,7 +492,7 @@ async function rollbackWrite() {
   if (!writePreviewBefore.value) return
   saving.value = true
   try {
-    await vault.writeSecret(fullPath.value, writePreviewBefore.value as Record<string, string>)
+    await vault.writeSecret(fullPath.value, writePreviewBefore.value as SecretData)
     await vault.listPath(vault.currentPath)
   } catch {}
   saving.value = false

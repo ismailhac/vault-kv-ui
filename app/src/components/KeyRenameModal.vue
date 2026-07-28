@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import { findKeyPaths, getNestedValue, renameNestedKey, toStringRecord } from '../utils/nestedKeys'
+import { pathToDisplay, type SecretPath, type SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -37,8 +38,18 @@ const matchingPaths = computed(() =>
     .sort()
 )
 
-function getFoundPath(secretPath: string): string {
-  return findKeyPaths(dumpData.value[secretPath] ?? {}, oldKeyName.value.trim())[0] ?? oldKeyName.value.trim()
+function matchesFor(secretPath: string): SecretPath[] {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, oldKeyName.value.trim())
+}
+
+const selectedMatch = ref<Record<string, SecretPath>>({})
+
+function getFoundPath(secretPath: string): SecretPath {
+  return selectedMatch.value[secretPath] ?? matchesFor(secretPath)[0] ?? [oldKeyName.value.trim()]
+}
+
+function pickMatch(secretPath: string, path: SecretPath) {
+  selectedMatch.value = { ...selectedMatch.value, [secretPath]: path }
 }
 
 const selectedPaths = ref<Set<string>>(new Set())
@@ -61,7 +72,7 @@ function newKeyConflicts(path: string): boolean {
 }
 
 // ── Step 2 — Diff ──
-type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; oldDotPath: string; newDotPath: string; val: string }
+type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; oldMatchPath: SecretPath; newMatchPath: SecretPath; val: string }
 
 const previews = computed<PathDiff[]>(() => {
   const ok = oldKeyName.value.trim()
@@ -71,13 +82,12 @@ const previews = computed<PathDiff[]>(() => {
     .filter(p => matchingPaths.value.includes(p))
     .sort()
     .map(path => {
-      const oldDotPath = getFoundPath(path)
-      const parts = oldDotPath.split('.')
-      const newDotPath = [...parts.slice(0, -1), nk].join('.') || nk
+      const oldMatchPath = getFoundPath(path)
+      const newMatchPath = [...oldMatchPath.slice(0, -1), nk]
       const before = dumpData.value[path] ?? {}
-      const after = renameNestedKey(dumpData.value[path] ?? {}, oldDotPath, nk)
-      const val = String(getNestedValue(dumpData.value[path] ?? {}, oldDotPath) ?? '')
-      return { path, before, after, oldDotPath, newDotPath, val }
+      const after = renameNestedKey(dumpData.value[path] ?? {}, oldMatchPath, nk)
+      const val = String(getNestedValue(dumpData.value[path] ?? {}, oldMatchPath) ?? '')
+      return { path, before, after, oldMatchPath, newMatchPath, val }
     })
 })
 
@@ -117,6 +127,7 @@ async function scan() {
   scanError.value = null
   scanned.value = false
   dumpData.value = {}
+  selectedMatch.value = {}
   try {
     const params = new URLSearchParams({ mount: vault.currentMount, namespace: vault.currentNamespace })
     const res = await fetch(`/api/kv/dump?${params}`)
@@ -139,7 +150,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
+      await vault.writeSecret(preview.path, preview.after as SecretData)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyRenameModal.networkError') })
@@ -300,40 +311,54 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <div
                   v-for="path in matchingPaths"
                   :key="path"
-                  class="flex items-center gap-3 px-3 py-2 cursor-pointer transition select-none"
+                  class="px-3 py-2 cursor-pointer transition select-none"
                   :class="selectedPaths.has(path) ? 'hover:bg-gray-800 light:hover:bg-gray-50' : 'opacity-35'"
                   @click="togglePath(path)"
                 >
-                  <!-- Checkbox -->
-                  <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
-                    :class="selectedPaths.has(path) ? 'bg-orange-500 border-orange-400' : 'border-gray-600 bg-gray-800 light:border-gray-400 light:bg-gray-100'">
-                    <span v-if="selectedPaths.has(path)">✓</span>
-                  </span>
-
-                  <!-- Path -->
-                  <span class="font-mono text-xs text-gray-300 shrink-0 min-w-0 truncate light:text-gray-700" style="max-width:220px" :title="path">
-                    {{ path }}
-                  </span>
-
-                  <!-- Key rename preview -->
-                  <div class="flex items-center gap-1.5 flex-1 min-w-0 text-xs font-mono">
-                    <span class="text-red-400 line-through truncate max-w-24" :title="oldKeyName">{{ oldKeyName }}</span>
-                    <span class="text-gray-600 shrink-0">=</span>
-                    <span class="text-amber-300 truncate max-w-28" :title="String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '')">
-                      {{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}
+                  <div class="flex items-center gap-3">
+                    <!-- Checkbox -->
+                    <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
+                      :class="selectedPaths.has(path) ? 'bg-orange-500 border-orange-400' : 'border-gray-600 bg-gray-800 light:border-gray-400 light:bg-gray-100'">
+                      <span v-if="selectedPaths.has(path)">✓</span>
                     </span>
-                    <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-gray-600 shrink-0">→</span>
-                    <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-green-400 truncate max-w-24" :title="newKeyName">
-                      {{ newKeyName }}
+
+                    <!-- Path -->
+                    <span class="font-mono text-xs text-gray-300 shrink-0 min-w-0 truncate light:text-gray-700" style="max-width:220px" :title="path">
+                      {{ path }}
                     </span>
+
+                    <!-- Key rename preview -->
+                    <div class="flex items-center gap-1.5 flex-1 min-w-0 text-xs font-mono">
+                      <span class="text-red-400 line-through truncate max-w-24" :title="oldKeyName">{{ oldKeyName }}</span>
+                      <span class="text-gray-600 shrink-0">=</span>
+                      <span class="text-amber-300 truncate max-w-28" :title="String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '')">
+                        {{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}
+                      </span>
+                      <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-gray-600 shrink-0">→</span>
+                      <span v-if="newKeyName.trim() && newKeyName.trim() !== oldKeyName.trim()" class="text-green-400 truncate max-w-24" :title="newKeyName">
+                        {{ newKeyName }}
+                      </span>
+                    </div>
+
+                    <!-- Conflict warning -->
+                    <span
+                      v-if="newKeyConflicts(path) && selectedPaths.has(path)"
+                      class="shrink-0 text-xs px-1.5 py-0.5 bg-amber-900 text-amber-300 rounded border border-amber-700"
+                      :title="t('keyRenameModal.conflictTitle')"
+                    >{{ t('keyRenameModal.conflictWarning') }}</span>
                   </div>
 
-                  <!-- Conflict warning -->
-                  <span
-                    v-if="newKeyConflicts(path) && selectedPaths.has(path)"
-                    class="shrink-0 text-xs px-1.5 py-0.5 bg-amber-900 text-amber-300 rounded border border-amber-700"
-                    :title="t('keyRenameModal.conflictTitle')"
-                  >{{ t('keyRenameModal.conflictWarning') }}</span>
+                  <!-- Multi-match picker: this key exists at more than one nested location in this secret -->
+                  <div v-if="matchesFor(path).length > 1" class="mt-1.5 pl-7 flex items-center gap-2" @click.stop>
+                    <span class="text-amber-500 text-xs shrink-0">⚠ {{ t('keyRenameModal.multiMatch', { n: matchesFor(path).length }) }}</span>
+                    <select
+                      class="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-950 border border-amber-700 text-amber-300 font-mono text-xs rounded focus:outline-none"
+                      :value="pathToDisplay(getFoundPath(path))"
+                      @change="pickMatch(path, matchesFor(path)[($event.target as HTMLSelectElement).selectedIndex])"
+                    >
+                      <option v-for="m in matchesFor(path)" :key="pathToDisplay(m)" :value="pathToDisplay(m)">{{ pathToDisplay(m) }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -374,13 +399,13 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <tbody>
                   <!-- Old key removed -->
                   <tr class="bg-red-950 text-red-300">
-                    <td class="py-1 pr-4 w-1/3 line-through opacity-70">{{ entry.oldDotPath }}</td>
+                    <td class="py-1 pr-4 w-1/3 line-through opacity-70">{{ pathToDisplay(entry.oldMatchPath) }}</td>
                     <td class="py-1 pr-4 w-1/3 opacity-70">{{ entry.val }}</td>
                     <td class="py-1 w-1/3 italic text-red-500">{{ t('keyRenameModal.deletedLabel') }}</td>
                   </tr>
                   <!-- New key added -->
                   <tr class="bg-green-950 text-green-300">
-                    <td class="py-1 pr-4 w-1/3 font-bold">{{ entry.newDotPath }}</td>
+                    <td class="py-1 pr-4 w-1/3 font-bold">{{ pathToDisplay(entry.newMatchPath) }}</td>
                     <td class="py-1 pr-4 w-1/3 text-gray-600 italic">—</td>
                     <td class="py-1 w-1/3 font-bold">{{ entry.val }}</td>
                   </tr>

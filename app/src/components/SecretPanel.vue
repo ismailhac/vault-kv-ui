@@ -11,6 +11,8 @@ import NestedJsonField from './NestedJsonField.vue'
 import SmartValueCell from './SmartValueCell.vue'
 import SmartEditValue from './SmartEditValue.vue'
 import CloneModal from './CloneModal.vue'
+import { editTopLevelRow } from '../utils/nestedKeys'
+import type { SecretData } from '../types/secret'
 
 const vault = useVaultStore()
 const editingAllowed = computed(() => vault.editingEnabled)
@@ -69,7 +71,7 @@ async function confirmSave() {
   const wasRestoring = isRestoring.value
   isRestoring.value = false
   showDiff.value = false
-  const writeData = (rawWriteData.value ?? pendingData.value) as Record<string, string>
+  const writeData = (rawWriteData.value ?? pendingData.value) as SecretData
   rawWriteData.value = null
   try {
     await vault.writeSecret(path, writeData)
@@ -126,14 +128,10 @@ async function saveRow(originalKey: string) {
   editingRow.value = null
   rowEditError.value = null
 
-  const newData: Record<string, string> = {}
-  for (const [k, v] of Object.entries(vault.selectedSecret.data)) {
-    const strV = v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
-    newData[k === originalKey ? newKey : k] = k === originalKey ? editingRowValue.value : strV
-  }
+  const newData = editTopLevelRow(vault.selectedSecret.data, originalKey, newKey, editingRowValue.value)
 
   try {
-    await vault.writeSecret(vault.selectedSecret.path, newData)
+    await vault.writeSecret(vault.selectedSecret.path, newData as SecretData)
     await vault.readSecret(vault.selectedSecret.path)
     rowSaveSuccess.value = newKey
     setTimeout(() => { if (rowSaveSuccess.value === newKey) rowSaveSuccess.value = null }, 2000)

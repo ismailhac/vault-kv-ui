@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import { setNestedValue, getNestedValue, toStringRecord } from '../utils/nestedKeys'
+import type { SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -14,6 +15,8 @@ const step = ref<Step>(1)
 
 // ── Step 1 — FF definition ──
 const ffKey = ref('')
+// User-authored dotted path: the dots express the user's intended nesting.
+const ffKeyPath = computed(() => ffKey.value.trim().split('.'))
 const ffValueType = ref<'boolean' | 'string' | 'number'>('boolean')
 const ffValue = ref('true')
 const ffProdValue = ref('false')
@@ -137,10 +140,9 @@ const previewsByGroup = computed(() => {
 })
 
 const totalPathsChanged = computed(() =>
-  previews.value.filter(p => {
-    const key = ffKey.value.trim()
-    return String(getNestedValue(p.before, key) ?? '') !== String(getNestedValue(p.after, key) ?? '')
-  }).length
+  previews.value.filter(p =>
+    String(getNestedValue(p.before, ffKeyPath.value) ?? '') !== String(getNestedValue(p.after, ffKeyPath.value) ?? '')
+  ).length
 )
 
 const confirmAllBefore = computed(() =>
@@ -245,7 +247,7 @@ async function buildPreviews() {
   previewLoading.value = true
   previews.value = []
   const results: PathDiff[] = []
-  const key = ffKey.value.trim()
+  const key = ffKeyPath.value
   for (const path of targetPaths.value) {
     const val = getEffectiveValue(path)
     try {
@@ -276,7 +278,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
+      await vault.writeSecret(preview.path, preview.after as SecretData)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('featureFlagModal.step5Errors') })
@@ -698,14 +700,14 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                     <tr
                       class="border-t border-gray-800 light:border-gray-200"
                       :class="{
-                        'text-green-300 bg-green-950': getNestedValue(entry.before, ffKey.trim()) === undefined,
-                        'text-yellow-200 bg-yellow-950': getNestedValue(entry.before, ffKey.trim()) !== undefined && String(getNestedValue(entry.before, ffKey.trim()) ?? '') !== String(getNestedValue(entry.after, ffKey.trim()) ?? ''),
-                        'text-gray-500': getNestedValue(entry.before, ffKey.trim()) !== undefined && String(getNestedValue(entry.before, ffKey.trim()) ?? '') === String(getNestedValue(entry.after, ffKey.trim()) ?? ''),
+                        'text-green-300 bg-green-950': getNestedValue(entry.before, ffKeyPath) === undefined,
+                        'text-yellow-200 bg-yellow-950': getNestedValue(entry.before, ffKeyPath) !== undefined && String(getNestedValue(entry.before, ffKeyPath) ?? '') !== String(getNestedValue(entry.after, ffKeyPath) ?? ''),
+                        'text-gray-500': getNestedValue(entry.before, ffKeyPath) !== undefined && String(getNestedValue(entry.before, ffKeyPath) ?? '') === String(getNestedValue(entry.after, ffKeyPath) ?? ''),
                       }"
                     >
                       <td class="px-4 py-1 w-1/3">{{ ffKey }}</td>
-                      <td class="px-2 py-1 w-1/3 opacity-60 line-through">{{ String(getNestedValue(entry.before, ffKey.trim()) ?? '') }}</td>
-                      <td class="px-2 py-1 w-1/3 font-bold">{{ String(getNestedValue(entry.after, ffKey.trim()) ?? '') }}</td>
+                      <td class="px-2 py-1 w-1/3 opacity-60 line-through">{{ String(getNestedValue(entry.before, ffKeyPath) ?? '') }}</td>
+                      <td class="px-2 py-1 w-1/3 font-bold">{{ String(getNestedValue(entry.after, ffKeyPath) ?? '') }}</td>
                     </tr>
                   </tbody>
                 </table>

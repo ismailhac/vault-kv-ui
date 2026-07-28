@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import NestedJsonField from './NestedJsonField.vue'
+import type { SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const props = defineProps<{ initialSource?: string; initialTarget?: string }>()
@@ -304,7 +305,7 @@ async function applyWrite() {
   writeError.value = null
   const tgt = diffResult.value?.target_path ?? targetPath.value.trim()
   try {
-    await vault.writeSecret(tgt, confirmAfterRaw.value as Record<string, string>)
+    await vault.writeSecret(tgt, confirmAfterRaw.value as SecretData)
     writtenCount.value = selectedKeys.value.size
     step.value = 4
   } catch (e: unknown) {

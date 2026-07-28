@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [1.10.10] — 2026-07-28
+
+### Bug Fixes
+- secret-data-integrity: fixed remaining data-loss bugs where a nested object value was coerced to the string `"[object Object]"` via `String(v)` — in `BulkEditModal` (loading, previewing, and applying bulk edits) and in `CreateSecretModal`'s JSON creation mode
+- secret-data-integrity: `SecretPanel`'s inline row edit/rename (`saveRow`) no longer flattens every nested sibling key to a JSON string when editing an unrelated plain key
+- secret-data-integrity: reversed the 1.10.9 "always normalize" policy — nested edits are now representation-preserving everywhere (a native object stays native, a legacy JSON-string stays a JSON-string), instead of silently normalizing JSON-string-encoded parents to native objects
+- secret-data-integrity: key paths are now carried as segment arrays end-to-end instead of dotted strings, so a literal key name containing a dot (e.g. `spring.datasource.url`) is never misinterpreted as a nested path
+- secret-data-integrity: `KeyUpdateModal`, `KeyAdjustModal`, `KeyRenameModal`, `KeyRemovalModal` now show an explicit picker when a searched/targeted key matches more than one nested location within a secret, instead of silently acting on the first match
+- secret-data-integrity: `CloneModal`'s merge logic extracted to a shared, tested `mergeSecretData` helper (same encoding-preserving policy)
+- secret-data-integrity: `writeSecret` now takes a typed `SecretData` payload instead of `Record<string,string>`, removing the type mismatch that let corrupted payloads pass silently
+- secret-data-integrity: added a Vitest regression suite (`app/src/utils/__tests__/`) covering native/JSON-string round-trips, sibling-preservation, the literal-dot-key case, and the `mergeSecretData` policy matrix
+
 ## [1.10.9] — 2026-06-24
 
 ### Bug Fixes

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import { findKeyPaths, getNestedValue, removeNestedKey, toStringRecord } from '../utils/nestedKeys'
+import { pathToDisplay, type SecretPath, type SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -30,8 +31,18 @@ const matchingPaths = computed(() =>
     .sort()
 )
 
-function getFoundPath(secretPath: string): string {
-  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())[0] ?? keyName.value.trim()
+function matchesFor(secretPath: string): SecretPath[] {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())
+}
+
+const selectedMatch = ref<Record<string, SecretPath>>({})
+
+function getFoundPath(secretPath: string): SecretPath {
+  return selectedMatch.value[secretPath] ?? matchesFor(secretPath)[0] ?? [keyName.value.trim()]
+}
+
+function pickMatch(secretPath: string, path: SecretPath) {
+  selectedMatch.value = { ...selectedMatch.value, [secretPath]: path }
 }
 
 // ── Step 2 — Selection ──
@@ -107,15 +118,15 @@ const targetPaths = computed(() =>
 )
 
 // ── Step 3 — Diff (computed from dump, no extra fetch) ──
-type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; dotPath: string; oldVal: string }
+type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; matchPath: SecretPath; oldVal: string }
 
 const previews = computed<PathDiff[]>(() =>
   targetPaths.value.map(path => {
-    const dotPath = getFoundPath(path)
+    const matchPath = getFoundPath(path)
     const before = dumpData.value[path] ?? {}
-    const after = removeNestedKey(dumpData.value[path] ?? {}, dotPath)
-    const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, dotPath) ?? '')
-    return { path, before, after, dotPath, oldVal }
+    const after = removeNestedKey(dumpData.value[path] ?? {}, matchPath)
+    const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, matchPath) ?? '')
+    return { path, before, after, matchPath, oldVal }
   })
 )
 
@@ -162,6 +173,7 @@ async function scan() {
   scanError.value = null
   scanned.value = false
   dumpData.value = {}
+  selectedMatch.value = {}
   try {
     const params = new URLSearchParams({ mount: vault.currentMount, namespace: vault.currentNamespace })
     const res = await fetch(`/api/kv/dump?${params}`)
@@ -205,7 +217,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
+      await vault.writeSecret(preview.path, preview.after as SecretData)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyRemovalModal.networkError') })
@@ -330,11 +342,24 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <div
                   v-for="path in matchingPaths.slice(0, 10)"
                   :key="path"
-                  class="px-4 py-2 flex items-center gap-3 text-xs font-mono"
+                  class="px-4 py-2 text-xs font-mono"
                 >
-                  <span class="text-red-500 shrink-0">✗</span>
-                  <span class="text-gray-300 flex-1 light:text-gray-700">{{ path }}</span>
-                  <span class="text-gray-600">{{ getFoundPath(path) }} = <span class="text-amber-400">{{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}</span></span>
+                  <div class="flex items-center gap-3">
+                    <span class="text-red-500 shrink-0">✗</span>
+                    <span class="text-gray-300 flex-1 light:text-gray-700">{{ path }}</span>
+                    <span class="text-gray-600">{{ pathToDisplay(getFoundPath(path)) }} = <span class="text-amber-400">{{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}</span></span>
+                  </div>
+                  <!-- Multi-match picker: this key exists at more than one nested location in this secret -->
+                  <div v-if="matchesFor(path).length > 1" class="mt-1 pl-6 flex items-center gap-2">
+                    <span class="text-amber-500 shrink-0">⚠ {{ t('keyRemovalModal.multiMatch', { n: matchesFor(path).length }) }}</span>
+                    <select
+                      class="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-950 border border-amber-700 text-amber-300 font-mono text-xs rounded focus:outline-none"
+                      :value="pathToDisplay(getFoundPath(path))"
+                      @change="pickMatch(path, matchesFor(path)[($event.target as HTMLSelectElement).selectedIndex])"
+                    >
+                      <option v-for="m in matchesFor(path)" :key="pathToDisplay(m)" :value="pathToDisplay(m)">{{ pathToDisplay(m) }}</option>
+                    </select>
+                  </div>
                 </div>
                 <div v-if="matchingPaths.length > 10" class="px-4 py-2 text-xs text-gray-500 text-center light:text-gray-600">
                   {{ t('keyRemovalModal.moreItems', { n: matchingPaths.length - 10 }) }}
@@ -513,10 +538,21 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <span class="font-mono text-xs text-gray-400 light:text-gray-600">{{ entry.path }}</span>
                 <span v-if="pathDepth(entry.path) > 3" class="text-amber-600 text-xs">{{ t('keyRemovalModal.subPath') }}</span>
               </div>
+              <!-- Multi-match picker: this key exists at more than one nested location in this secret -->
+              <div v-if="matchesFor(entry.path).length > 1" class="px-4 pb-1 flex items-center gap-2">
+                <span class="text-amber-500 text-xs shrink-0">⚠ {{ t('keyRemovalModal.multiMatch', { n: matchesFor(entry.path).length }) }}</span>
+                <select
+                  class="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-950 border border-amber-700 text-amber-300 font-mono text-xs rounded focus:outline-none"
+                  :value="pathToDisplay(getFoundPath(entry.path))"
+                  @change="pickMatch(entry.path, matchesFor(entry.path)[($event.target as HTMLSelectElement).selectedIndex])"
+                >
+                  <option v-for="m in matchesFor(entry.path)" :key="pathToDisplay(m)" :value="pathToDisplay(m)">{{ pathToDisplay(m) }}</option>
+                </select>
+              </div>
               <table class="w-full text-xs font-mono">
                 <tbody>
                   <tr class="border-t border-gray-800 bg-red-950 text-red-300">
-                    <td class="px-4 py-1 w-1/3 line-through opacity-70">{{ entry.dotPath }}</td>
+                    <td class="px-4 py-1 w-1/3 line-through opacity-70">{{ pathToDisplay(entry.matchPath) }}</td>
                     <td class="px-2 py-1 w-1/3 line-through opacity-70">{{ entry.oldVal }}</td>
                     <td class="px-2 py-1 w-1/3 italic text-red-500">{{ t('keyRemovalModal.deletedLabel') }}</td>
                   </tr>

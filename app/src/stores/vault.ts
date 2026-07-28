@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { SecretData } from '../types/secret'
 
 export interface TokenStatus {
   display_name: string
@@ -356,7 +357,7 @@ export const useVaultStore = defineStore('vault', () => {
     return res.json()
   }
 
-  async function writeSecret(path: string, data: Record<string, string>) {
+  async function writeSecret(path: string, data: SecretData) {
     const res = await fetch('/api/kv/write', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -491,19 +492,6 @@ export const useVaultStore = defineStore('vault', () => {
     listPath('')
   }
 
-  async function renewToken() {
-    const res = await fetch('/api/token/renew', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ namespace: currentNamespace.value }),
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
-    }
-    tokenStatus.value = await res.json()
-  }
-
   async function logout() {
     try {
       // Clear token and config on BFF
@@ -524,6 +512,19 @@ export const useVaultStore = defineStore('vault', () => {
     showLoginModal.value = false
     showSetupStep.value = false
     try { localStorage.removeItem('vault-namespace') } catch {}
+  }
+
+  async function renewToken() {
+    const res = await fetch('/api/token/renew', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ namespace: currentNamespace.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+    }
+    tokenStatus.value = await res.json()
   }
 
   return {

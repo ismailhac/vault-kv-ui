@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
+import { mergeSecretData } from '../utils/nestedKeys'
+import type { SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const props = defineProps<{
@@ -227,33 +229,6 @@ async function scanConflicts() {
   targetLeafSelections.value = initSel
 }
 
-function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...target }
-  for (const [key, srcVal] of Object.entries(source)) {
-    const tgtVal = result[key]
-    if (
-      srcVal !== null && typeof srcVal === 'object' && !Array.isArray(srcVal) &&
-      tgtVal !== null && typeof tgtVal === 'object' && !Array.isArray(tgtVal)
-    ) {
-      result[key] = deepMerge(tgtVal as Record<string, unknown>, srcVal as Record<string, unknown>)
-    } else if (
-      srcVal !== null && typeof srcVal === 'object' && !Array.isArray(srcVal) &&
-      typeof tgtVal === 'string'
-    ) {
-      // Target stores as JSON string — parse, merge, re-serialize
-      try {
-        const parsed = JSON.parse(tgtVal)
-        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-          result[key] = JSON.stringify(deepMerge(parsed as Record<string, unknown>, srcVal as Record<string, unknown>))
-        } else { result[key] = srcVal }
-      } catch { result[key] = srcVal }
-    } else {
-      result[key] = srcVal
-    }
-  }
-  return result
-}
-
 async function applyClone() {
   phase.value = 'applying'
   await Promise.all(
@@ -261,8 +236,8 @@ async function applyClone() {
       .filter(s => selectedClean.value.has(s.path))
       .map(async (s) => {
         try {
-          const merged = deepMerge(s.data ?? {}, buildDataForTarget(s.path))
-          await vault.writeSecret(s.path, merged as Record<string, string>)
+          const merged = mergeSecretData(s.data ?? {}, buildDataForTarget(s.path))
+          await vault.writeSecret(s.path, merged as SecretData)
           s.writeResult = 'ok'
         } catch (e: unknown) {
           s.writeResult = 'error'

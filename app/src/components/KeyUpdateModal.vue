@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import { findKeyPaths, getNestedValue, setNestedValue, toStringRecord } from '../utils/nestedKeys'
+import { pathToDisplay, type SecretPath, type SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -37,8 +38,20 @@ const matchingPaths = computed(() =>
     .sort()
 )
 
-function getFoundPath(secretPath: string): string {
-  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())[0] ?? keyName.value.trim()
+// All nested locations of the searched key within a given secret (there can be more than one).
+function matchesFor(secretPath: string): SecretPath[] {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())
+}
+
+// User's explicit pick when a secret has more than one match; defaults to the first match.
+const selectedMatch = ref<Record<string, SecretPath>>({})
+
+function getFoundPath(secretPath: string): SecretPath {
+  return selectedMatch.value[secretPath] ?? matchesFor(secretPath)[0] ?? [keyName.value.trim()]
+}
+
+function pickMatch(secretPath: string, path: SecretPath) {
+  selectedMatch.value = { ...selectedMatch.value, [secretPath]: path }
 }
 
 // Individual path selection (all pre-checked after scan)
@@ -67,18 +80,18 @@ function selectAll() { selectedPaths.value = new Set(matchingPaths.value) }
 function selectNone() { selectedPaths.value = new Set() }
 
 // ── Step 2 — Diff (instant, from dump) ──
-type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; dotPath: string; oldVal: string; newVal: string }
+type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; matchPath: SecretPath; oldVal: string; newVal: string }
 
 const previews = computed<PathDiff[]>(() =>
   [...selectedPaths.value]
     .filter(p => matchingPaths.value.includes(p))
     .sort()
     .map(path => {
-      const dotPath = getFoundPath(path)
+      const matchPath = getFoundPath(path)
       const before = dumpData.value[path] ?? {}
-      const after = setNestedValue(dumpData.value[path] ?? {}, dotPath, newValue.value)
-      const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, dotPath) ?? '')
-      return { path, before, after, dotPath, oldVal, newVal: newValue.value }
+      const after = setNestedValue(dumpData.value[path] ?? {}, matchPath, newValue.value)
+      const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, matchPath) ?? '')
+      return { path, before, after, matchPath, oldVal, newVal: newValue.value }
     }),
 )
 
@@ -116,6 +129,7 @@ async function scan() {
   scanned.value = false
   dumpData.value = {}
   newValue.value = ''
+  selectedMatch.value = {}
   try {
     const params = new URLSearchParams({ mount: vault.currentMount, namespace: vault.currentNamespace })
     const res = await fetch(`/api/kv/dump?${params}`)
@@ -138,7 +152,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
+      await vault.writeSecret(preview.path, preview.after as SecretData)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyUpdateModal.applyError') })
@@ -291,28 +305,42 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <div
                   v-for="path in matchingPaths"
                   :key="path"
-                  class="flex items-center gap-3 px-4 py-2 cursor-pointer transition select-none"
+                  class="px-4 py-2 cursor-pointer transition select-none"
                   :class="selectedPaths.has(path) ? 'hover:bg-gray-800' : 'opacity-40 hover:opacity-60'"
                   @click="togglePath(path)"
                 >
-                  <!-- Checkbox -->
-                  <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
-                    :class="selectedPaths.has(path) ? 'bg-blue-500 border-blue-400' : 'border-gray-600 bg-gray-800'">
-                    <span v-if="selectedPaths.has(path)">✓</span>
-                  </span>
-
-                  <!-- Path -->
-                  <span class="font-mono text-xs flex-1 min-w-0 truncate text-gray-300">{{ path }}</span>
-
-                  <!-- Current → new value preview -->
-                  <div class="flex items-center gap-1.5 shrink-0 text-xs font-mono">
-                    <span class="text-amber-400 max-w-32 truncate" :title="String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '')">
-                      {{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}
+                  <div class="flex items-center gap-3">
+                    <!-- Checkbox -->
+                    <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs transition"
+                      :class="selectedPaths.has(path) ? 'bg-blue-500 border-blue-400' : 'border-gray-600 bg-gray-800'">
+                      <span v-if="selectedPaths.has(path)">✓</span>
                     </span>
-                    <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-gray-600">→</span>
-                    <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-green-400 max-w-32 truncate" :title="newValue">
-                      {{ newValue }}
-                    </span>
+
+                    <!-- Path -->
+                    <span class="font-mono text-xs flex-1 min-w-0 truncate text-gray-300">{{ path }}</span>
+
+                    <!-- Current → new value preview -->
+                    <div class="flex items-center gap-1.5 shrink-0 text-xs font-mono">
+                      <span class="text-amber-400 max-w-32 truncate" :title="String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '')">
+                        {{ String(getNestedValue(dumpData[path] ?? {}, getFoundPath(path)) ?? '') }}
+                      </span>
+                      <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-gray-600">→</span>
+                      <span v-if="newValue.trim() && selectedPaths.has(path)" class="text-green-400 max-w-32 truncate" :title="newValue">
+                        {{ newValue }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Multi-match picker: this key exists at more than one nested location in this secret -->
+                  <div v-if="matchesFor(path).length > 1" class="mt-1.5 pl-7 flex items-center gap-2" @click.stop>
+                    <span class="text-amber-500 text-xs shrink-0">⚠ {{ t('keyUpdateModal.multiMatch', { n: matchesFor(path).length }) }}</span>
+                    <select
+                      class="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-950 border border-amber-700 text-amber-300 font-mono text-xs rounded focus:outline-none"
+                      :value="pathToDisplay(getFoundPath(path))"
+                      @change="pickMatch(path, matchesFor(path)[($event.target as HTMLSelectElement).selectedIndex])"
+                    >
+                      <option v-for="m in matchesFor(path)" :key="pathToDisplay(m)" :value="pathToDisplay(m)">{{ pathToDisplay(m) }}</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -342,7 +370,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               <table class="w-full text-xs font-mono">
                 <tbody>
                   <tr class="text-yellow-200 bg-yellow-950 rounded">
-                    <td class="py-1 pr-4 w-1/3 font-semibold">{{ entry.dotPath }}</td>
+                    <td class="py-1 pr-4 w-1/3 font-semibold">{{ pathToDisplay(entry.matchPath) }}</td>
                     <td class="py-1 pr-4 w-1/3 opacity-70 line-through">{{ entry.oldVal }}</td>
                     <td class="py-1 w-1/3 font-bold text-green-300">{{ entry.newVal }}</td>
                   </tr>

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
 import { findKeyPaths, getNestedValue, setNestedValue, toStringRecord } from '../utils/nestedKeys'
+import { pathToDisplay, type SecretPath, type SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -36,8 +37,19 @@ const matchingPaths = computed(() =>
     .sort()
 )
 
-function getFoundPath(secretPath: string): string {
-  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())[0] ?? keyName.value.trim()
+function matchesFor(secretPath: string): SecretPath[] {
+  return findKeyPaths(dumpData.value[secretPath] ?? {}, keyName.value.trim())
+}
+
+const selectedMatch = ref<Record<string, SecretPath>>({})
+
+function getFoundPath(secretPath: string): SecretPath {
+  return selectedMatch.value[secretPath] ?? matchesFor(secretPath)[0] ?? [keyName.value.trim()]
+}
+
+function pickMatch(secretPath: string, path: SecretPath) {
+  selectedMatch.value = { ...selectedMatch.value, [secretPath]: path }
+  resetValue(secretPath)
 }
 
 // Per-path edited values (pre-filled with current value)
@@ -71,19 +83,19 @@ function isModified(path: string): boolean {
 }
 
 // ── Step 2 — Diff: only selected paths where value actually changed ──
-type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; dotPath: string; oldVal: string; newVal: string }
+type PathDiff = { path: string; before: Record<string, unknown>; after: Record<string, unknown>; matchPath: SecretPath; oldVal: string; newVal: string }
 
 const previews = computed<PathDiff[]>(() =>
   [...selectedPaths.value]
     .filter(p => matchingPaths.value.includes(p) && isModified(p))
     .sort()
     .map(path => {
-      const dotPath = getFoundPath(path)
+      const matchPath = getFoundPath(path)
       const before = dumpData.value[path] ?? {}
-      const after = setNestedValue(dumpData.value[path] ?? {}, dotPath, pathValues.value[path] ?? '')
-      const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, dotPath) ?? '')
+      const after = setNestedValue(dumpData.value[path] ?? {}, matchPath, pathValues.value[path] ?? '')
+      const oldVal = String(getNestedValue(dumpData.value[path] ?? {}, matchPath) ?? '')
       const newVal = pathValues.value[path] ?? ''
-      return { path, before, after, dotPath, oldVal, newVal }
+      return { path, before, after, matchPath, oldVal, newVal }
     })
 )
 
@@ -123,6 +135,7 @@ async function scan() {
   scanError.value = null
   scanned.value = false
   dumpData.value = {}
+  selectedMatch.value = {}
   try {
     const params = new URLSearchParams({ mount: vault.currentMount, namespace: vault.currentNamespace })
     const res = await fetch(`/api/kv/dump?${params}`)
@@ -145,7 +158,7 @@ async function applyAll() {
   applyResults.value = []
   for (const preview of previews.value) {
     try {
-      await vault.writeSecret(preview.path, preview.after as Record<string, string>)
+      await vault.writeSecret(preview.path, preview.after as SecretData)
       applyResults.value.push({ path: preview.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: preview.path, ok: false, error: e instanceof Error ? e.message : t('keyAdjustModal.networkError') })
@@ -276,52 +289,66 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
                 <div
                   v-for="path in matchingPaths"
                   :key="path"
-                  class="flex items-center gap-3 px-3 py-2 transition"
+                  class="px-3 py-2 transition"
                   :class="selectedPaths.has(path) ? '' : 'opacity-35'"
                 >
-                  <!-- Checkbox -->
-                  <span
-                    class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs cursor-pointer transition"
-                    :class="selectedPaths.has(path) ? 'bg-violet-500 border-violet-400' : 'border-gray-600 bg-gray-800 light:border-gray-400 light:bg-gray-100'"
-                    @click="togglePath(path)"
-                  >
-                    <span v-if="selectedPaths.has(path)">✓</span>
-                  </span>
+                  <div class="flex items-center gap-3">
+                    <!-- Checkbox -->
+                    <span
+                      class="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-white text-xs cursor-pointer transition"
+                      :class="selectedPaths.has(path) ? 'bg-violet-500 border-violet-400' : 'border-gray-600 bg-gray-800 light:border-gray-400 light:bg-gray-100'"
+                      @click="togglePath(path)"
+                    >
+                      <span v-if="selectedPaths.has(path)">✓</span>
+                    </span>
 
-                  <!-- Path -->
-                  <span
-                    class="font-mono text-xs text-gray-300 cursor-pointer shrink-0 min-w-0 truncate light:text-gray-700"
-                    style="max-width: 220px"
-                    :title="path"
-                    @click="togglePath(path)"
-                  >{{ path }}</span>
+                    <!-- Path -->
+                    <span
+                      class="font-mono text-xs text-gray-300 cursor-pointer shrink-0 min-w-0 truncate light:text-gray-700"
+                      style="max-width: 220px"
+                      :title="path"
+                      @click="togglePath(path)"
+                    >{{ path }}</span>
 
-                  <!-- Editable value -->
-                  <div class="flex-1 flex items-center gap-1.5 min-w-0">
-                    <input
-                      v-model="pathValues[path]"
-                      type="text"
-                      class="flex-1 px-2 py-1 bg-gray-950 font-mono rounded text-xs focus:outline-none transition min-w-0 light:bg-white"
-                      :class="isModified(path)
-                        ? 'border border-yellow-600 text-yellow-200 focus:border-yellow-400'
-                        : 'border border-gray-700 text-gray-400 focus:border-gray-500 light:border-gray-300 light:text-gray-600'"
-                      :disabled="!selectedPaths.has(path)"
-                      spellcheck="false"
-                    />
-                    <!-- Reset button — only show when value is modified -->
-                    <button
-                      v-if="isModified(path)"
-                      class="shrink-0 text-gray-600 hover:text-gray-300 text-xs px-1.5 py-1 rounded hover:bg-gray-700 transition light:hover:text-gray-700 light:hover:bg-gray-100"
-                      :title="t('keyAdjustModal.resetValue')"
-                      @click="resetValue(path)"
-                    >↺</button>
+                    <!-- Editable value -->
+                    <div class="flex-1 flex items-center gap-1.5 min-w-0">
+                      <input
+                        v-model="pathValues[path]"
+                        type="text"
+                        class="flex-1 px-2 py-1 bg-gray-950 font-mono rounded text-xs focus:outline-none transition min-w-0 light:bg-white"
+                        :class="isModified(path)
+                          ? 'border border-yellow-600 text-yellow-200 focus:border-yellow-400'
+                          : 'border border-gray-700 text-gray-400 focus:border-gray-500 light:border-gray-300 light:text-gray-600'"
+                        :disabled="!selectedPaths.has(path)"
+                        spellcheck="false"
+                      />
+                      <!-- Reset button — only show when value is modified -->
+                      <button
+                        v-if="isModified(path)"
+                        class="shrink-0 text-gray-600 hover:text-gray-300 text-xs px-1.5 py-1 rounded hover:bg-gray-700 transition light:hover:text-gray-700 light:hover:bg-gray-100"
+                        :title="t('keyAdjustModal.resetValue')"
+                        @click="resetValue(path)"
+                      >↺</button>
+                    </div>
+
+                    <!-- Modified badge -->
+                    <span
+                      v-if="isModified(path) && selectedPaths.has(path)"
+                      class="shrink-0 text-xs px-1.5 py-0.5 bg-yellow-900 text-yellow-300 rounded border border-yellow-800"
+                    >{{ t('keyAdjustModal.modifiedBadge') }}</span>
                   </div>
 
-                  <!-- Modified badge -->
-                  <span
-                    v-if="isModified(path) && selectedPaths.has(path)"
-                    class="shrink-0 text-xs px-1.5 py-0.5 bg-yellow-900 text-yellow-300 rounded border border-yellow-800"
-                  >{{ t('keyAdjustModal.modifiedBadge') }}</span>
+                  <!-- Multi-match picker: this key exists at more than one nested location in this secret -->
+                  <div v-if="matchesFor(path).length > 1" class="mt-1.5 pl-7 flex items-center gap-2">
+                    <span class="text-amber-500 text-xs shrink-0">⚠ {{ t('keyAdjustModal.multiMatch', { n: matchesFor(path).length }) }}</span>
+                    <select
+                      class="flex-1 min-w-0 px-1.5 py-0.5 bg-gray-950 border border-amber-700 text-amber-300 font-mono text-xs rounded focus:outline-none"
+                      :value="pathToDisplay(getFoundPath(path))"
+                      @change="pickMatch(path, matchesFor(path)[($event.target as HTMLSelectElement).selectedIndex])"
+                    >
+                      <option v-for="m in matchesFor(path)" :key="pathToDisplay(m)" :value="pathToDisplay(m)">{{ pathToDisplay(m) }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -357,7 +384,7 @@ const STEP_LABELS = computed<Record<number, string>>(() => ({
               <table class="w-full text-xs font-mono">
                 <tbody>
                   <tr class="text-yellow-200 bg-yellow-950">
-                    <td class="py-1 pr-4 w-1/3 font-semibold">{{ entry.dotPath }}</td>
+                    <td class="py-1 pr-4 w-1/3 font-semibold">{{ pathToDisplay(entry.matchPath) }}</td>
                     <td class="py-1 pr-4 w-1/3 opacity-60 line-through">{{ entry.oldVal }}</td>
                     <td class="py-1 w-1/3 font-bold text-green-300">{{ entry.newVal }}</td>
                   </tr>

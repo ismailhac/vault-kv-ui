@@ -3,6 +3,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVaultStore } from '../stores/vault'
 import ConfirmDiffModal from './ConfirmDiffModal.vue'
+import { parseJsonSecretObject } from '../utils/jsonSecret'
+import type { SecretData } from '../types/secret'
 
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()
@@ -129,11 +131,7 @@ function defaultBulkJson(): string {
   )
 }
 
-function toStringRecord(input: Record<string, unknown>): Record<string, string> {
-  return Object.fromEntries(Object.entries(input).map(([k, v]) => [k, String(v)]))
-}
-
-function buildBulkJson(path: string, data: Record<string, string>): string {
+function buildBulkJson(path: string, data: Record<string, unknown>): string {
   return JSON.stringify({ [path]: data }, null, 2)
 }
 
@@ -167,7 +165,7 @@ async function loadSelectedPathJson(path: string) {
 
     const payload = await res.json()
     const data = payload?.data && typeof payload.data === 'object'
-      ? toStringRecord(payload.data as Record<string, unknown>)
+      ? (payload.data as Record<string, unknown>)
       : {}
     bulkJson.value = buildBulkJson(path, data)
   } catch (e: unknown) {
@@ -209,8 +207,8 @@ onMounted(() => {
 // ---- Preview state ----
 type PathDiff = {
   path: string
-  before: Record<string, string>
-  after: Record<string, string>
+  before: Record<string, unknown>
+  after: Record<string, unknown>
   fetchError?: string
 }
 
@@ -223,21 +221,22 @@ const applyResults = ref<{ path: string; ok: boolean; error?: string }[]>([])
 const allApplied = ref(false)
 const successMessage = ref<string | null>(null)
 
-function parseBulk(): Record<string, Record<string, string>> | null {
+function parseBulk(): Record<string, Record<string, unknown>> | null {
   jsonError.value = null
-  try {
-    const parsed = JSON.parse(bulkJson.value)
-    if (typeof parsed !== 'object' || Array.isArray(parsed))
-      throw new Error(t('bulkEditModal.jsonMustBeObject'))
-    for (const [path, data] of Object.entries(parsed)) {
-      if (typeof data !== 'object' || Array.isArray(data))
-        throw new Error(t('bulkEditModal.valueMustBeObject', { path }))
-    }
-    return parsed as Record<string, Record<string, string>>
-  } catch (e: unknown) {
-    jsonError.value = e instanceof Error ? e.message : t('bulkEditModal.jsonMustBeObject')
+  const parsed = parseJsonSecretObject(bulkJson.value)
+  if (!parsed) {
+    jsonError.value = t('bulkEditModal.jsonMustBeObject')
     return null
   }
+  const result: Record<string, Record<string, unknown>> = {}
+  for (const [path, data] of Object.entries(parsed)) {
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      jsonError.value = t('bulkEditModal.valueMustBeObject', { path })
+      return null
+    }
+    result[path] = data as Record<string, unknown>
+  }
+  return result
 }
 
 async function preview() {
@@ -262,7 +261,7 @@ async function preview() {
         results.push({
           path,
           before: json.data ?? {},
-          after: Object.fromEntries(Object.entries(afterData).map(([k, v]) => [k, String(v)])),
+          after: afterData,
         })
       } else if (res.status === 404) {
         results.push({ path, before: {}, after: afterData })
@@ -289,7 +288,7 @@ async function confirmOne(index: number) {
   confirmIndex.value = null
   const entry = previews.value[index]
   try {
-    await vault.writeSecret(entry.path, entry.after)
+    await vault.writeSecret(entry.path, entry.after as SecretData)
     applyResults.value.push({ path: entry.path, ok: true })
   } catch (e: unknown) {
     applyResults.value.push({ path: entry.path, ok: false, error: e instanceof Error ? e.message : t('bulkEditModal.applyAll') })
@@ -305,7 +304,7 @@ async function applyAll() {
   allApplied.value = false
   // find first with changes
   const firstChanged = previews.value.findIndex((p) =>
-    Object.keys(p.after).some((k) => p.before[k] !== p.after[k]) ||
+    Object.keys(p.after).some((k) => JSON.stringify(p.before[k]) !== JSON.stringify(p.after[k])) ||
     Object.keys(p.before).some((k) => !(k in p.after))
   )
   if (firstChanged === -1) return
@@ -316,7 +315,7 @@ async function confirmApplyAll() {
   applyAllIndex.value = null
   for (const entry of previews.value) {
     try {
-      await vault.writeSecret(entry.path, entry.after)
+      await vault.writeSecret(entry.path, entry.after as SecretData)
       applyResults.value.push({ path: entry.path, ok: true })
     } catch (e: unknown) {
       applyResults.value.push({ path: entry.path, ok: false, error: e instanceof Error ? e.message : t('bulkEditModal.applyAll') })
@@ -346,18 +345,22 @@ const totalChanges = computed(() =>
   ).length
 )
 
+function displayValue(v: unknown): string {
+  return v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')
+}
+
 const confirmAllBefore = computed(() =>
-  previews.value.reduce((acc, p) => ({ ...acc, ...Object.fromEntries(Object.entries(p.before).map(([k, v]) => [`${p.path} / ${k}`, v])) }), {} as Record<string, string>)
+  previews.value.reduce((acc, p) => ({ ...acc, ...Object.fromEntries(Object.entries(p.before).map(([k, v]) => [`${p.path} / ${k}`, displayValue(v)])) }), {} as Record<string, string>)
 )
 const confirmAllAfter = computed(() =>
-  previews.value.reduce((acc, p) => ({ ...acc, ...Object.fromEntries(Object.entries(p.after).map(([k, v]) => [`${p.path} / ${k}`, v])) }), {} as Record<string, string>)
+  previews.value.reduce((acc, p) => ({ ...acc, ...Object.fromEntries(Object.entries(p.after).map(([k, v]) => [`${p.path} / ${k}`, displayValue(v)])) }), {} as Record<string, string>)
 )
 
 // Helper: determine row status for styling
 function getRowStatus(entry: PathDiff, key: string) {
   if (!(key in entry.before) && key in entry.after) return 'added'
   if (key in entry.before && !(key in entry.after)) return 'removed'
-  if (key in entry.before && key in entry.after && entry.before[key] !== entry.after[key]) return 'modified'
+  if (key in entry.before && key in entry.after && JSON.stringify(entry.before[key]) !== JSON.stringify(entry.after[key])) return 'modified'
   return 'unchanged'
 }
 </script>
@@ -536,8 +539,8 @@ function getRowStatus(entry: PathDiff, key: string) {
                   }"
                 >
                   <td class="px-4 py-1 w-1/4">{{ key }}</td>
-                  <td class="px-2 py-1 w-1/3 opacity-70" :class="{ 'line-through': getRowStatus(entry, key) !== 'unchanged' }">{{ entry.before[key] ?? '' }}</td>
-                  <td class="px-2 py-1 w-1/3">{{ entry.after[key] ?? '—' }}</td>
+                  <td class="px-2 py-1 w-1/3 opacity-70" :class="{ 'line-through': getRowStatus(entry, key) !== 'unchanged' }">{{ key in entry.before ? displayValue(entry.before[key]) : '' }}</td>
+                  <td class="px-2 py-1 w-1/3">{{ key in entry.after ? displayValue(entry.after[key]) : '—' }}</td>
                 </tr>
               </tbody>
             </table>
