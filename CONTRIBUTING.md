@@ -44,6 +44,17 @@ export VAULT_NAMESPACE=org/team/my-namespace
 2. Import and register it in `BrowserView.vue` alongside the other modals
 3. Add a toolbar button in the `v-if="vault.editingEnabled"` actions block
 
+## Writing or editing a nested secret value
+
+A Vault KV v2 secret can hold arbitrary JSON — including a value that's a nested object, either as a native object or (legacy data) as a JSON-encoded string. This has caused real data-loss bugs in the past, so:
+
+- **Never build a write payload with `String(v)` on every key.** `String()` on an object gives you the literal string `"[object Object]"` — permanent, silent data loss. Same danger with a blanket `JSON.stringify(v)` applied to keys you didn't mean to touch.
+- **`vault.writeSecret(path, data)` takes a `SecretData`** (`app/src/types/secret.ts`), not `Record<string, string>` — pass values through with their real type (object, number, boolean, `null`, array).
+- **Don't change a key's existing encoding as a side effect of an unrelated edit.** A key that was already a native object stays a native object; a key that was a JSON string stays a JSON string. Use the shared helpers in `app/src/utils/nestedKeys.ts` (`setNestedValue`, `removeNestedKey`, `renameNestedKey`, `mergeSecretData`, `editTopLevelRow`) rather than writing a new local deep-merge/deep-set — that's how this bug got reintroduced multiple times before.
+- **Key paths are arrays of segments, not dotted strings you `split('.')`** — a literal key name containing a dot must not be misread as nested levels.
+
+Run `npm test --prefix app` (Vitest) to check these helpers still round-trip correctly before submitting a PR that touches a write path.
+
 ## Adding a BFF route
 
 All routes are in `server/index.mjs`. The pattern for a Vault-proxying route:
@@ -79,7 +90,7 @@ app.post('/api/kv/my-action', async (req, res) => {
 ## Submitting changes
 
 1. Fork the repository and create a branch from `main`
-2. Make your changes and verify the build passes: `npm run build --prefix app`
+2. Make your changes and verify the build passes: `npm run build --prefix app`, and the tests pass: `npm test --prefix app`
 3. Open a pull request with a clear description of what changed and why
 
 ## Releasing a new version
